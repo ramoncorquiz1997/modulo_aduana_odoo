@@ -2,7 +2,7 @@
 <odoo>
   <data>
     <record id="res_partner_view_form_inherit_mi_modulo_aduana" model="ir.ui.view">
-      <field name="name">res.partner.form.inherit.mi_modulo.aduana</field>
+      <field name="name">res.partner.form.inherit.mimodulo_aduana_odoo_modulo.aduana</field>
       <field name="model">res.partner</field>
       <field name="inherit_id" ref="base.view_partner_form"/>
       <field name="arch" type="xml">
