@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- LIST (ANTES TREE) -->
+    <record id="view_mx_ped_clave_list" model="ir.ui.view">
+        <field name="name">mx.ped.clave.list</field>
+        <field name="model">mx.ped.clave</field>
+        <field name="arch" type="xml">
+            <list string="Claves de Pedimento" default_order="code">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="tipo_operacion"/>
+                <field name="regimen"/>
+                <field name="requiere_immex"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- FORM -->
+    <record id="view_mx_ped_clave_form" model="ir.ui.view">
+        <field name="name">mx.ped.clave.form</field>
+        <field name="model">mx.ped.clave</field>
+        <field name="arch" type="xml">
+            <form string="Clave de Pedimento">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code" placeholder="Ej. A1, A4, V1"/>
+                            <field name="name" placeholder="Ej. Importación definitiva"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="tipo_operacion"/>
+                            <field name="regimen"/>
+                            <field name="requiere_immex"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <group>
+                            <field name="vigente_desde"/>
+                            <field name="vigente_hasta"/>
+                        </group>
+                        <group>
+                            <field name="note" placeholder="Notas / reglas internas"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ACTION -->
+    <record id="action_mx_ped_clave" model="ir.actions.act_window">
+        <field name="name">Claves de pedimento</field>
+        <field name="res_model">mx.ped.clave</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crea las claves (A1, A4, V1, etc.) para seleccionarlas en tus operaciones.
+            </p>
+        </field>
+    </record>
+
+    <!-- MENUS -->
+    <menuitem id="menu_mx_ped_root" name="Aduanas" sequence="10"/>
+    <menuitem id="menu_mx_ped_catalogos" name="Catálogos" parent="menu_mx_ped_root" sequence="20"/>
+    <menuitem id="menu_mx_ped_clave" name="Claves de pedimento"
+              parent="menu_mx_ped_catalogos"
+              action="action_mx_ped_clave"
+              sequence="10"/>
+
+</odoo>

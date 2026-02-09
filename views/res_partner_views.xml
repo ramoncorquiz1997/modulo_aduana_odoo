@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+    <record id="res_partner_view_form_inherit_mi_modulo_aduana" model="ir.ui.view">
+      <field name="name">res.partner.form.inherit.mi_modulo.aduana</field>
+      <field name="model">res.partner</field>
+      <field name="inherit_id" ref="base.view_partner_form"/>
+      <field name="arch" type="xml">
+        <xpath expr="//notebook" position="inside">
+          <page string="Aduana" name="mi_modulo_aduana_partner">
+            <group>
+              <group string="Identificación">
+                <field name="vat"/>
+                <field name="x_curp"/>
+                <field name="x_identificacion_fiscal"/>
+              </group>
+              <group string="Domicilio">
+                <field name="street"/>
+                <field name="street2"/>
+                <field name="zip"/>
+                <field name="city"/>
+                <field name="state_id"/>
+                <field name="country_id"/>
+              </group>
+            </group>
+          </page>
+        </xpath>
+      </field>
+    </record>
+  </data>
+</odoo>

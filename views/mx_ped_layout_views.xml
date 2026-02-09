@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <record id="mx_ped_layout_view_list" model="ir.ui.view">
+      <field name="name">mx.ped.layout.list</field>
+      <field name="model">mx.ped.layout</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="name"/>
+          <field name="version"/>
+          <field name="active"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="mx_ped_layout_view_form" model="ir.ui.view">
+      <field name="name">mx.ped.layout.form</field>
+      <field name="model">mx.ped.layout</field>
+      <field name="arch" type="xml">
+        <form string="Layout">
+          <sheet>
+            <group>
+              <field name="name"/>
+              <field name="version"/>
+              <field name="active"/>
+            </group>
+            <group string="Formato TXT">
+              <field name="export_format"/>
+              <field name="field_separator" modifiers="{'invisible': [['export_format','!=','pipe']]}"/>
+              <field name="record_separator"/>
+              <field name="file_name_pattern"/>
+            </group>
+
+            <div class="alert alert-info" role="alert">
+              <strong>Guía rápida</strong>
+              <div>1) Crea el registro (ej. 501, 505, 551).</div>
+              <div>2) Agrega los campos con posiciones del lineamiento.</div>
+              <div>3) En cada campo, usa “Campo origen” para ligar al Lead.</div>
+            </div>
+
+            <notebook>
+              <page string="Registros">
+                <field name="registro_ids">
+                  <list editable="bottom">
+                    <field name="orden" string="Orden (10,20,30...)"/>
+                    <field name="codigo" string="Código (501, 505...)"/>
+                    <field name="nombre" string="Nombre corto"/>
+                    <field name="requerido" string="Obligatorio"/>
+                  </list>
+                  <form>
+                    <sheet>
+                      <group>
+                        <field name="orden" string="Orden (10,20,30...)"/>
+                        <field name="codigo" string="Código (501, 505...)"/>
+                        <field name="nombre" string="Nombre corto"/>
+                        <field name="requerido" string="Obligatorio"/>
+                      </group>
+                      <group string="Campos">
+                        <field name="campo_ids">
+                          <list editable="bottom">
+                            <field name="layout_export_format" invisible="1"/>
+                            <field name="orden" string="Orden"/>
+                            <field name="nombre" string="Nombre layout"/>
+                            <field name="pos_ini" string="Pos. inicio"
+                                   modifiers="{'invisible': [['layout_export_format','=','pipe']]}"/>
+                            <field name="pos_fin" string="Pos. fin"
+                                   modifiers="{'invisible': [['layout_export_format','=','pipe']]}"/>
+                            <field name="longitud" readonly="1" string="Longitud"
+                                   modifiers="{'invisible': [['layout_export_format','=','pipe']]}"/>
+                            <field name="tipo" string="Tipo"/>
+                            <field name="requerido" string="Obligatorio"/>
+                            <field name="default" string="Valor por defecto"/>
+                            <field name="formato" string="Formato"/>
+                            <field name="source_model"/>
+                            <field name="source_field_id"/>
+                            <field name="source_field" string="Campo origen (técnico)"/>
+                          </list>
+                        </field>
+                      </group>
+                    </sheet>
+                  </form>
+                </field>
+              </page>
+            </notebook>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="mx_ped_layout_action" model="ir.actions.act_window">
+      <field name="name">Layouts</field>
+      <field name="res_model">mx.ped.layout</field>
+      <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="mx_ped_layout_registro_view_list" model="ir.ui.view">
+      <field name="name">mx.ped.layout.registro.list</field>
+      <field name="model">mx.ped.layout.registro</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="layout_id"/>
+          <field name="orden"/>
+          <field name="codigo"/>
+          <field name="nombre"/>
+          <field name="requerido"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="mx_ped_layout_registro_view_form" model="ir.ui.view">
+      <field name="name">mx.ped.layout.registro.form</field>
+      <field name="model">mx.ped.layout.registro</field>
+      <field name="arch" type="xml">
+        <form string="Registro de Layout">
+          <sheet>
+            <group>
+              <field name="layout_id"/>
+              <field name="orden"/>
+              <field name="codigo"/>
+              <field name="nombre"/>
+              <field name="requerido"/>
+            </group>
+            <group string="Campos">
+              <field name="campo_ids">
+                          <list editable="bottom">
+                            <field name="layout_export_format" invisible="1"/>
+                            <field name="orden" string="Orden"/>
+                            <field name="nombre" string="Nombre layout"/>
+                            <field name="pos_ini" string="Pos. inicio"
+                                   modifiers="{'invisible': [['layout_export_format','=','pipe']]}"/>
+                            <field name="pos_fin" string="Pos. fin"
+                                   modifiers="{'invisible': [['layout_export_format','=','pipe']]}"/>
+                            <field name="longitud" readonly="1" string="Longitud"
+                                   modifiers="{'invisible': [['layout_export_format','=','pipe']]}"/>
+                            <field name="tipo" string="Tipo"/>
+                            <field name="requerido" string="Obligatorio"/>
+                            <field name="default" string="Valor por defecto"/>
+                            <field name="formato" string="Formato"/>
+                            <field name="source_model"/>
+                            <field name="source_field_id"/>
+                            <field name="source_field" string="Campo origen (técnico)"/>
+                          </list>
+              </field>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="mx_ped_layout_registro_action" model="ir.actions.act_window">
+      <field name="name">Registros de Layout</field>
+      <field name="res_model">mx.ped.layout.registro</field>
+      <field name="view_mode">list,form</field>
+      <field name="context">{}</field>
+    </record>
+
+    <record id="mx_ped_layout_campo_view_list" model="ir.ui.view">
+      <field name="name">mx.ped.layout.campo.list</field>
+      <field name="model">mx.ped.layout.campo</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="registro_id"/>
+          <field name="nombre"/>
+          <field name="pos_ini"/>
+          <field name="pos_fin"/>
+          <field name="longitud"/>
+          <field name="tipo"/>
+          <field name="requerido"/>
+          <field name="source_model"/>
+          <field name="source_field_id"/>
+          <field name="source_field"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="mx_ped_layout_campo_view_form" model="ir.ui.view">
+      <field name="name">mx.ped.layout.campo.form</field>
+      <field name="model">mx.ped.layout.campo</field>
+      <field name="arch" type="xml">
+        <form string="Campo de Layout">
+          <sheet>
+            <group>
+              <field name="registro_id"/>
+              <field name="nombre"/>
+              <field name="pos_ini"/>
+              <field name="pos_fin"/>
+              <field name="longitud" readonly="1"/>
+              <field name="tipo"/>
+              <field name="requerido"/>
+              <field name="default"/>
+              <field name="formato"/>
+              <field name="source_model"/>
+              <field name="source_field_id"/>
+              <field name="source_field"/>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="mx_ped_layout_campo_action" model="ir.actions.act_window">
+      <field name="name">Campos de Layout</field>
+      <field name="res_model">mx.ped.layout.campo</field>
+      <field name="view_mode">list,form</field>
+      <field name="context">{}</field>
+    </record>
+
+    <menuitem id="mx_ped_layout_menu"
+              name="Layouts"
+              parent="mx_ped_operacion_menu_root"
+              action="mx_ped_layout_action"
+              sequence="20"/>
+
+    <menuitem id="mx_ped_layout_registro_menu"
+              name="Registros (Layout)"
+              parent="mx_ped_operacion_menu_root"
+              action="mx_ped_layout_registro_action"
+              sequence="30"/>
+
+    <menuitem id="mx_ped_layout_campo_menu"
+              name="Campos (Layout)"
+              parent="mx_ped_operacion_menu_root"
+              action="mx_ped_layout_campo_action"
+              sequence="40"/>
+    <menuitem id="mx_ped_clave_menu"  
+              name="Claves de pedimento"
+              parent="mx_ped_operacion_menu_root"
+              action="action_mx_ped_clave"
+              sequence="50"/>
+
+  </data>
+</odoo>

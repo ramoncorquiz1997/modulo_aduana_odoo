@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_mx_ped_operacion,mx.ped.operacion,model_mx_ped_operacion,,1,1,1,1
+access_mx_ped_partida,mx.ped.partida,model_mx_ped_partida,,1,1,1,1
+access_mx_ped_documento,mx.ped.documento,model_mx_ped_documento,,1,1,1,1
+access_mx_ped_evento,mx.ped.evento,model_mx_ped_evento,,1,1,1,1
+access_mx_ped_layout,mx.ped.layout,model_mx_ped_layout,,1,1,1,1
+access_mx_ped_layout_registro,mx.ped.layout.registro,model_mx_ped_layout_registro,,1,1,1,1
+access_mx_ped_layout_campo,mx.ped.layout.campo,model_mx_ped_layout_campo,,1,1,1,1
+access_mx_ped_registro,mx.ped.registro,model_mx_ped_registro,,1,1,1,1
+access_mx_ped_clave,mx.ped.clave,model_mx_ped_clave,,1,1,1,1
+
