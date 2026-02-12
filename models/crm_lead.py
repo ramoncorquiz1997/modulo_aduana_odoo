@@ -501,6 +501,7 @@ class CrmLead(models.Model):
         comodel_name="mx.ped.operacion",
         compute="_compute_x_last_ped_operacion_id",
         string="Último pedimento",
+        store=True,
     )
 
         # =========================================================
@@ -510,45 +511,45 @@ class CrmLead(models.Model):
     x_ped_num_pedimento = fields.Char(
         string="Número de pedimento (último)",
         compute="_compute_x_ped_resumen",
-        store=False,
+        store=True,
         readonly=True,
     )
     x_ped_fecha_pago = fields.Date(
         string="Fecha de pago (último)",
         compute="_compute_x_ped_resumen",
-        store=False,
+        store=True,
         readonly=True,
     )
     x_ped_semaforo = fields.Selection(
         selection=[("verde", "Verde"), ("rojo", "Rojo")],
         string="Semáforo (último)",
         compute="_compute_x_ped_resumen",
-        store=False,
+        store=True,
         readonly=True,
     )
     x_ped_fecha_liberacion = fields.Date(
         string="Fecha de liberación (último)",
         compute="_compute_x_ped_resumen",
-        store=False,
+        store=True,
         readonly=True,
     )
 
     x_ped_aduana_clave = fields.Char(
         string="Aduana (clave, último)",
         compute="_compute_x_ped_resumen",
-        store=False,
+        store=True,
         readonly=True,
     )
     x_ped_patente = fields.Char(
         string="Patente (último)",
         compute="_compute_x_ped_resumen",
-        store=False,
+        store=True,
         readonly=True,
     )
     x_ped_clave_pedimento = fields.Char(
         string="Clave pedimento (último)",
         compute="_compute_x_ped_resumen",
-        store=False,
+        store=True,
         readonly=True,
     )
 
