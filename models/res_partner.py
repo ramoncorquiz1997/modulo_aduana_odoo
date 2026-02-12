@@ -8,5 +8,5 @@ class ResPartner(models.Model):
     x_identificacion_fiscal = fields.Char(string="Identificación fiscal (extranjero)")
 
     # Documentos
-    x_csf_filename = fields.Char(string="Nombre de archivo CSF")
-    x_csf_file = fields.Binary(string="CSF (PDF)")
+    #x_csf_filename = fields.Char(string="Nombre de archivo CSF")
+    #x_csf_file = fields.Binary(string="CSF (PDF)")
