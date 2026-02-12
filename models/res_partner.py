@@ -26,32 +26,34 @@ class ResPartner(models.Model):
             return
 
         try:
-            # 1. Convertir PDF a Imagen
             file_content = base64.b64decode(self.x_csf_file)
             images = convert_from_bytes(file_content, first_page=1, last_page=1)
             
             if images:
-                # 2. Buscar y Decodificar el QR
                 qr_codes = decode(images[0])
-                
                 if qr_codes:
-                    # La URL del SAT suele ser algo como: https://msc.satsaid.gob.mx/consultas/....
                     qr_data = qr_codes[0].data.decode('utf-8')
                     _logger.info("URL extraída del QR: %s", qr_data)
 
-                    # 3. Extraer RFC de la URL (El RFC siempre viene en el parámetro 'id=')
-                    # Ejemplo: ...?id=EIAJ8910101J7&...
-                    rfc_match = re.search(r'id=([A-Z&Ñ]{3,4}[0-9]{6}[A-Z0-9]{3})', qr_data)
+                    # --- NUEVA LÓGICA PARA EL PARÁMETRO D3 ---
+                    # Buscamos el RFC al final de la cadena D3 (después del guion bajo _)
+                    # Ejemplo: ...D3=20030099070_EIAJ8910101J7
+                    rfc_match = re.search(r'D3=.*?_([A-Z&Ñ]{3,4}[0-9]{6}[A-Z0-9]{3})', qr_data)
+                    
                     if rfc_match:
                         self.vat = rfc_match.group(1)
-                        
-                    # 4. Extraer CURP de la URL (si viene presente)
-                    curp_match = re.search(r'curp=([A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2})', qr_data)
-                    if curp_match:
-                        self.x_curp = curp_match.group(1)
+                        _logger.info("RFC asignado: %s", self.vat)
+                    else:
+                        # Intento alternativo si no trae guion bajo
+                        rfc_alt = re.search(r'D3=([A-Z&Ñ]{3,4}[0-9]{6}[A-Z0-9]{3})', qr_data)
+                        if rfc_alt:
+                            self.vat = rfc_alt.group(1)
+
+                    # Nota: El QR del SAT normalmente no trae la CURP en esta URL simplificada.
+                    # Si necesitas la CURP, tendremos que usar el OCR de texto además del QR.
 
                 else:
-                    _logger.warning("No se encontró código QR en la primera página.")
+                    _logger.warning("No se detectó QR en el archivo.")
                     
         except Exception as e:
-            _logger.error("Error procesando QR: %s", str(e))
+            _logger.error("Error: %s", str(e))
