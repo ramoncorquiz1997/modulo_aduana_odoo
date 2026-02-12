@@ -1,4 +1,3 @@
-
 {
     "name": "Aduana - Operaciones y Pedimentos",
     "version": "18.0.1.2.0",
@@ -11,9 +10,9 @@
         "views/mx_ped_operacion_views.xml",
         "views/mx_ped_clave_views.xml",
         "views/mx_ped_layout_views.xml",
-        "views/crm_lead_views.xml",
-        
+        "views/crm_lead_views.xml"
     ],
+    "license": "LGPL-3",
     "application": False,
     "installable": True,
 }
