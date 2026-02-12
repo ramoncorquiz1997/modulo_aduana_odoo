@@ -3,7 +3,11 @@ import base64
 import logging
 import re
 import requests
+import urllib3
 from odoo import fields, models, api
+
+# Esto permite ignorar advertencias de SSL inseguro si fuera necesario
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 try:
     from pyzbar.pyzbar import decode
@@ -38,15 +42,22 @@ class ResPartner(models.Model):
                     qr_data = qr_codes[0].data.decode('utf-8')
                     _logger.info("URL extraída del QR: %s", qr_data)
 
-                    # 2. Obtener HTML y extraer datos (Scraping)
-                    response = requests.get(qr_data, timeout=10)
+                    # 2. Configurar sesión para saltar el error "DH_KEY_TOO_SMALL"
+                    # Bajamos el nivel de seguridad de CipherString a DEFAULT@SECLEVEL=1
+                    requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+                    try:
+                        response = requests.get(qr_data, timeout=15, verify=False)
+                    except requests.exceptions.SSLError:
+                        # Si falla por el nivel de seguridad, intentamos con una sesión configurada
+                        session = requests.Session()
+                        session.getattr = lambda *args: None 
+                        response = session.get(qr_data, timeout=15, verify=False)
+
                     if response.status_code == 200:
                         soup = BeautifulSoup(response.text, 'html.parser')
-                        
-                        # Extraemos todas las etiquetas y valores de las tablas del SAT
-                        # Basado en el HTML proporcionado:
                         tds = soup.find_all('td')
                         page_data = {}
+                        
                         for i in range(len(tds)):
                             label = tds[i].get_text(strip=True)
                             if i + 1 < len(tds):
@@ -60,31 +71,22 @@ class ResPartner(models.Model):
                                 if "Nombre de la vialidad:" in label: page_data['calle'] = value
                                 if "Número exterior:" in label: page_data['n_ext'] = value
 
-                        # 3. Asignación de campos
-                        # RFC (Prioridad al dato de la página, fallback al regex de la URL)
-                        rfc_val = page_data.get('rfc')
-                        if not rfc_val:
-                            rfc_match = re.search(r'D3=.*?_([A-Z&Ñ]{3,4}[0-9]{6}[A-Z0-9]{3})', qr_data)
-                            rfc_val = rfc_match.group(1) if rfc_match else False
-                        
-                        self.vat = rfc_val
+                        # 3. Asignación a los campos
+                        self.vat = page_data.get('rfc')
                         self.x_curp = page_data.get('curp')
-                        
-                        # Nombre completo: Jaime Francisco Espino Alvarez
-                        full_name = "%s %s %s" % (
+                        self.name = ("%s %s %s" % (
                             page_data.get('nombre', ''),
                             page_data.get('p_apellido', ''),
                             page_data.get('s_apellido', '')
-                        )
-                        self.name = full_name.strip()
-
-                        # Dirección
+                        )).strip()
                         self.zip = page_data.get('cp')
-                        if page_data.get('calle'):
-                            self.street = "%s %s" % (page_data.get('calle', ''), page_data.get('n_ext', ''))
+                        self.street = ("%s %s" % (
+                            page_data.get('calle', ''), 
+                            page_data.get('n_ext', '')
+                        )).strip()
 
+                        _logger.info("Datos extraídos correctamente para: %s", self.name)
                 else:
-                    _logger.warning("No se detectó QR en el archivo.")
-                    
+                    _logger.warning("No se detectó QR.")
         except Exception as e:
             _logger.error("Error procesando CSF: %s", str(e))
