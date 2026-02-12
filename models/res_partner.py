@@ -3,11 +3,8 @@ import base64
 import logging
 import re
 import requests
-import urllib3
+import ssl
 from odoo import fields, models, api
-
-# Esto permite ignorar advertencias de SSL inseguro si fuera necesario
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 try:
     from pyzbar.pyzbar import decode
@@ -17,6 +14,15 @@ except ImportError:
     decode = None
 
 _logger = logging.getLogger(__name__)
+
+# Clase para forzar un nivel de seguridad SSL más bajo (necesario para el SAT)
+class DESAdapter(requests.adapters.HTTPAdapter):
+    def init_poolmanager(self, *args, **kwargs):
+        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        # Bajamos el nivel de seguridad a 1 para aceptar llaves DH pequeñas
+        context.set_ciphers('DEFAULT@SECLEVEL=1')
+        kwargs['ssl_context'] = context
+        return super(DESAdapter, self).init_poolmanager(*args, **kwargs)
 
 class ResPartner(models.Model):
     _inherit = "res.partner"
@@ -42,16 +48,11 @@ class ResPartner(models.Model):
                     qr_data = qr_codes[0].data.decode('utf-8')
                     _logger.info("URL extraída del QR: %s", qr_data)
 
-                    # 2. Configurar sesión para saltar el error "DH_KEY_TOO_SMALL"
-                    # Bajamos el nivel de seguridad de CipherString a DEFAULT@SECLEVEL=1
-                    requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
-                    try:
-                        response = requests.get(qr_data, timeout=15, verify=False)
-                    except requests.exceptions.SSLError:
-                        # Si falla por el nivel de seguridad, intentamos con una sesión configurada
-                        session = requests.Session()
-                        session.getattr = lambda *args: None 
-                        response = session.get(qr_data, timeout=15, verify=False)
+                    # 2. Configurar sesión con el adaptador SSL personalizado
+                    session = requests.Session()
+                    session.mount("https://", DESAdapter())
+                    
+                    response = session.get(qr_data, timeout=15, verify=False)
 
                     if response.status_code == 200:
                         soup = BeautifulSoup(response.text, 'html.parser')
