@@ -28,6 +28,12 @@
               <field name="x_csf_file" widget="binary" filename="x_csf_filename" string="Constancia de Situación Fiscal (PDF)"/>
             </group>
           </page>
+          <page string="Docimentación" name="mi_modulo_aduana_partner">
+            <group string="Constancia de Situación Fiscal">
+              <field name="x_csf_filename" invisible="1"/>
+              <field name="x_csf_file" widget="binary" filename="x_csf_filename" string="Constancia de Situación Fiscal (PDF)"/>
+            </group>
+          </page>
         </xpath>
       </field>
     </record>
