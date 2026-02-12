@@ -9,7 +9,4 @@ class ResPartner(models.Model):
 
     # Documentos
     x_csf_filename = fields.Char(string="Nombre de archivo CSF")
-    x_csf_file = fields.Binary(
-        string="CSF (PDF)", 
-        filename="x_csf_filename"  # Esto vincula el binario con el nombre
-    )
+    x_csf_file = fields.Binary(string="CSF (PDF)")
