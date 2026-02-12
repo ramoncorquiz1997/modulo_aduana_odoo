@@ -23,6 +23,10 @@
                 <field name="country_id"/>
               </group>
             </group>
+            <group string="Documentación">
+              <field name="x_csf_filename" invisible="1"/>
+              <field name="x_csf_file" widget="binary" filename="x_csf_filename" string="Constancia de Situación Fiscal (PDF)"/>
+            </group>
           </page>
         </xpath>
       </field>
