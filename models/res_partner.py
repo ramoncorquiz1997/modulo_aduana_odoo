@@ -15,12 +15,14 @@ except ImportError:
 
 _logger = logging.getLogger(__name__)
 
-# Clase para forzar un nivel de seguridad SSL más bajo (necesario para el SAT)
 class DESAdapter(requests.adapters.HTTPAdapter):
     def init_poolmanager(self, *args, **kwargs):
+        # Creamos un contexto SSL que ignore las restricciones modernas
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-        # Bajamos el nivel de seguridad a 1 para aceptar llaves DH pequeñas
         context.set_ciphers('DEFAULT@SECLEVEL=1')
+        # Desactivamos explícitamente el check_hostname para permitir verify=False
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
         kwargs['ssl_context'] = context
         return super(DESAdapter, self).init_poolmanager(*args, **kwargs)
 
@@ -38,7 +40,6 @@ class ResPartner(models.Model):
             return
 
         try:
-            # 1. Extraer URL del QR
             file_content = base64.b64decode(self.x_csf_file)
             images = convert_from_bytes(file_content, first_page=1, last_page=1)
             
@@ -48,10 +49,10 @@ class ResPartner(models.Model):
                     qr_data = qr_codes[0].data.decode('utf-8')
                     _logger.info("URL extraída del QR: %s", qr_data)
 
-                    # 2. Configurar sesión con el adaptador SSL personalizado
                     session = requests.Session()
                     session.mount("https://", DESAdapter())
                     
+                    # Ahora sí pasamos verify=False sin conflicto
                     response = session.get(qr_data, timeout=15, verify=False)
 
                     if response.status_code == 200:
@@ -72,7 +73,6 @@ class ResPartner(models.Model):
                                 if "Nombre de la vialidad:" in label: page_data['calle'] = value
                                 if "Número exterior:" in label: page_data['n_ext'] = value
 
-                        # 3. Asignación a los campos
                         self.vat = page_data.get('rfc')
                         self.x_curp = page_data.get('curp')
                         self.name = ("%s %s %s" % (
@@ -86,7 +86,7 @@ class ResPartner(models.Model):
                             page_data.get('n_ext', '')
                         )).strip()
 
-                        _logger.info("Datos extraídos correctamente para: %s", self.name)
+                        _logger.info("Extracción exitosa: %s", self.name)
                 else:
                     _logger.warning("No se detectó QR.")
         except Exception as e:
