@@ -1,11 +1,11 @@
 registro_tipo_id/id,secuencia,nombre_tecnico,etiqueta,tipo_dato,longitud,requerido,default,origen_modelo,origen_campo,nota
-mi_modulo.aduana_layout_registro_tipo_500,1,clave_registro,Clave del tipo de registro,char,3,True,500,aduana.pedimento,,Constante por tipo de registro
-mi_modulo.aduana_layout_registro_tipo_500,2,tipo_movimiento,Tipo de movimiento,int,2,True,,aduana.pedimento.registro_tecnico,payload.tipo_movimiento,Valor tecnico por flujo
-mi_modulo.aduana_layout_registro_tipo_500,3,patente,Patente o autorizacion,char,4,True,,aduana.pedimento,patente,
-mi_modulo.aduana_layout_registro_tipo_500,4,numero_pedimento,Numero de pedimento,char,7,True,,aduana.pedimento,name,En esta iteracion se usa referencia
-mi_modulo.aduana_layout_registro_tipo_500,5,aduana_seccion_despacho,Aduana-Seccion de despacho,char,3,True,,aduana.pedimento,aduana_despacho_id.code,
-mi_modulo.aduana_layout_registro_tipo_501,1,clave_registro,Clave del tipo de registro,char,3,True,501,aduana.pedimento,,Constante por tipo de registro
-mi_modulo.aduana_layout_registro_tipo_501,2,clave_pedimento,Clave de pedimento,char,2,True,,aduana.pedimento,clave_pedimento_id.code,
-mi_modulo.aduana_layout_registro_tipo_501,3,rfc_ie,RFC importador/exportador,char,13,False,,aduana.pedimento,rfc_importador_exportador,
-mi_modulo.aduana_layout_registro_tipo_510,1,clave_registro,Clave del tipo de registro,char,3,True,510,aduana.pedimento,,Constante por tipo de registro
-mi_modulo.aduana_layout_registro_tipo_801,1,clave_registro,Clave del tipo de registro,char,3,True,801,aduana.pedimento,,Constante por tipo de registro
+modulo_aduana_odooaduana_layout_registro_tipo_500,1,clave_registro,Clave del tipo de registro,char,3,True,500,aduana.pedimento,,Constante por tipo de registro
+modulo_aduana_odooaduana_layout_registro_tipo_500,2,tipo_movimiento,Tipo de movimiento,int,2,True,,aduana.pedimento.registro_tecnico,payload.tipo_movimiento,Valor tecnico por flujo
+modulo_aduana_odooaduana_layout_registro_tipo_500,3,patente,Patente o autorizacion,char,4,True,,aduana.pedimento,patente,
+modulo_aduana_odooaduana_layout_registro_tipo_500,4,numero_pedimento,Numero de pedimento,char,7,True,,aduana.pedimento,name,En esta iteracion se usa referencia
+modulo_aduana_odooaduana_layout_registro_tipo_500,5,aduana_seccion_despacho,Aduana-Seccion de despacho,char,3,True,,aduana.pedimento,aduana_despacho_id.code,
+modulo_aduana_odooaduana_layout_registro_tipo_501,1,clave_registro,Clave del tipo de registro,char,3,True,501,aduana.pedimento,,Constante por tipo de registro
+modulo_aduana_odooaduana_layout_registro_tipo_501,2,clave_pedimento,Clave de pedimento,char,2,True,,aduana.pedimento,clave_pedimento_id.code,
+modulo_aduana_odooaduana_layout_registro_tipo_501,3,rfc_ie,RFC importador/exportador,char,13,False,,aduana.pedimento,rfc_importador_exportador,
+modulo_aduana_odooaduana_layout_registro_tipo_510,1,clave_registro,Clave del tipo de registro,char,3,True,510,aduana.pedimento,,Constante por tipo de registro
+modulo_aduana_odooaduana_layout_registro_tipo_801,1,clave_registro,Clave del tipo de registro,char,3,True,801,aduana.pedimento,,Constante por tipo de registro

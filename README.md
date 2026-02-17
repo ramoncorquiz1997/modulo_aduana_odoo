@@ -23,11 +23,11 @@ Modelo destino:
 Notas:
 
 - Ya existe una carga base por XML con XML IDs estables:
-  - `mi_modulo.aduana_layout_registro_tipo_500`
-  - `mi_modulo.aduana_layout_registro_tipo_501`
-  - `mi_modulo.aduana_layout_registro_tipo_510`
-  - `mi_modulo.aduana_layout_registro_tipo_700`
-  - `mi_modulo.aduana_layout_registro_tipo_801`
+  - `modulo_aduana_odooaduana_layout_registro_tipo_500`
+  - `modulo_aduana_odooaduana_layout_registro_tipo_501`
+  - `modulo_aduana_odooaduana_layout_registro_tipo_510`
+  - `modulo_aduana_odooaduana_layout_registro_tipo_700`
+  - `modulo_aduana_odooaduana_layout_registro_tipo_801`
 
 ### 3) Cargar campos por registro (CSV tecnico)
 
@@ -42,7 +42,7 @@ Modelo destino:
 Clave para Many2one:
 
 - La columna `registro_tipo_id/id` debe contener el XML ID completo del tipo de registro.
-- Ejemplo: `mi_modulo.aduana_layout_registro_tipo_500`
+- Ejemplo: `modulo_aduana_odooaduana_layout_registro_tipo_500`
 
 ### 4) Flujo recomendado para catálogos
 
