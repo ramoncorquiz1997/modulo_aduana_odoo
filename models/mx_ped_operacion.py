@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import base64
+import re
 import xml.etree.ElementTree as ET
 
 from odoo import api, fields, models, _
@@ -378,6 +379,8 @@ class MxPedOperacion(models.Model):
             "type": "binary",
             "datas": base64.b64encode(txt_data.encode("utf-8")),
             "mimetype": "text/plain",
+            "res_model": self._name,
+            "res_id": self.id,
         })
         return {
             "type": "ir.actions.act_url",
@@ -423,27 +426,35 @@ class MxPedOperacion(models.Model):
 
     def _build_txt_filename(self):
         self.ensure_one()
-        layout = self.layout_id
-        if not layout or not layout.file_name_pattern:
-            return f"PEDIMENTO_{self.name}.txt"
+        patente_raw = self.patente or (self.lead_id.x_patente_agente if self.lead_id else "")
+        patente = "".join(ch for ch in str(patente_raw or "") if ch.isdigit())
+        if not patente:
+            raise UserError(_("Falta la patente para construir el nombre SAAI (mppppnnn.ddd)."))
+        if len(patente) > 4:
+            raise UserError(_("La patente debe tener maximo 4 digitos para el nombre SAAI."))
+        patente = patente.zfill(4)
 
-        from datetime import datetime
+        today = fields.Date.context_today(self)
+        julian_day = today.timetuple().tm_yday
+        ddd = f"{julian_day:03d}"
+        prefix = f"m{patente}"
+        regex = re.compile(rf"^{prefix}(\d{{3}})\.{ddd}$")
 
-        patente = self.patente or (self.lead_id.x_patente_agente if self.lead_id else "")
-        today = datetime.now()
-        julian_day = int(today.strftime("%j"))
-        seq = 1
-        try:
-            name = layout.file_name_pattern.format(
-                patente=patente,
-                julian_day=julian_day,
-                seq=seq,
-            )
-        except Exception:
-            name = f"PEDIMENTO_{self.name}.txt"
-        if not name.lower().endswith(".txt"):
-            name = f"{name}.txt"
-        return name
+        existing = self.env["ir.attachment"].search([
+            ("name", "=like", f"{prefix}%.{ddd}"),
+            ("mimetype", "=", "text/plain"),
+        ])
+        seq = 0
+        for att in existing:
+            m = regex.match(att.name or "")
+            if m:
+                seq = max(seq, int(m.group(1)))
+        seq += 1
+        if seq > 999:
+            raise UserError(_("Se alcanzo el consecutivo diario maximo (999) para la patente %s.") % patente)
+
+        # Formato obligatorio SAAI M3: mppppnnn.ddd
+        return f"{prefix}{seq:03d}.{ddd}"
 
     # ==========================
     # Cargar registros desde Lead
