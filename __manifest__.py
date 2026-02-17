@@ -3,7 +3,7 @@
     "version": "18.0.1.2.0",
     "category": "CRM",
     "summary": "Gestión de operaciones aduanales y pedimentos desde CRM",
-    "depends": ["crm", "mail", "base", "contacts"],
+    "depends": ["crm", "mail", "base", "contacts" "account"],
     "data": [
         "security/ir.model.access.csv",
         "views/res_partner_views.xml",
@@ -11,6 +11,7 @@
         "views/mx_ped_clave_views.xml",
         "views/mx_ped_layout_views.xml",
         "views/crm_lead_views.xml"
+        "views/account_move_views.xml"
     ],
     "license": "LGPL-3",
     "application": False,
