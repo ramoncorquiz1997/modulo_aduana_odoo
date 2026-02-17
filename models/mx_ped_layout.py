@@ -47,6 +47,7 @@ class MxPedLayoutRegistro(models.Model):
     _name = "mx.ped.layout.registro"
     _description = "Layout - Registro"
     _order = "orden asc, codigo asc, id asc"
+    _rec_name = "codigo"
 
     layout_id = fields.Many2one(
         "mx.ped.layout",
@@ -66,6 +67,15 @@ class MxPedLayoutRegistro(models.Model):
         string="Campos",
         copy=True,
     )
+
+    def name_get(self):
+        result = []
+        for rec in self:
+            if rec.nombre:
+                result.append((rec.id, f"{rec.codigo} - {rec.nombre}"))
+            else:
+                result.append((rec.id, rec.codigo or str(rec.id)))
+        return result
 
 
 class MxPedLayoutCampo(models.Model):
