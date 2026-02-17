@@ -6,6 +6,25 @@ import base64
 class CrmLead(models.Model):
     _inherit = "crm.lead"
 
+    # Referencia ligera: el detalle del pedimento vive en aduana.pedimento
+    x_pedimento_id = fields.Many2one(
+        "aduana.pedimento",
+        string="Pedimento",
+        ondelete="set null",
+        index=True,
+    )
+    x_pedimento_status = fields.Selection(
+        [
+            ("draft", "Borrador"),
+            ("ready", "Listo"),
+            ("generated", "Generado"),
+            ("error", "Error"),
+        ],
+        string="Estado pedimento",
+        default="draft",
+    )
+    x_pedimento_last_error = fields.Text(string="Ultimo error pedimento")
+
     # =========================================================
     # AGENCIA ADUANAL - DATOS BASE (LEAD COMO EXPEDIENTE)
     # =========================================================
@@ -634,3 +653,18 @@ class CrmLead(models.Model):
             "res_id": op.id,
             "target": "current",
         }
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        leads = super().create(vals_list)
+        for lead, vals in zip(leads, vals_list):
+            # Solo crea automaticamente si el flujo lo pide por contexto/flag.
+            create_flag = self.env.context.get("create_pedimento") or vals.get("x_create_pedimento")
+            if not create_flag or lead.x_pedimento_id:
+                continue
+            ped = self.env["aduana.pedimento"].create({
+                "lead_id": lead.id,
+                "name": lead.name or _("Nuevo"),
+            })
+            lead.x_pedimento_id = ped.id
+        return leads

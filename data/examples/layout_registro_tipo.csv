@@ -1,0 +1,6 @@
+codigo,nombre,nivel,orden,activo
+500,Inicio de pedimento,cabecera,10,True
+501,Datos generales,cabecera,20,True
+510,Contribuciones,cabecera,30,True
+700,Rectificacion,cabecera,40,True
+801,Fin de archivo,archivo,90,True

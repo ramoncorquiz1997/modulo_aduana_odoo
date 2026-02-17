@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data noupdate="1">
+    <record id="aduana_layout_registro_tipo_500" model="aduana.layout_registro_tipo">
+      <field name="codigo">500</field>
+      <field name="nombre">Inicio de pedimento</field>
+      <field name="nivel">cabecera</field>
+      <field name="orden">10</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="aduana_layout_registro_tipo_501" model="aduana.layout_registro_tipo">
+      <field name="codigo">501</field>
+      <field name="nombre">Datos generales</field>
+      <field name="nivel">cabecera</field>
+      <field name="orden">20</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="aduana_layout_registro_tipo_510" model="aduana.layout_registro_tipo">
+      <field name="codigo">510</field>
+      <field name="nombre">Contribuciones</field>
+      <field name="nivel">cabecera</field>
+      <field name="orden">30</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="aduana_layout_registro_tipo_700" model="aduana.layout_registro_tipo">
+      <field name="codigo">700</field>
+      <field name="nombre">Rectificacion</field>
+      <field name="nivel">cabecera</field>
+      <field name="orden">40</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="aduana_layout_registro_tipo_801" model="aduana.layout_registro_tipo">
+      <field name="codigo">801</field>
+      <field name="nombre">Fin de archivo</field>
+      <field name="nivel">archivo</field>
+      <field name="orden">90</field>
+      <field name="activo">True</field>
+    </record>
+  </data>
+</odoo>
