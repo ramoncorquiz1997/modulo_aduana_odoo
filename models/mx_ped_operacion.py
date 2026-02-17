@@ -99,6 +99,16 @@ class MxPedOperacion(models.Model):
 
     observaciones = fields.Text(string="Observaciones")
 
+    invoice_ids = fields.One2many(
+        "account.move",
+        "x_ped_operacion_id",
+        string="Facturas",
+    )
+    invoice_count = fields.Integer(
+        string="Facturas",
+        compute="_compute_invoice_count",
+    )
+
     # ==========================
     # Layout y registros (VOCE/SAAI)
     # ==========================
@@ -135,6 +145,11 @@ class MxPedOperacion(models.Model):
         for rec in self:
             rec.partida_count = len(rec.partida_ids)
 
+    @api.depends("invoice_ids")
+    def _compute_invoice_count(self):
+        for rec in self:
+            rec.invoice_count = len(rec.invoice_ids.filtered(lambda m: m.move_type == "out_invoice"))
+
     def action_view_partidas(self):
         """Abre las partidas de esta operación (útil para smart button)."""
         self.ensure_one()
@@ -147,6 +162,95 @@ class MxPedOperacion(models.Model):
             "context": {"default_operacion_id": self.id},
             "target": "current",
         }
+
+    def _get_invoice_partner(self):
+        self.ensure_one()
+        lead = self.lead_id
+        partner = lead.partner_id or lead.x_importador_id or lead.x_exportador_id
+        if not partner:
+            raise UserError(
+                _("La operación no tiene cliente para facturar. Define Cliente/Importador/Exportador en el Lead.")
+            )
+        return partner
+
+    def _get_invoice_origin(self):
+        self.ensure_one()
+        parts = [self.name or ""]
+        if self.pedimento_numero:
+            parts.append(f"PED-{self.pedimento_numero}")
+        return " / ".join([p for p in parts if p])
+
+    def _prepare_optional_invoice_lines(self):
+        self.ensure_one()
+        lead = self.lead_id
+        concepts = [
+            (_("Honorarios aduanales"), lead.x_costo_estimado),
+            (_("DTA estimado"), lead.x_dta_estimado),
+            (_("PRV estimado"), lead.x_prv_estimado),
+            (_("IGI estimado"), lead.x_igi_estimado),
+            (_("IVA estimado"), lead.x_iva_estimado),
+        ]
+        lines = []
+        for name, amount in concepts:
+            if amount and amount > 0:
+                lines.append((0, 0, {
+                    "name": name,
+                    "quantity": 1.0,
+                    "price_unit": amount,
+                }))
+        return lines
+
+    def action_crear_factura(self):
+        self.ensure_one()
+        partner = self._get_invoice_partner()
+        move = self.env["account.move"].create({
+            "move_type": "out_invoice",
+            "partner_id": partner.id,
+            "currency_id": self.currency_id.id,
+            "invoice_origin": self._get_invoice_origin(),
+            "x_ped_operacion_id": self.id,
+        })
+
+        line_vals = self._prepare_optional_invoice_lines()
+        if line_vals:
+            try:
+                move.write({"invoice_line_ids": line_vals})
+            except Exception:
+                # Fallback: keep invoice linked even if product/account setup is incomplete.
+                move.write({
+                    "invoice_line_ids": [(0, 0, {
+                        "display_type": "line_note",
+                        "name": _("No se pudieron crear líneas automáticas. Revisa cuentas/productos de facturación."),
+                    })]
+                })
+
+        if self.lead_id:
+            self.lead_id.write({
+                "x_factura_emitida": True,
+                "x_factura_ref": move.name or str(move.id),
+            })
+
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Factura"),
+            "res_model": "account.move",
+            "res_id": move.id,
+            "view_mode": "form",
+            "target": "current",
+        }
+
+    def action_view_facturas(self):
+        self.ensure_one()
+        action = self.env.ref("account.action_move_out_invoice_type").read()[0]
+        action["domain"] = [("x_ped_operacion_id", "=", self.id), ("move_type", "=", "out_invoice")]
+        action["context"] = {
+            "default_move_type": "out_invoice",
+            "default_partner_id": self._get_invoice_partner().id,
+            "default_currency_id": self.currency_id.id,
+            "default_x_ped_operacion_id": self.id,
+            "default_invoice_origin": self._get_invoice_origin(),
+        }
+        return action
 
     # ==========================
     # Exportación TXT / XML

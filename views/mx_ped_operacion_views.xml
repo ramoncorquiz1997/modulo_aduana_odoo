@@ -32,8 +32,14 @@
             <button name="action_export_txt" type="object" string="Exportar TXT" class="btn-primary"/>
             <button name="action_export_xml" type="object" string="Exportar XML"/>
             <button name="action_cargar_desde_lead" type="object" string="Cargar desde Lead" class="btn-secondary"/>
+            <button name="action_crear_factura" type="object" string="Crear factura" class="btn-secondary"/>
           </header>
           <sheet>
+            <div class="oe_button_box" name="button_box">
+              <button type="object" name="action_view_facturas" class="oe_stat_button" icon="fa-file-text-o">
+                <field name="invoice_count" widget="statinfo" string="Facturas"/>
+              </button>
+            </div>
             <div class="oe_title">
               <h1><field name="name"/></h1>
             </div>
