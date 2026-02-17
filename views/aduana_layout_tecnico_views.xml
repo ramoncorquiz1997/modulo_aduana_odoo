@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <record id="aduana_layout_registro_tipo_view_list" model="ir.ui.view">
+      <field name="name">aduana.layout_registro_tipo.list</field>
+      <field name="model">aduana.layout_registro_tipo</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="codigo"/>
+          <field name="nombre"/>
+          <field name="nivel"/>
+          <field name="orden"/>
+          <field name="activo"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="aduana_layout_registro_tipo_view_form" model="ir.ui.view">
+      <field name="name">aduana.layout_registro_tipo.form</field>
+      <field name="model">aduana.layout_registro_tipo</field>
+      <field name="arch" type="xml">
+        <form string="Tipo de Registro">
+          <sheet>
+            <group>
+              <field name="codigo"/>
+              <field name="nombre"/>
+              <field name="nivel"/>
+              <field name="orden"/>
+              <field name="activo"/>
+            </group>
+            <group string="Campos">
+              <field name="campo_ids">
+                <list editable="bottom">
+                  <field name="secuencia"/>
+                  <field name="nombre_tecnico"/>
+                  <field name="etiqueta"/>
+                  <field name="tipo_dato"/>
+                  <field name="longitud"/>
+                  <field name="requerido"/>
+                  <field name="default"/>
+                  <field name="origen_modelo"/>
+                  <field name="origen_campo"/>
+                </list>
+              </field>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="aduana_layout_registro_campo_view_list" model="ir.ui.view">
+      <field name="name">aduana.layout_registro_campo.list</field>
+      <field name="model">aduana.layout_registro_campo</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="registro_tipo_id"/>
+          <field name="secuencia"/>
+          <field name="nombre_tecnico"/>
+          <field name="etiqueta"/>
+          <field name="tipo_dato"/>
+          <field name="longitud"/>
+          <field name="requerido"/>
+          <field name="origen_modelo"/>
+          <field name="origen_campo"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="aduana_layout_registro_campo_view_form" model="ir.ui.view">
+      <field name="name">aduana.layout_registro_campo.form</field>
+      <field name="model">aduana.layout_registro_campo</field>
+      <field name="arch" type="xml">
+        <form string="Campo de Registro">
+          <sheet>
+            <group>
+              <field name="registro_tipo_id"/>
+              <field name="secuencia"/>
+              <field name="nombre_tecnico"/>
+              <field name="etiqueta"/>
+              <field name="tipo_dato"/>
+              <field name="longitud"/>
+              <field name="requerido"/>
+              <field name="default"/>
+              <field name="origen_modelo"/>
+              <field name="origen_campo"/>
+              <field name="nota"/>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="aduana_layout_registro_tipo_action" model="ir.actions.act_window">
+      <field name="name">Tipos de registro</field>
+      <field name="res_model">aduana.layout_registro_tipo</field>
+      <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="aduana_layout_registro_campo_action" model="ir.actions.act_window">
+      <field name="name">Campos de registro</field>
+      <field name="res_model">aduana.layout_registro_campo</field>
+      <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="aduana_layout_tecnico_menu_root"
+              name="Layout tecnico"
+              parent="mx_ped_operacion_menu_root"
+              sequence="70"/>
+
+    <menuitem id="aduana_layout_tecnico_tipo_menu"
+              name="Tipos de registro"
+              parent="aduana_layout_tecnico_menu_root"
+              action="aduana_layout_registro_tipo_action"
+              sequence="10"/>
+
+    <menuitem id="aduana_layout_tecnico_campo_menu"
+              name="Campos de registro"
+              parent="aduana_layout_tecnico_menu_root"
+              action="aduana_layout_registro_campo_action"
+              sequence="20"/>
+
+  </data>
+</odoo>

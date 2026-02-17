@@ -656,10 +656,11 @@ class CrmLead(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        create_flags = [bool(vals.pop("x_create_pedimento", False)) for vals in vals_list]
         leads = super().create(vals_list)
-        for lead, vals in zip(leads, vals_list):
+        for i, lead in enumerate(leads):
             # Solo crea automaticamente si el flujo lo pide por contexto/flag.
-            create_flag = self.env.context.get("create_pedimento") or vals.get("x_create_pedimento")
+            create_flag = self.env.context.get("create_pedimento") or create_flags[i]
             if not create_flag or lead.x_pedimento_id:
                 continue
             ped = self.env["aduana.pedimento"].create({
@@ -668,3 +669,20 @@ class CrmLead(models.Model):
             })
             lead.x_pedimento_id = ped.id
         return leads
+
+    def action_open_aduana_pedimento(self):
+        self.ensure_one()
+        if not self.x_pedimento_id:
+            ped = self.env["aduana.pedimento"].create({
+                "lead_id": self.id,
+                "name": self.name or _("Nuevo"),
+            })
+            self.x_pedimento_id = ped.id
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Pedimento"),
+            "res_model": "aduana.pedimento",
+            "view_mode": "form",
+            "res_id": self.x_pedimento_id.id,
+            "target": "current",
+        }

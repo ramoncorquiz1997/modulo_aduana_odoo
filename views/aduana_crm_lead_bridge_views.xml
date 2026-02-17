@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <record id="crm_lead_view_form_inherit_aduana_bridge" model="ir.ui.view">
+      <field name="name">crm.lead.form.inherit.aduana.bridge</field>
+      <field name="model">crm.lead</field>
+      <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+      <field name="arch" type="xml">
+        <xpath expr="//header" position="inside">
+          <button name="action_open_aduana_pedimento"
+                  type="object"
+                  string="Abrir pedimento"
+                  class="btn-secondary"/>
+        </xpath>
+
+        <xpath expr="//notebook" position="inside">
+          <page string="Pedimento 1:1" name="aduana_pedimento_rel">
+            <group>
+              <field name="x_pedimento_id" readonly="1"/>
+              <field name="x_pedimento_status"/>
+              <field name="x_pedimento_last_error"/>
+            </group>
+          </page>
+        </xpath>
+      </field>
+    </record>
+
+  </data>
+</odoo>
