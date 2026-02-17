@@ -1,7 +1,7 @@
 <odoo>
   <record id="account_move_form_inherit_mi_modulo"
           model="ir.ui.view">
-    <field name="name">account.move.form.inherit.mi_modulo</field>
+    <field name="name">account.move.form.inherit.modulo_aduana_odoo</field>
     <field name="model">account.move</field>
     <field name="inherit_id" ref="account.view_move_form"/>
     <field name="arch" type="xml">
