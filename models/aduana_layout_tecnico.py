@@ -6,6 +6,7 @@ class AduanaLayoutRegistroTipo(models.Model):
     _name = "aduana.layout_registro_tipo"
     _description = "Aduana - Layout Tipo de Registro"
     _order = "orden, codigo"
+    _rec_name = "codigo"
 
     codigo = fields.Char(required=True, index=True)
     nombre = fields.Char(required=True)
