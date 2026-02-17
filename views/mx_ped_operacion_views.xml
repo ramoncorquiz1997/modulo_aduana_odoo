@@ -14,7 +14,7 @@
           <field name="regimen"/>
           <field name="aduana_clave"/>
           <field name="patente"/>
-          <field name="clave_pedimento"/>
+          <field name="clave_pedimento_id"/>
           <field name="pedimento_numero"/>
           <field name="fecha_pago"/>
           <field name="semaforo"/>
@@ -56,7 +56,8 @@
                 <field name="incoterm"/>
                 <field name="aduana_clave"/>
                 <field name="patente"/>
-                <field name="clave_pedimento"/>
+                <field name="clave_pedimento_id"
+                       domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
                 <field name="layout_id"/>
                 <field name="currency_id"/>
               </group>

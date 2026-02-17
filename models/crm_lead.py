@@ -613,10 +613,9 @@ class CrmLead(models.Model):
             "regimen": self.x_regimen,
             "incoterm": self.x_incoterm,
 
-            # si después lo conviertes a catálogo, aquí lo cambias por Many2one
             "aduana_clave": (self.x_aduana or ""),
             "patente": (self.x_patente_agente or ""),
-            "clave_pedimento": (self.x_clave_pedimento or ""),
+            "clave_pedimento_id": self.x_clave_pedimento_id.id or False,
 
             "currency_id": currency.id,
 

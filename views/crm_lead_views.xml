@@ -56,7 +56,8 @@
                 <field name="x_aduana_seccion_entrada_salida"/>
                 <field name="x_patente_agente"/>
                 <field name="x_curp_agente"/>
-                <field name="x_clave_pedimento"/>
+                <field name="x_clave_pedimento_id"
+                       domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',x_tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',x_regimen)]"/>
                 <field name="x_acuse_validacion"/>
               </group>
             </group>
@@ -323,7 +324,7 @@
                 <field name="regimen"/>
                 <field name="aduana_clave"/>
                 <field name="patente"/>
-                <field name="clave_pedimento"/>
+                <field name="clave_pedimento_id"/>
                 <field name="pedimento_numero"/>
                 <field name="fecha_pago"/>
                 <field name="fecha_liberacion"/>
@@ -349,7 +350,8 @@
                       <field name="incoterm"/>
                       <field name="aduana_clave"/>
                       <field name="patente"/>
-                      <field name="clave_pedimento"/>
+                      <field name="clave_pedimento_id"
+                             domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
                       <field name="currency_id"/>
                     </group>
 
