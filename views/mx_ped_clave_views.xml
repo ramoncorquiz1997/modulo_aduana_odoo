@@ -64,11 +64,11 @@
     </record>
 
     <!-- MENUS -->
-    <menuitem id="menu_mx_ped_root" name="Aduanas" sequence="10"/>
-    <menuitem id="menu_mx_ped_catalogos" name="Catálogos" parent="menu_mx_ped_root" sequence="20"/>
+        <menuitem id="menu_mx_ped_catalogos" name="Catálogos" parent="mx_ped_operacion_menu_root" sequence="20"/>
     <menuitem id="menu_mx_ped_clave" name="Claves de pedimento"
               parent="menu_mx_ped_catalogos"
               action="action_mx_ped_clave"
               sequence="10"/>
 
 </odoo>
+

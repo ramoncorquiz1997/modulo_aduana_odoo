@@ -223,11 +223,7 @@
               parent="mx_ped_operacion_menu_root"
               action="mx_ped_layout_campo_action"
               sequence="40"/>
-    <menuitem id="mx_ped_clave_menu"  
-              name="Claves de pedimento"
-              parent="mx_ped_operacion_menu_root"
-              action="action_mx_ped_clave"
-              sequence="50"/>
-
   </data>
 </odoo>
+
+
