@@ -51,6 +51,10 @@ class MxPedOperacion(models.Model):
         string="Incoterm",
     )
 
+    aduana_seccion_despacho_id = fields.Many2one(
+        "mx.ped.aduana.seccion",
+        string="Aduana-seccion de despacho",
+    )
     aduana_clave = fields.Char(string="Aduana (clave)")  # ej 070
     patente = fields.Char(string="Patente")
     clave_pedimento_id = fields.Many2one(
@@ -78,7 +82,16 @@ class MxPedOperacion(models.Model):
         string="Tipo de movimiento",
         default="1",
     )
-    aduana_seccion_entrada_salida = fields.Char(string="Aduana-seccion entrada/salida")
+    aduana_seccion_entrada_salida_id = fields.Many2one(
+        "mx.ped.aduana.seccion",
+        string="Aduana-seccion entrada/salida",
+    )
+    aduana_seccion_entrada_salida = fields.Char(
+        string="Aduana-seccion entrada/salida",
+        related="aduana_seccion_entrada_salida_id.code",
+        store=True,
+        readonly=True,
+    )
     acuse_validacion = fields.Char(string="Acuse electronico validacion")
     curp_agente = fields.Char(string="CURP agente/apoderado")
 
@@ -235,8 +248,9 @@ class MxPedOperacion(models.Model):
             "tipo_operacion": lead.x_tipo_operacion or False,
             "regimen": lead.x_regimen or False,
             "incoterm": lead.x_incoterm or False,
+            "aduana_seccion_despacho_id": lead.x_aduana_seccion_despacho_id or False,
             "aduana_clave": lead.x_aduana or False,
-            "aduana_seccion_entrada_salida": lead.x_aduana_seccion_entrada_salida or False,
+            "aduana_seccion_entrada_salida_id": lead.x_aduana_seccion_entrada_salida_id or False,
             "acuse_validacion": lead.x_acuse_validacion or False,
             "patente": lead.x_patente_agente or False,
             "curp_agente": lead.x_curp_agente or False,
@@ -251,6 +265,12 @@ class MxPedOperacion(models.Model):
         for field_name, value in defaults.items():
             if not self[field_name]:
                 self[field_name] = value
+
+    @api.onchange("aduana_seccion_despacho_id")
+    def _onchange_aduana_seccion_despacho_id(self):
+        for rec in self:
+            if rec.aduana_seccion_despacho_id:
+                rec.aduana_clave = rec.aduana_seccion_despacho_id.code
 
     def action_view_partidas(self):
         """Abre las partidas de esta operación (útil para smart button)."""
