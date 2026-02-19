@@ -56,7 +56,7 @@
                 <field name="incoterm"/>
                 <field name="aduana_seccion_despacho_id"/>
                 <field name="aduana_clave"/>
-                <field name="aduana_seccion_entrada_salida"/>
+                <field name="aduana_seccion_entrada_salida_id"/>
                 <field name="patente"/>
                 <field name="curp_agente"/>
                 <field name="clave_pedimento_id"

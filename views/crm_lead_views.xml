@@ -54,7 +54,7 @@
                 <field name="x_tipo_despacho"/>
                 <field name="x_aduana_seccion_despacho_id"/>
                 <field name="x_aduana" readonly="1"/>
-                <field name="x_aduana_seccion_entrada_salida"/>
+                <field name="x_aduana_seccion_entrada_salida_id"/>
                 <field name="x_patente_agente"/>
                 <field name="x_curp_agente"/>
                 <field name="x_clave_pedimento_id"
