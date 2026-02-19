@@ -4,7 +4,7 @@ import re
 import xml.etree.ElementTree as ET
 
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 
 class MxPedOperacion(models.Model):
@@ -286,6 +286,26 @@ class MxPedOperacion(models.Model):
                 continue
             rec.patente = agent.x_patente_aduanal or rec.patente
             rec.curp_agente = agent.x_curp or rec.curp_agente
+
+    @api.onchange("tipo_movimiento")
+    def _onchange_tipo_movimiento_clear_acuse(self):
+        for rec in self:
+            if rec.tipo_movimiento not in ("2", "3", "8"):
+                rec.acuse_validacion = False
+
+    @api.constrains("tipo_movimiento", "acuse_validacion")
+    def _check_acuse_validacion(self):
+        for rec in self:
+            if rec.tipo_movimiento in ("2", "3", "8"):
+                acuse = (rec.acuse_validacion or "").strip()
+                if not acuse:
+                    raise ValidationError(
+                        _("El acuse de validacion es obligatorio para eliminacion, desistimiento y confirmacion de pago.")
+                    )
+                if len(acuse) != 8:
+                    raise ValidationError(_("El acuse de validacion debe tener exactamente 8 caracteres."))
+                if acuse == "0" * 8:
+                    raise ValidationError(_("El acuse de validacion no puede ser 00000000."))
 
     def action_view_partidas(self):
         """Abre las partidas de esta operación (útil para smart button)."""
@@ -663,7 +683,8 @@ class MxPedOperacion(models.Model):
         source_model = source_model or "lead"
 
         # Normaliza tipo de operación a 1/2 aunque el layout use nombre "amigable"
-        if _norm(source) in ("tipooperacion", "xtipooperacion"):
+        source_norm = _norm(source)
+        if source_norm in ("tipooperacion", "xtipooperacion"):
             raw = self._record_value_for_field(lead, "x_tipo_operacion")
             raw = (str(raw or "")).strip().lower()
             if raw in ("importacion", "1", "01"):
@@ -671,6 +692,9 @@ class MxPedOperacion(models.Model):
             if raw in ("exportacion", "2", "02"):
                 return "2"
             return ""
+        if source_norm in ("acusevalidacion", "xacusevalidacion"):
+            if self.tipo_movimiento not in ("2", "3", "8"):
+                return "NULO"
 
         if source_model == "operacion":
             return self._record_value_for_field(self, source)

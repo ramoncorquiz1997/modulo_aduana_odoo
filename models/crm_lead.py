@@ -161,7 +161,7 @@ class CrmLead(models.Model):
         string="Agente aduanal",
         domain="[('x_contact_role','=','agente_aduanal')]",
     )
-    x_patente_agente = fields.Char(string="Patente / Agente")
+    x_patente_agente = fields.Char(string="Patente")
     x_curp_agente = fields.Char(string="CURP agente / apoderado")
 
     x_tipo_despacho = fields.Selection(

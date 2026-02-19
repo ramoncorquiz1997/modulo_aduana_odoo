@@ -62,7 +62,9 @@
                 <field name="curp_agente"/>
                 <field name="clave_pedimento_id"
                        domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
-                <field name="acuse_validacion"/>
+                <field name="acuse_validacion"
+                       invisible="tipo_movimiento not in ('2','3','8')"
+                       required="tipo_movimiento in ('2','3','8')"/>
                 <field name="layout_id"/>
                 <field name="currency_id"/>
               </group>
