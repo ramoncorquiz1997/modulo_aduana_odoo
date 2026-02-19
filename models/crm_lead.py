@@ -166,6 +166,22 @@ class CrmLead(models.Model):
     x_descripcion_mercancia = fields.Text(string="Descripción de mercancía")
 
     # --- Logística / embarque ---
+    _MEDIO_TRANSPORTE_SELECTION = [
+        ("01", "01 - Mar?timo"),
+        ("02", "02 - Ferroviario de doble estiba"),
+        ("03", "03 - Carretero-ferroviario"),
+        ("04", "04 - A?reo"),
+        ("05", "05 - Postal"),
+        ("06", "06 - Ferroviario"),
+        ("07", "07 - Carretero"),
+        ("08", "08 - Tuber?a"),
+        ("10", "10 - Cables"),
+        ("11", "11 - Ductos"),
+        ("12", "12 - Peatonal"),
+        ("98", "98 - Sin presentaci?n f?sica"),
+        ("99", "99 - Otros"),
+    ]
+
     x_modo_transporte = fields.Selection(
         selection=[
             ("terrestre", "Terrestre"),
@@ -175,9 +191,21 @@ class CrmLead(models.Model):
         ],
         string="Modo de transporte",
     )
-    x_medio_transporte_salida = fields.Char(string="Medio transporte salida (cve)")
-    x_medio_transporte_arribo = fields.Char(string="Medio transporte arribo (cve)")
-    x_medio_transporte_entrada_salida = fields.Char(string="Medio transporte entrada/salida (cve)")
+    x_medio_transporte_salida = fields.Selection(
+        selection=_MEDIO_TRANSPORTE_SELECTION,
+        string="Medio transporte salida (cve)",
+        help="Clave Ap?ndice 3 Anexo 22 para salida de aduana-secci?n de despacho.",
+    )
+    x_medio_transporte_arribo = fields.Selection(
+        selection=_MEDIO_TRANSPORTE_SELECTION,
+        string="Medio transporte arribo (cve)",
+        help="Clave Ap?ndice 3 Anexo 22 para arribo a aduana-secci?n.",
+    )
+    x_medio_transporte_entrada_salida = fields.Selection(
+        selection=_MEDIO_TRANSPORTE_SELECTION,
+        string="Medio transporte entrada/salida (cve)",
+        help="Clave Ap?ndice 3 Anexo 22 para entrada/salida a territorio nacional.",
+    )
     x_origen_destino_mercancia = fields.Char(string="Origen/Destino mercancía (cve)")
 
     x_transportista_id = fields.Many2one(
@@ -240,6 +268,25 @@ class CrmLead(models.Model):
 
     x_visible_portal = fields.Boolean(string="Visible en portal", default=True)
     
+    @api.onchange("x_modo_transporte")
+    def _onchange_x_modo_transporte_set_default_codes(self):
+        """Sugiere claves Ap?ndice 3 cuando se elige modo general."""
+        mapping = {
+            "maritimo": "01",
+            "aereo": "04",
+            "ferro": "06",
+            "terrestre": "07",
+        }
+        code = mapping.get(self.x_modo_transporte)
+        if not code:
+            return
+        if not self.x_medio_transporte_salida:
+            self.x_medio_transporte_salida = code
+        if not self.x_medio_transporte_arribo:
+            self.x_medio_transporte_arribo = code
+        if not self.x_medio_transporte_entrada_salida:
+            self.x_medio_transporte_entrada_salida = code
+
     def action_generate_pedimento_xml(self):
         self.ensure_one()
         

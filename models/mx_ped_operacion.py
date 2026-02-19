@@ -611,6 +611,7 @@ class MxPedOperacion(models.Model):
             "folio_operacion": "x_folio_operacion",
             "referencia_cliente": "x_referencia_cliente",
             "aduana_seccion_entrada_salida": "aduana_seccion_entrada_salida",
+            "medio_transporte_salida": "x_medio_transporte_salida",
             "acuse_validacion": "acuse_validacion",
             "curp_agente": "curp_agente",
             "rfc_importador_exportador": "participante_rfc",
