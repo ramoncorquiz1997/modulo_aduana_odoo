@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class MxPedAduanaSeccion(models.Model):
@@ -23,6 +24,15 @@ class MxPedAduanaSeccion(models.Model):
             "La combinacion Aduana-Seccion debe ser unica.",
         ),
     ]
+
+    @api.constrains("aduana")
+    def _check_aduana_format(self):
+        for rec in self:
+            aduana = (rec.aduana or "").strip()
+            if not aduana:
+                continue
+            if not aduana.isdigit() or len(aduana) != 2:
+                raise ValidationError("El campo Aduana debe tener exactamente 2 caracteres numericos.")
 
     @api.depends("aduana", "seccion")
     def _compute_code(self):
