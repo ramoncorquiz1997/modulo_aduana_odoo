@@ -8,6 +8,7 @@ from . import mx_ped_layout
 from . import mx_ped_registro
 from . import mx_ped_clave
 from . import mx_ped_aduana_seccion
+from . import mx_ped_fraccion
 from . import account_move
 from . import aduana_catalogos
 from . import aduana_pedimento

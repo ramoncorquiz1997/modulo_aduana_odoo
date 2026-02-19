@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_mx_ped_um_list" model="ir.ui.view">
+        <field name="name">mx.ped.um.list</field>
+        <field name="model">mx.ped.um</field>
+        <field name="arch" type="xml">
+            <list string="Unidades de medida">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mx_ped_um_form" model="ir.ui.view">
+        <field name="name">mx.ped.um.form</field>
+        <field name="model">mx.ped.um</field>
+        <field name="arch" type="xml">
+            <form string="Unidad de medida">
+                <sheet>
+                    <group>
+                        <field name="code"/>
+                        <field name="name"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_mx_ped_um" model="ir.actions.act_window">
+        <field name="name">Unidades de medida</field>
+        <field name="res_model">mx.ped.um</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_mx_ped_fraccion_list" model="ir.ui.view">
+        <field name="name">mx.ped.fraccion.list</field>
+        <field name="model">mx.ped.fraccion</field>
+        <field name="arch" type="xml">
+            <list string="Fracciones arancelarias" default_order="code">
+                <field name="code"/>
+                <field name="nico"/>
+                <field name="name"/>
+                <field name="um_id"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mx_ped_fraccion_form" model="ir.ui.view">
+        <field name="name">mx.ped.fraccion.form</field>
+        <field name="model">mx.ped.fraccion</field>
+        <field name="arch" type="xml">
+            <form string="Fraccion arancelaria">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="nico"/>
+                            <field name="um_id"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="seccion"/>
+                            <field name="capitulo"/>
+                            <field name="partida"/>
+                            <field name="subpartida"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="name"/>
+                    </group>
+                    <group string="Tasas">
+                        <field name="tasa_ids" context="{'default_fraccion_id': id}">
+                            <list editable="bottom">
+                                <field name="tipo_operacion"/>
+                                <field name="territorio"/>
+                                <field name="igi"/>
+                                <field name="iva"/>
+                                <field name="note"/>
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_mx_ped_fraccion" model="ir.actions.act_window">
+        <field name="name">Fracciones arancelarias</field>
+        <field name="res_model">mx.ped.fraccion</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_mx_ped_fraccion_tasa_list" model="ir.ui.view">
+        <field name="name">mx.ped.fraccion.tasa.list</field>
+        <field name="model">mx.ped.fraccion.tasa</field>
+        <field name="arch" type="xml">
+            <list string="Tasas por fraccion">
+                <field name="fraccion_id"/>
+                <field name="tipo_operacion"/>
+                <field name="territorio"/>
+                <field name="igi"/>
+                <field name="iva"/>
+                <field name="note"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_mx_ped_fraccion_tasa_form" model="ir.ui.view">
+        <field name="name">mx.ped.fraccion.tasa.form</field>
+        <field name="model">mx.ped.fraccion.tasa</field>
+        <field name="arch" type="xml">
+            <form string="Tasa por fraccion">
+                <sheet>
+                    <group>
+                        <field name="fraccion_id"/>
+                        <field name="tipo_operacion"/>
+                        <field name="territorio"/>
+                        <field name="igi"/>
+                        <field name="iva"/>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_mx_ped_fraccion_tasa" model="ir.actions.act_window">
+        <field name="name">Tasas por fraccion</field>
+        <field name="res_model">mx.ped.fraccion.tasa</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_mx_ped_fraccion"
+              name="Fracciones arancelarias"
+              parent="menu_mx_ped_catalogos"
+              action="action_mx_ped_fraccion"
+              sequence="20"/>
+
+    <menuitem id="menu_mx_ped_um"
+              name="Unidades de medida"
+              parent="menu_mx_ped_catalogos"
+              action="action_mx_ped_um"
+              sequence="30"/>
+
+    <menuitem id="menu_mx_ped_fraccion_tasa"
+              name="Tasas de fraccion"
+              parent="menu_mx_ped_catalogos"
+              action="action_mx_ped_fraccion_tasa"
+              sequence="40"/>
+
+</odoo>

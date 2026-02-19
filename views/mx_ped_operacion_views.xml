@@ -93,6 +93,20 @@
             </group>
 
             <notebook>
+              <page string="Partidas">
+                <field name="partida_ids" context="{'default_operacion_id': id}">
+                  <list editable="bottom">
+                    <field name="numero_partida"/>
+                    <field name="fraccion_id"/>
+                    <field name="fraccion_arancelaria"/>
+                    <field name="nico"/>
+                    <field name="descripcion"/>
+                    <field name="unidad_tarifa"/>
+                    <field name="cantidad_tarifa"/>
+                    <field name="valor_aduana"/>
+                  </list>
+                </field>
+              </page>
               <page string="Registros">
                 <field name="registro_ids">
                   <list editable="bottom">

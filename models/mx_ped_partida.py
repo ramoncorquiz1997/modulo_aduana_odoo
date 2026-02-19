@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class MxPedPartida(models.Model):
@@ -15,7 +15,9 @@ class MxPedPartida(models.Model):
     )
 
     numero_partida = fields.Integer()
+    fraccion_id = fields.Many2one("mx.ped.fraccion", string="Fraccion arancelaria")
     fraccion_arancelaria = fields.Char(size=20, index=True)
+    nico = fields.Char(size=2)
     descripcion = fields.Text()
 
     unidad_tarifa = fields.Char(size=10)
@@ -36,3 +38,16 @@ class MxPedPartida(models.Model):
     pais_vendedor_id = fields.Many2one("res.country", string="País vendedor")
 
     observaciones = fields.Text()
+
+    @api.onchange("fraccion_id")
+    def _onchange_fraccion_id(self):
+        for rec in self:
+            fraccion = rec.fraccion_id
+            if not fraccion:
+                continue
+            rec.fraccion_arancelaria = fraccion.code
+            rec.nico = fraccion.nico
+            if not rec.descripcion:
+                rec.descripcion = fraccion.name
+            if fraccion.um_id:
+                rec.unidad_tarifa = fraccion.um_id.code
