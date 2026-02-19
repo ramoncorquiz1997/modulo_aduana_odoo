@@ -700,7 +700,6 @@ class CrmLead(models.Model):
             "aduana_seccion_despacho_id": self.x_aduana_seccion_despacho_id.id or False,
             "aduana_clave": (self.x_aduana or ""),
             "aduana_seccion_entrada_salida_id": self.x_aduana_seccion_entrada_salida_id.id or False,
-            "aduana_seccion_entrada_salida": (self.x_aduana_seccion_entrada_salida or ""),
             "acuse_validacion": (self.x_acuse_validacion or ""),
             "patente": (self.x_patente_agente or ""),
             "curp_agente": (self.x_curp_agente or ""),
