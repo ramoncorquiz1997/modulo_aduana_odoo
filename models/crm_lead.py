@@ -185,6 +185,11 @@ class CrmLead(models.Model):
         store=True,
         readonly=True,
     )
+    x_fraccion_arancelaria_id = fields.Many2one(
+        comodel_name="mx.ped.fraccion",
+        string="Fracción arancelaria principal",
+        domain=[("active", "=", True)],
+    )
     x_fraccion_arancelaria_principal = fields.Char(string="Fracción arancelaria principal")
     x_descripcion_mercancia = fields.Text(string="Descripción de mercancía")
 
@@ -318,6 +323,15 @@ class CrmLead(models.Model):
             self.x_medio_transporte_arribo = code
         if not self.x_medio_transporte_entrada_salida:
             self.x_medio_transporte_entrada_salida = code
+
+    @api.onchange("x_fraccion_arancelaria_id")
+    def _onchange_x_fraccion_arancelaria_id(self):
+        for rec in self:
+            fraccion = rec.x_fraccion_arancelaria_id
+            if not fraccion:
+                continue
+            rec.x_fraccion_arancelaria_principal = fraccion.code
+            rec.x_descripcion_mercancia = fraccion.name
 
     def action_generate_pedimento_xml(self):
         self.ensure_one()

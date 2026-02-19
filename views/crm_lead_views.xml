@@ -68,7 +68,8 @@
           <page string="Mercancía" name="mi_modulo_mercancia">
             <group>
               <group string="Descripción">
-                <field name="x_fraccion_arancelaria_principal" placeholder="Ej. 9403.20.01"/>
+                <field name="x_fraccion_arancelaria_id"/>
+                <field name="x_fraccion_arancelaria_principal" readonly="1"/>
                 <field name="x_descripcion_mercancia"/>
                 <field name="x_currency_id"/>
               </group>
