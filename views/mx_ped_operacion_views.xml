@@ -45,21 +45,34 @@
             </div>
 
             <group>
-              <group string="Vinculación">
+              <group string="Vinculaci?n">
                 <field name="lead_id"/>
               </group>
 
-              <group string="Clasificación">
+              <group string="Clasificaci?n">
                 <field name="tipo_operacion"/>
                 <field name="tipo_movimiento"/>
                 <field name="regimen"/>
                 <field name="incoterm"/>
                 <field name="aduana_clave"/>
+                <field name="aduana_seccion_entrada_salida"/>
                 <field name="patente"/>
+                <field name="curp_agente"/>
                 <field name="clave_pedimento_id"
                        domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
+                <field name="acuse_validacion"/>
                 <field name="layout_id"/>
                 <field name="currency_id"/>
+              </group>
+
+              <group string="Participantes">
+                <field name="cliente_id" readonly="1"/>
+                <field name="importador_id" readonly="1"/>
+                <field name="exportador_id" readonly="1"/>
+                <field name="proveedor_id" readonly="1"/>
+                <field name="participante_id" readonly="1"/>
+                <field name="participante_rfc" readonly="1"/>
+                <field name="participante_curp" readonly="1"/>
               </group>
             </group>
 

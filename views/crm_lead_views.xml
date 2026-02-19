@@ -277,35 +277,6 @@
           </page>
 
           <!-- ✅ Pedimento en LEAD: SOLO RESUMEN (READ-ONLY) -->
-          <page string="Pedimento (resumen)" name="mi_modulo_pedimento_resumen">
-            <group>
-              <group string="Último pedimento ligado" col="2">
-                <field name="x_last_ped_operacion_id" readonly="1"/>
-              </group>
-            </group>
-
-            <group>
-              <group string="Datos oficiales (último)">
-                <field name="x_ped_num_pedimento" readonly="1"/>
-                <field name="x_ped_fecha_pago" readonly="1"/>
-                <field name="x_ped_semaforo" readonly="1"/>
-                <field name="x_ped_fecha_liberacion" readonly="1"/>
-              </group>
-              <group string="Referencia">
-                <field name="x_ped_aduana_clave" readonly="1"/>
-                <field name="x_ped_patente" readonly="1"/>
-                <field name="x_ped_clave_pedimento" readonly="1"/>
-              </group>
-            </group>
-
-            <group>
-              <group string="Nota">
-                <div class="o_form_label">Para editar/crear pedimentos usa la pestaña 'Pedimentos'.</div>
-              </group>
-            </group>
-          </page>
-
-          <!-- ✅ Alta/edición real -->
           <page string="Pedimentos" name="mi_modulo_pedimentos_rel">
             <group>
               <group string="Acciones">

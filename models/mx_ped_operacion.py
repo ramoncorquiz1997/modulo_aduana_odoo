@@ -78,6 +78,55 @@ class MxPedOperacion(models.Model):
         string="Tipo de movimiento",
         default="1",
     )
+    aduana_seccion_entrada_salida = fields.Char(string="Aduana-seccion entrada/salida")
+    acuse_validacion = fields.Char(string="Acuse electronico validacion")
+    curp_agente = fields.Char(string="CURP agente/apoderado")
+
+    cliente_id = fields.Many2one(
+        "res.partner",
+        string="Contacto / Cliente",
+        related="lead_id.partner_id",
+        store=True,
+        readonly=True,
+    )
+    importador_id = fields.Many2one(
+        "res.partner",
+        string="Importador",
+        related="lead_id.x_importador_id",
+        store=True,
+        readonly=True,
+    )
+    exportador_id = fields.Many2one(
+        "res.partner",
+        string="Exportador",
+        related="lead_id.x_exportador_id",
+        store=True,
+        readonly=True,
+    )
+    proveedor_id = fields.Many2one(
+        "res.partner",
+        string="Proveedor",
+        related="lead_id.x_proveedor_id",
+        store=True,
+        readonly=True,
+    )
+    participante_id = fields.Many2one(
+        "res.partner",
+        string="Importador/Exportador efectivo",
+        compute="_compute_participante",
+    )
+    participante_rfc = fields.Char(
+        string="RFC importador/exportador",
+        compute="_compute_participante_data",
+    )
+    participante_curp = fields.Char(
+        string="CURP importador/exportador",
+        compute="_compute_participante_data",
+    )
+    participante_nombre = fields.Char(
+        string="Nombre importador/exportador",
+        compute="_compute_participante_data",
+    )
 
     # ==========================
     # Resultado oficial/operativo
@@ -146,10 +195,62 @@ class MxPedOperacion(models.Model):
         for rec in self:
             rec.partida_count = len(rec.partida_ids)
 
+    @api.depends("tipo_operacion", "importador_id", "exportador_id")
+    def _compute_participante(self):
+        for rec in self:
+            if rec.tipo_operacion == "exportacion":
+                rec.participante_id = rec.exportador_id
+            else:
+                rec.participante_id = rec.importador_id
+
+    @api.depends(
+        "tipo_operacion",
+        "importador_id",
+        "importador_id.vat",
+        "importador_id.x_curp",
+        "importador_id.name",
+        "exportador_id",
+        "exportador_id.vat",
+        "exportador_id.x_curp",
+        "exportador_id.name",
+    )
+    def _compute_participante_data(self):
+        for rec in self:
+            partner = rec.exportador_id if rec.tipo_operacion == "exportacion" else rec.importador_id
+            rec.participante_rfc = partner.vat if partner else False
+            rec.participante_curp = partner.x_curp if partner else False
+            rec.participante_nombre = partner.name if partner else False
+
     @api.depends("invoice_ids")
     def _compute_invoice_count(self):
         for rec in self:
             rec.invoice_count = len(rec.invoice_ids.filtered(lambda m: m.move_type == "out_invoice"))
+
+    @api.onchange("lead_id")
+    def _onchange_lead_id_fill_defaults(self):
+        if not self.lead_id:
+            return
+        lead = self.lead_id
+        defaults = {
+            "tipo_operacion": lead.x_tipo_operacion or False,
+            "regimen": lead.x_regimen or False,
+            "incoterm": lead.x_incoterm or False,
+            "aduana_clave": lead.x_aduana or False,
+            "aduana_seccion_entrada_salida": lead.x_aduana_seccion_entrada_salida or False,
+            "acuse_validacion": lead.x_acuse_validacion or False,
+            "patente": lead.x_patente_agente or False,
+            "curp_agente": lead.x_curp_agente or False,
+            "clave_pedimento_id": lead.x_clave_pedimento_id or False,
+            "currency_id": lead.x_currency_id or self.env.company.currency_id,
+            "pedimento_numero": lead.x_num_pedimento or False,
+            "fecha_pago": lead.x_fecha_pago_pedimento or False,
+            "fecha_liberacion": lead.x_fecha_liberacion or False,
+            "semaforo": lead.x_semaforo or False,
+            "observaciones": lead.x_incidente_text or False,
+        }
+        for field_name, value in defaults.items():
+            if not self[field_name]:
+                self[field_name] = value
 
     def action_view_partidas(self):
         """Abre las partidas de esta operación (útil para smart button)."""
@@ -509,6 +610,12 @@ class MxPedOperacion(models.Model):
             "valor_aduana": "x_valor_aduana_estimado",
             "folio_operacion": "x_folio_operacion",
             "referencia_cliente": "x_referencia_cliente",
+            "aduana_seccion_entrada_salida": "aduana_seccion_entrada_salida",
+            "acuse_validacion": "acuse_validacion",
+            "curp_agente": "curp_agente",
+            "rfc_importador_exportador": "participante_rfc",
+            "curp_importador_exportador": "participante_curp",
+            "nombre_importador_exportador": "participante_nombre",
         }
 
         source = source_field or aliases.get(field_name, field_name)
@@ -526,6 +633,8 @@ class MxPedOperacion(models.Model):
 
         if source_model == "operacion":
             return self._record_value_for_field(self, source)
+        if source_model == "cliente":
+            return self._record_value_for_field(lead.partner_id if lead else None, source)
         if source_model == "importador":
             return self._record_value_for_field(lead.x_importador_id if lead else None, source)
         if source_model == "exportador":

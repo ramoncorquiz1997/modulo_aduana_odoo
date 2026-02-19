@@ -10,9 +10,6 @@
     <record id="aduana_pedimento_menu" model="ir.ui.menu">
       <field name="active">False</field>
     </record>
-    <record id="aduana_pedimento_action" model="ir.actions.act_window">
-      <field name="active">False</field>
-    </record>
     <record id="aduana_pedimento_view_list" model="ir.ui.view">
       <field name="active">False</field>
     </record>
@@ -27,12 +24,6 @@
       <field name="active">False</field>
     </record>
     <record id="aduana_layout_tecnico_campo_menu" model="ir.ui.menu">
-      <field name="active">False</field>
-    </record>
-    <record id="aduana_layout_registro_tipo_action" model="ir.actions.act_window">
-      <field name="active">False</field>
-    </record>
-    <record id="aduana_layout_registro_campo_action" model="ir.actions.act_window">
       <field name="active">False</field>
     </record>
     <record id="aduana_layout_registro_tipo_view_list" model="ir.ui.view">
@@ -61,18 +52,6 @@
       <field name="active">False</field>
     </record>
     <record id="aduana_catalogo_clave_pedimento_menu" model="ir.ui.menu">
-      <field name="active">False</field>
-    </record>
-    <record id="aduana_catalogo_tipo_operacion_action" model="ir.actions.act_window">
-      <field name="active">False</field>
-    </record>
-    <record id="aduana_catalogo_regimen_action" model="ir.actions.act_window">
-      <field name="active">False</field>
-    </record>
-    <record id="aduana_catalogo_aduana_action" model="ir.actions.act_window">
-      <field name="active">False</field>
-    </record>
-    <record id="aduana_catalogo_clave_pedimento_action" model="ir.actions.act_window">
       <field name="active">False</field>
     </record>
     <record id="aduana_catalogo_tipo_operacion_view_list" model="ir.ui.view">
