@@ -47,7 +47,16 @@ class CrmLead(models.Model):
         string="Régimen",
     )
 
-    x_aduana = fields.Char(string="Aduana")
+    x_aduana_seccion_despacho_id = fields.Many2one(
+        "mx.ped.aduana.seccion",
+        string="Aduana-seccion de despacho",
+    )
+    x_aduana = fields.Char(
+        string="Aduana",
+        related="x_aduana_seccion_despacho_id.code",
+        store=True,
+        readonly=True,
+    )
     x_aduana_seccion_entrada_salida = fields.Char(string="Aduana-sección entrada/salida")
     x_acuse_validacion = fields.Char(string="Acuse electrónico validación")
 
@@ -679,6 +688,7 @@ class CrmLead(models.Model):
             "regimen": self.x_regimen,
             "incoterm": self.x_incoterm,
 
+            "aduana_seccion_despacho_id": self.x_aduana_seccion_despacho_id.id or False,
             "aduana_clave": (self.x_aduana or ""),
             "aduana_seccion_entrada_salida": (self.x_aduana_seccion_entrada_salida or ""),
             "acuse_validacion": (self.x_acuse_validacion or ""),

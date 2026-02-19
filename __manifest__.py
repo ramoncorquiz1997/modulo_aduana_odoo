@@ -15,6 +15,7 @@
         "views/aduana_crm_lead_bridge_views.xml",
         "views/res_partner_views.xml",
         "views/mx_ped_clave_views.xml",
+        "views/mx_ped_aduana_seccion_views.xml",
         "views/mx_ped_layout_views.xml",
         "views/crm_lead_views.xml",
         "views/account_move_views.xml",
