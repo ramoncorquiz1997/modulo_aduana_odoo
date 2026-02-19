@@ -190,7 +190,7 @@
           </page>
 
           <page string="Importación" name="mi_modulo_importacion"
-                modifiers='{"invisible":[["x_tipo_operacion","!=","importacion"]]}'>
+                invisible="x_tipo_operacion != 'importacion'">
 
             <group>
               <group string="Compra / proveedor">
@@ -231,7 +231,7 @@
           </page>
 
           <page string="Exportación" name="mi_modulo_exportacion"
-                modifiers='{"invisible":[["x_tipo_operacion","!=","exportacion"]]}'>
+                invisible="x_tipo_operacion != 'exportacion'">
 
             <group>
               <group string="Venta">
