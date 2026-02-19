@@ -31,8 +31,20 @@ class DESAdapter(requests.adapters.HTTPAdapter):
 class ResPartner(models.Model):
     _inherit = "res.partner"
 
+    x_contact_role = fields.Selection(
+        [
+            ("cliente", "Cliente"),
+            ("agente_aduanal", "Agente Aduanal"),
+            ("proveedor", "Proveedor"),
+            ("otro", "Otro"),
+        ],
+        string="Rol aduanal",
+        default="cliente",
+    )
     x_curp = fields.Char(string="CURP")
     x_identificacion_fiscal = fields.Char(string="Identificación fiscal (extranjero)")
+    x_patente_aduanal = fields.Char(string="Patente aduanal")
+    x_num_autorizacion_aduanal = fields.Char(string="Núm. autorización aduanal")
     x_csf_filename = fields.Char(string="Nombre de archivo CSF")
     x_csf_file = fields.Binary(string="CSF (PDF)")
 

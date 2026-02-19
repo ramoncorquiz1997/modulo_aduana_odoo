@@ -57,7 +57,8 @@
                 <field name="aduana_seccion_despacho_id"/>
                 <field name="aduana_clave"/>
                 <field name="aduana_seccion_entrada_salida_id"/>
-                <field name="patente"/>
+                <field name="agente_aduanal_id" domain="[('x_contact_role','=','agente_aduanal')]"/>
+                <field name="patente" readonly="1"/>
                 <field name="curp_agente"/>
                 <field name="clave_pedimento_id"
                        domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>

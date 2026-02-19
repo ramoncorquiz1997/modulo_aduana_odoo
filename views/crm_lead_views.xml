@@ -55,7 +55,8 @@
                 <field name="x_aduana_seccion_despacho_id"/>
                 <field name="x_aduana" readonly="1"/>
                 <field name="x_aduana_seccion_entrada_salida_id"/>
-                <field name="x_patente_agente"/>
+                <field name="x_agente_aduanal_id" domain="[('x_contact_role','=','agente_aduanal')]"/>
+                <field name="x_patente_agente" readonly="1"/>
                 <field name="x_curp_agente"/>
                 <field name="x_clave_pedimento_id"
                        domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',x_tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',x_regimen)]"/>
@@ -77,11 +78,11 @@
           <page string="Partes" name="mi_modulo_partes">
             <group>
               <group string="Participantes">
-                <field name="x_exportador_id"/>
+                <field name="x_exportador_id" domain="[('x_contact_role','in',['cliente','otro'])]"/>
                 <field name="x_exportador_name"/>
-                <field name="x_importador_id"/>
+                <field name="x_importador_id" domain="[('x_contact_role','in',['cliente','otro'])]"/>
                 <field name="x_importador_name"/>
-                <field name="x_proveedor_id"/>
+                <field name="x_proveedor_id" domain="[('x_contact_role','in',['proveedor','otro'])]"/>
                 <field name="x_proveedor_name"/>
               </group>
               <group string="Destino">
@@ -295,6 +296,7 @@
                 <field name="tipo_operacion"/>
                 <field name="regimen"/>
                 <field name="aduana_clave"/>
+                <field name="agente_aduanal_id"/>
                 <field name="patente"/>
                 <field name="clave_pedimento_id"/>
                 <field name="pedimento_numero"/>
@@ -321,7 +323,8 @@
                       <field name="regimen"/>
                       <field name="incoterm"/>
                       <field name="aduana_clave"/>
-                      <field name="patente"/>
+                      <field name="agente_aduanal_id" domain="[('x_contact_role','=','agente_aduanal')]"/>
+                      <field name="patente" readonly="1"/>
                       <field name="clave_pedimento_id"
                              domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
                       <field name="currency_id"/>

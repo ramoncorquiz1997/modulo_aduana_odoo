@@ -156,6 +156,11 @@ class CrmLead(models.Model):
     )
 
     # --- Clasificación / aduana (resumen / header) ---
+    x_agente_aduanal_id = fields.Many2one(
+        "res.partner",
+        string="Agente aduanal",
+        domain="[('x_contact_role','=','agente_aduanal')]",
+    )
     x_patente_agente = fields.Char(string="Patente / Agente")
     x_curp_agente = fields.Char(string="CURP agente / apoderado")
 
@@ -285,6 +290,15 @@ class CrmLead(models.Model):
     )
 
     x_visible_portal = fields.Boolean(string="Visible en portal", default=True)
+
+    @api.onchange("x_agente_aduanal_id")
+    def _onchange_x_agente_aduanal_id(self):
+        for rec in self:
+            agent = rec.x_agente_aduanal_id
+            if not agent:
+                continue
+            rec.x_patente_agente = agent.x_patente_aduanal or rec.x_patente_agente
+            rec.x_curp_agente = agent.x_curp or rec.x_curp_agente
     
     @api.onchange("x_modo_transporte")
     def _onchange_x_modo_transporte_set_default_codes(self):
@@ -701,7 +715,8 @@ class CrmLead(models.Model):
             "aduana_clave": (self.x_aduana or ""),
             "aduana_seccion_entrada_salida_id": self.x_aduana_seccion_entrada_salida_id.id or False,
             "acuse_validacion": (self.x_acuse_validacion or ""),
-            "patente": (self.x_patente_agente or ""),
+            "agente_aduanal_id": self.x_agente_aduanal_id.id or False,
+            "patente": (self.x_agente_aduanal_id.x_patente_aduanal or self.x_patente_agente or ""),
             "curp_agente": (self.x_curp_agente or ""),
             "clave_pedimento_id": self.x_clave_pedimento_id.id or False,
 

@@ -56,6 +56,11 @@ class MxPedOperacion(models.Model):
         string="Aduana-seccion de despacho",
     )
     aduana_clave = fields.Char(string="Aduana (clave)")  # ej 070
+    agente_aduanal_id = fields.Many2one(
+        "res.partner",
+        string="Agente aduanal",
+        domain="[('x_contact_role','=','agente_aduanal')]",
+    )
     patente = fields.Char(string="Patente")
     clave_pedimento_id = fields.Many2one(
         "mx.ped.clave",
@@ -252,7 +257,8 @@ class MxPedOperacion(models.Model):
             "aduana_clave": lead.x_aduana or False,
             "aduana_seccion_entrada_salida_id": lead.x_aduana_seccion_entrada_salida_id or False,
             "acuse_validacion": lead.x_acuse_validacion or False,
-            "patente": lead.x_patente_agente or False,
+            "agente_aduanal_id": lead.x_agente_aduanal_id or False,
+            "patente": (lead.x_agente_aduanal_id.x_patente_aduanal or lead.x_patente_agente or False),
             "curp_agente": lead.x_curp_agente or False,
             "clave_pedimento_id": lead.x_clave_pedimento_id or False,
             "currency_id": lead.x_currency_id or self.env.company.currency_id,
@@ -271,6 +277,15 @@ class MxPedOperacion(models.Model):
         for rec in self:
             if rec.aduana_seccion_despacho_id:
                 rec.aduana_clave = rec.aduana_seccion_despacho_id.code
+
+    @api.onchange("agente_aduanal_id")
+    def _onchange_agente_aduanal_id(self):
+        for rec in self:
+            agent = rec.agente_aduanal_id
+            if not agent:
+                continue
+            rec.patente = agent.x_patente_aduanal or rec.patente
+            rec.curp_agente = agent.x_curp or rec.curp_agente
 
     def action_view_partidas(self):
         """Abre las partidas de esta operación (útil para smart button)."""
@@ -547,7 +562,12 @@ class MxPedOperacion(models.Model):
 
     def _build_txt_filename(self):
         self.ensure_one()
-        patente_raw = self.patente or (self.lead_id.x_patente_agente if self.lead_id else "")
+        patente_raw = (
+            self.patente
+            or (self.agente_aduanal_id.x_patente_aduanal if self.agente_aduanal_id else "")
+            or (self.lead_id.x_agente_aduanal_id.x_patente_aduanal if self.lead_id and self.lead_id.x_agente_aduanal_id else "")
+            or (self.lead_id.x_patente_agente if self.lead_id else "")
+        )
         patente = "".join(ch for ch in str(patente_raw or "") if ch.isdigit())
         if not patente:
             raise UserError(_("Falta la patente para construir el nombre SAAI (mppppnnn.ddd)."))
