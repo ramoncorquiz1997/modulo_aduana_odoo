@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <!-- Oculta UI del esquema aduana.* para dejar solo flujo mx.ped.* -->
+    <record id="crm_lead_view_form_inherit_aduana_bridge" model="ir.ui.view">
+      <field name="active">False</field>
+    </record>
+
+    <record id="aduana_pedimento_menu" model="ir.ui.menu">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_pedimento_action" model="ir.actions.act_window">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_pedimento_view_list" model="ir.ui.view">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_pedimento_view_form" model="ir.ui.view">
+      <field name="active">False</field>
+    </record>
+
+    <record id="aduana_layout_tecnico_menu_root" model="ir.ui.menu">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_layout_tecnico_tipo_menu" model="ir.ui.menu">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_layout_tecnico_campo_menu" model="ir.ui.menu">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_layout_registro_tipo_action" model="ir.actions.act_window">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_layout_registro_campo_action" model="ir.actions.act_window">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_layout_registro_tipo_view_list" model="ir.ui.view">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_layout_registro_tipo_view_form" model="ir.ui.view">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_layout_registro_campo_view_list" model="ir.ui.view">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_layout_registro_campo_view_form" model="ir.ui.view">
+      <field name="active">False</field>
+    </record>
+
+    <record id="aduana_catalogo_menu_root" model="ir.ui.menu">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_tipo_operacion_menu" model="ir.ui.menu">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_regimen_menu" model="ir.ui.menu">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_aduana_menu" model="ir.ui.menu">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_clave_pedimento_menu" model="ir.ui.menu">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_tipo_operacion_action" model="ir.actions.act_window">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_regimen_action" model="ir.actions.act_window">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_aduana_action" model="ir.actions.act_window">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_clave_pedimento_action" model="ir.actions.act_window">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_tipo_operacion_view_list" model="ir.ui.view">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_regimen_view_list" model="ir.ui.view">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_aduana_view_list" model="ir.ui.view">
+      <field name="active">False</field>
+    </record>
+    <record id="aduana_catalogo_clave_pedimento_view_list" model="ir.ui.view">
+      <field name="active">False</field>
+    </record>
+
+  </data>
+</odoo>

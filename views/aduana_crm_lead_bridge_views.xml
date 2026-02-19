@@ -14,15 +14,6 @@
                   class="btn-secondary"/>
         </xpath>
 
-        <xpath expr="//notebook" position="inside">
-          <page string="Pedimento 1:1" name="aduana_pedimento_rel">
-            <group>
-              <field name="x_pedimento_id" readonly="1"/>
-              <field name="x_pedimento_status"/>
-              <field name="x_pedimento_last_error"/>
-            </group>
-          </page>
-        </xpath>
       </field>
     </record>
 

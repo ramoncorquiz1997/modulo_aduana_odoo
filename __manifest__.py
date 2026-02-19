@@ -18,6 +18,7 @@
         "views/mx_ped_layout_views.xml",
         "views/crm_lead_views.xml",
         "views/account_move_views.xml",
+        "views/mx_only_cleanup_views.xml",
     ],
     "license": "LGPL-3",
     "application": False,
