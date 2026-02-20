@@ -617,6 +617,66 @@ class MxPedOperacion(models.Model):
         # Formato obligatorio SAAI M3: mppppnnn.ddd
         return f"{prefix}{seq:03d}.{ddd}"
 
+    def _get_pedimento_number_parts(self):
+        self.ensure_one()
+        today = fields.Date.context_today(self)
+        yy = f"{today.year % 100:02d}"
+        year_last_digit = str(today.year)[-1]
+
+        aduana_digits = "".join(ch for ch in str(self.aduana_clave or "") if ch.isdigit())
+        if len(aduana_digits) < 2:
+            raise UserError(_("La aduana debe tener al menos 2 digitos para generar el numero de pedimento."))
+        aa = aduana_digits[:2]
+
+        patente_raw = (
+            self.patente
+            or (self.agente_aduanal_id.x_patente_aduanal if self.agente_aduanal_id else "")
+            or (self.lead_id.x_agente_aduanal_id.x_patente_aduanal if self.lead_id and self.lead_id.x_agente_aduanal_id else "")
+            or (self.lead_id.x_patente_agente if self.lead_id else "")
+        )
+        patente_digits = "".join(ch for ch in str(patente_raw or "") if ch.isdigit())
+        if not patente_digits:
+            raise UserError(_("Falta la patente para generar el numero de pedimento."))
+        if len(patente_digits) > 4:
+            raise UserError(_("La patente debe tener maximo 4 digitos."))
+        pppp = patente_digits.zfill(4)
+        return yy, aa, pppp, year_last_digit
+
+    def _next_pedimento_consecutivo(self, yy, aa, pppp):
+        self.ensure_one()
+        control_model = self.env["mx.ped.numero.control"].sudo()
+        control = control_model.search([
+            ("year_two", "=", yy),
+            ("aduana_clave", "=", aa),
+            ("patente", "=", pppp),
+        ], limit=1)
+        if not control:
+            control = control_model.with_context(real_user_id=self.env.user.id).create({
+                "year_two": yy,
+                "aduana_clave": aa,
+                "patente": pppp,
+                "ultimo_consecutivo": 0,
+            })
+
+        self.env.cr.execute(
+            "SELECT ultimo_consecutivo FROM mx_ped_numero_control WHERE id = %s FOR UPDATE",
+            [control.id],
+        )
+        current = self.env.cr.fetchone()[0] or 0
+        next_value = current + 1
+        if next_value > 999999:
+            raise UserError(_("Se alcanzo el maximo de consecutivo 999999 para %s-%s-%s.") % (yy, aa, pppp))
+
+        control.with_context(real_user_id=self.env.user.id).write({"ultimo_consecutivo": next_value})
+        return f"{next_value:06d}"
+
+    def action_asignar_numero_pedimento(self):
+        for rec in self:
+            yy, aa, pppp, d = rec._get_pedimento_number_parts()
+            nnnnnn = rec._next_pedimento_consecutivo(yy, aa, pppp)
+            rec.pedimento_numero = f"{yy}{aa}{pppp}{d}{nnnnnn}"
+        return True
+
     # ==========================
     # Cargar registros desde Lead
     # ==========================

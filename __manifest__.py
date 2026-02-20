@@ -1,6 +1,6 @@
 {
     "name": "Aduana - Operaciones y Pedimentos",
-    "version": "18.0.1.4.0",
+    "version": "18.0.1.5.0",
     "category": "CRM",
     "summary": "Gestión de operaciones aduanales y pedimentos desde CRM",
     "depends": ["crm", "mail", "base", "contacts","account"],
@@ -18,6 +18,7 @@
         "views/mx_ped_aduana_seccion_views.xml",
         "views/mx_ped_fraccion_views.xml",
         "views/mx_ped_tipo_contenedor_views.xml",
+        "views/mx_ped_numero_control_views.xml",
         "views/mx_ped_layout_views.xml",
         "views/crm_lead_views.xml",
         "views/account_move_views.xml",

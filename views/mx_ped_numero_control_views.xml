@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <record id="mx_ped_numero_control_view_list" model="ir.ui.view">
+      <field name="name">mx.ped.numero.control.list</field>
+      <field name="model">mx.ped.numero.control</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="year_two"/>
+          <field name="aduana_clave"/>
+          <field name="patente"/>
+          <field name="ultimo_consecutivo"/>
+          <field name="active"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="mx_ped_numero_control_view_form" model="ir.ui.view">
+      <field name="name">mx.ped.numero.control.form</field>
+      <field name="model">mx.ped.numero.control</field>
+      <field name="arch" type="xml">
+        <form string="Control de consecutivo de pedimento">
+          <sheet>
+            <group>
+              <field name="year_two"/>
+              <field name="aduana_clave"/>
+              <field name="patente"/>
+              <field name="ultimo_consecutivo"/>
+              <field name="active"/>
+            </group>
+            <notebook>
+              <page string="Bitacora">
+                <field name="log_ids" readonly="1">
+                  <list create="0" delete="0" edit="0">
+                    <field name="create_date" string="Fecha"/>
+                    <field name="changed_by_id"/>
+                    <field name="old_value"/>
+                    <field name="new_value"/>
+                    <field name="note"/>
+                  </list>
+                </field>
+              </page>
+            </notebook>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="mx_ped_numero_control_action" model="ir.actions.act_window">
+      <field name="name">Consecutivos de Pedimento</field>
+      <field name="res_model">mx.ped.numero.control</field>
+      <field name="view_mode">list,form</field>
+      <field name="groups_id" eval="[(4, ref('base.group_system'))]"/>
+    </record>
+
+    <menuitem id="mx_ped_numero_control_menu"
+              name="Consecutivos de Pedimento"
+              parent="mx_ped_operacion_menu_root"
+              action="mx_ped_numero_control_action"
+              sequence="80"
+              groups="base.group_system"/>
+
+  </data>
+</odoo>

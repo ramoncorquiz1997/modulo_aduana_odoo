@@ -29,6 +29,7 @@
       <field name="arch" type="xml">
         <form string="Pedimento">
           <header>
+            <button name="action_asignar_numero_pedimento" type="object" string="Asignar Núm. Pedimento" class="btn-secondary"/>
             <button name="action_export_txt" type="object" string="Exportar TXT" class="btn-primary"/>
             <button name="action_export_xml" type="object" string="Exportar XML"/>
             <button name="action_cargar_desde_lead" type="object" string="Cargar desde Lead" class="btn-secondary"/>
