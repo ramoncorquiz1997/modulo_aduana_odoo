@@ -79,10 +79,18 @@
           <page string="Partes" name="mi_modulo_partes">
             <group>
               <group string="Participantes">
-                <field name="x_exportador_id" domain="[('x_contact_role','in',['cliente','otro'])]"/>
-                <field name="x_exportador_name"/>
-                <field name="x_importador_id" domain="[('x_contact_role','in',['cliente','otro'])]"/>
-                <field name="x_importador_name"/>
+                <field name="x_exportador_id"
+                       domain="[('x_contact_role','in',['cliente','otro'])]"
+                       invisible="x_tipo_operacion == 'importacion'"
+                       required="x_tipo_operacion == 'exportacion'"/>
+                <field name="x_exportador_name"
+                       invisible="x_tipo_operacion == 'importacion'"/>
+                <field name="x_importador_id"
+                       domain="[('x_contact_role','in',['cliente','otro'])]"
+                       invisible="x_tipo_operacion == 'exportacion'"
+                       required="x_tipo_operacion == 'importacion'"/>
+                <field name="x_importador_name"
+                       invisible="x_tipo_operacion == 'exportacion'"/>
                 <field name="x_proveedor_id" domain="[('x_contact_role','in',['proveedor','otro'])]"/>
                 <field name="x_proveedor_name"/>
               </group>
