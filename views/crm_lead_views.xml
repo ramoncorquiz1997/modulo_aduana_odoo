@@ -132,6 +132,7 @@
                 <field name="x_booking" modifiers='{"invisible":[["x_modo_transporte","!=","maritimo"]]}'/>
               </group>
               <group string="Equipo">
+                <field name="x_tipo_contenedor_id"/>
                 <field name="x_num_contenedor"/>
                 <field name="x_num_sello"/>
               </group>

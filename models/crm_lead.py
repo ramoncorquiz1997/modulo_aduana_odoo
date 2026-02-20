@@ -444,6 +444,11 @@ class CrmLead(models.Model):
     )
     x_guia_manifiesto = fields.Char(string="Guía o manifiesto", size=20)
     x_booking = fields.Char(string="Booking")
+    x_tipo_contenedor_id = fields.Many2one(
+        comodel_name="mx.ped.tipo.contenedor",
+        string="Tipo de contenedor/vehículo",
+        domain=[("active", "=", True)],
+    )
     x_num_contenedor = fields.Char(string="Número de contenedor")
     x_num_sello = fields.Char(string="Número de sello")
 
