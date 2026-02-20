@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
 import base64
+import io
 import re
 import xml.etree.ElementTree as ET
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
+
+try:
+    from PyPDF2 import PdfReader
+except Exception:  # pragma: no cover
+    PdfReader = None
 
 
 class MxPedOperacion(models.Model):
@@ -166,6 +172,9 @@ class MxPedOperacion(models.Model):
     )
 
     observaciones = fields.Text(string="Observaciones")
+    bl_file = fields.Binary(string="Archivo B/L (PDF)")
+    bl_filename = fields.Char(string="Nombre archivo B/L")
+    bl_last_read = fields.Datetime(string="Ultima lectura B/L", readonly=True)
 
     invoice_ids = fields.One2many(
         "account.move",
@@ -578,6 +587,113 @@ class MxPedOperacion(models.Model):
             "type": "ir.actions.act_url",
             "url": f"/web/content/{attachment.id}?download=true",
             "target": "self",
+        }
+
+    def _extract_bl_pdf_text(self, pdf_bytes):
+        if not PdfReader:
+            raise UserError(_("Falta dependencia PyPDF2 en el servidor para leer PDF de B/L."))
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        chunks = []
+        for page in reader.pages[:3]:
+            chunks.append(page.extract_text() or "")
+        return "\n".join(chunks)
+
+    def _parse_bl_text(self, text):
+        clean = re.sub(r"[ \t]+", " ", text or "")
+
+        def _pick(patterns):
+            for pat in patterns:
+                m = re.search(pat, clean, re.IGNORECASE | re.MULTILINE)
+                if m:
+                    return (m.group(1) or "").strip()
+            return False
+
+        bl_no = _pick([
+            r"\bB/?L\s*(?:NO\.?|NUMBER)?\s*[:#]?\s*([A-Z0-9\-]+)",
+            r"\bMBL\s*[:#]?\s*([A-Z0-9\-]+)",
+            r"\bMASTER\s*B/?L\s*[:#]?\s*([A-Z0-9\-]+)",
+        ])
+        container = _pick([r"\b([A-Z]{4}\d{7})\b"])
+        seal = _pick([r"\b(?:SEAL\s*NO\.?\s*[:#]?\s*|/)([A-Z0-9]{6,})\b"])
+        kgs = _pick([r"(\d+(?:\.\d+)?)\s*KGS\b"])
+        cbm = _pick([r"(\d+(?:\.\d+)?)\s*CBM\b"])
+        bultos = _pick([
+            r"/\s*(\d+)\s+[A-Z ]{2,20}/",
+            r"\b(\d+)\s+(?:WOODEN\s+CASES?|PACKAGES?|PKGS?)\b",
+        ])
+        loading = _pick([r"Port of Loading\s*([A-Z0-9 ,\-\(\)]+)"])
+        discharge = _pick([r"Port of discharge:\s*Place of delivery\s*([A-Z0-9 ,\-\(\)\/]+)"])
+        vessel_line = _pick([r"Ocean Vessel\s+Voy\.?No\.\s+Port of Loading\s*([A-Z0-9 .,\-\(\)]+)"])
+
+        return {
+            "bl_no": bl_no,
+            "container": container,
+            "seal": seal,
+            "kgs": kgs,
+            "cbm": cbm,
+            "bultos": bultos,
+            "loading": loading,
+            "discharge": discharge,
+            "vessel": vessel_line,
+        }
+
+    def action_read_bl(self):
+        self.ensure_one()
+        if not self.bl_file:
+            raise UserError(_("Sube primero el archivo B/L en PDF."))
+        if not self.lead_id:
+            raise UserError(_("La operacion requiere un Lead asociado para cargar datos del B/L."))
+
+        pdf_bytes = base64.b64decode(self.bl_file)
+        text = self._extract_bl_pdf_text(pdf_bytes)
+        parsed = self._parse_bl_text(text)
+        if not any(parsed.values()):
+            raise UserError(_("No se detectaron datos utiles en el B/L. Revisa calidad del PDF."))
+
+        lead_vals = {}
+        if parsed.get("bl_no"):
+            lead_vals["x_guia_manifiesto"] = parsed["bl_no"]
+            lead_vals["x_tipo_guia"] = "M"
+        if parsed.get("container"):
+            lead_vals["x_num_contenedor"] = parsed["container"]
+        if parsed.get("seal"):
+            lead_vals["x_num_sello"] = parsed["seal"]
+        if parsed.get("bultos"):
+            try:
+                lead_vals["x_bultos"] = int(float(parsed["bultos"]))
+            except Exception:
+                pass
+        if parsed.get("kgs"):
+            try:
+                lead_vals["x_peso_bruto"] = float(parsed["kgs"])
+            except Exception:
+                pass
+        if parsed.get("cbm"):
+            try:
+                lead_vals["x_volumen_cbm"] = float(parsed["cbm"])
+            except Exception:
+                pass
+        if parsed.get("loading"):
+            lead_vals["x_lugar_carga"] = parsed["loading"]
+        if parsed.get("discharge"):
+            lead_vals["x_lugar_descarga"] = parsed["discharge"]
+
+        if lead_vals:
+            self.lead_id.write(lead_vals)
+        if parsed.get("vessel"):
+            note = f"B/L vessel/voy: {parsed['vessel']}"
+            self.observaciones = f"{(self.observaciones or '').strip()}\n{note}".strip()
+        self.bl_last_read = fields.Datetime.now()
+
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("B/L procesado"),
+                "message": _("Datos cargados al lead vinculado."),
+                "type": "success",
+                "sticky": False,
+            },
         }
 
     def _build_txt_filename(self):

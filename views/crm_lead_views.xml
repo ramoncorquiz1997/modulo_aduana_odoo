@@ -22,11 +22,12 @@
         <!-- BOTÓN EN HEADER -->
         <xpath expr="//header" position="inside">
           <button name="action_crear_pedimento" type="object" string="Crear pedimento" class="btn-secondary"/>
-          <button name="action_generate_pedimento_xml" 
-                  type="object" 
-                  string="Generar XML (MVP)" 
-                  class="btn-primary" 
-                  icon="fa-file-code-o"/>
+          <button type="action"
+                  name="%(modulo_aduana_odoo.mx_ped_operacion_action)d"
+                  string="B/L (en pedimento)"
+                  class="btn-primary"
+                  icon="fa-file-pdf-o"
+                  context="{'search_default_lead_id': id}"/>
         </xpath>
 
         <xpath expr="//notebook" position="inside">
