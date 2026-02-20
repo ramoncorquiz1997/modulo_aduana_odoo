@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import base64
+import json
 import logging
 import requests
 import ssl
 import urllib3
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 # Desactivar advertencias de SSL en el log
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -49,6 +51,71 @@ class ResPartner(models.Model):
     x_num_autorizacion_aduanal = fields.Char(string="Num. autorizacion aduanal")
     x_csf_filename = fields.Char(string="Nombre de archivo CSF")
     x_csf_file = fields.Binary(string="CSF (PDF)")
+
+    def _wa_param(self, key):
+        return self.env["ir.config_parameter"].sudo().get_param(key)
+
+    def _wa_normalize_phone(self, raw):
+        digits = "".join(ch for ch in (raw or "") if ch.isdigit())
+        if len(digits) == 10:
+            digits = f"52{digits}"
+        return digits
+
+    def _wa_send_message(self, to, payload):
+        token = self._wa_param("modulo_aduana_odoo.whatsapp_token")
+        phone_number_id = self._wa_param("modulo_aduana_odoo.whatsapp_phone_number_id")
+        if not token or not phone_number_id:
+            raise UserError("Falta configurar WhatsApp en Parametros del sistema (token y phone_number_id).")
+        url = f"https://graph.facebook.com/v22.0/{phone_number_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        body = {"messaging_product": "whatsapp", "to": to}
+        body.update(payload)
+        resp = requests.post(url, headers=headers, data=json.dumps(body), timeout=20)
+        if resp.status_code >= 300:
+            raise UserError(f"No se pudo enviar WhatsApp ({resp.status_code}): {resp.text}")
+        return resp
+
+    def action_request_missing_documents(self):
+        for rec in self:
+            to = rec._wa_normalize_phone(rec.mobile or rec.phone)
+            if not to:
+                raise UserError("El contacto no tiene telefono/mobile valido para WhatsApp.")
+
+            missing_rows = []
+            if not rec.x_csf_file:
+                missing_rows.append({"id": "send_csf", "title": "Enviar CSF"})
+
+            if not missing_rows:
+                raise UserError("No hay documentos faltantes por solicitar (CSF ya cargado).")
+
+            # Prepara sesion para que, al llegar el archivo, se procese como CSF.
+            session_model = self.env["mx.wa.session"].sudo()
+            session = session_model.search([("wa_id", "=", to)], limit=1)
+            vals = {"partner_id": rec.id}
+            if len(missing_rows) == 1 and missing_rows[0]["id"] == "send_csf":
+                vals["expected_doc_type"] = "csf"
+            if session:
+                session.write(vals)
+            else:
+                vals["wa_id"] = to
+                session_model.create(vals)
+
+            payload = {
+                "type": "interactive",
+                "interactive": {
+                    "type": "list",
+                    "body": {"text": "Tenemos documentos pendientes. Selecciona cual enviar:"},
+                    "action": {
+                        "button": "Seleccionar",
+                        "sections": [{"title": "Pendientes", "rows": missing_rows}],
+                    },
+                },
+            }
+            rec._wa_send_message(to, payload)
+        return True
 
     def _extract_csf_values(self, encoded_pdf):
         if not encoded_pdf or not decode:

@@ -43,6 +43,10 @@
               </group>
             </group>
             <group string="Documentación">
+              <button name="action_request_missing_documents"
+                      type="object"
+                      string="Solicitar Docs por WhatsApp"
+                      class="btn-primary"/>
               <field name="x_csf_filename" invisible="1"/>
               <field name="x_csf_file" widget="binary" filename="x_csf_filename" string="Constancia de Situación Fiscal (PDF)"/>
             </group>
