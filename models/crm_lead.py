@@ -164,7 +164,6 @@ class CrmLead(models.Model):
     x_patente_agente = fields.Char(
         string="Patente",
         related="x_agente_aduanal_id.x_patente_aduanal",
-        store=True,
         readonly=True,
     )
     x_curp_agente = fields.Char(string="CURP agente / apoderado")
