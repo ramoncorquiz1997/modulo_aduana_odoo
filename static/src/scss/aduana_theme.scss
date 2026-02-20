@@ -1,20 +1,35 @@
-/* Aduana maritime palette: replace purple accents with navy blue */
+/* Aduana maritime palette */
 
 :root {
-    --o-brand-odoo: #0b3a66;
-    --o-enterprise-primary-color: #0b3a66;
-    --o-enterprise-action-color: #145a96;
+    --o-brand-odoo: #0a2f57;
+    --o-enterprise-primary-color: #0a2f57;
+    --o-enterprise-action-color: #0f4c81;
 }
 
+/* Top bar (remove purple and keep readable text) */
+.o_main_navbar {
+    background-color: #0a2f57 !important;
+}
+
+.o_main_navbar .o_menu_sections .o_nav_entry,
+.o_main_navbar .o_menu_brand,
+.o_main_navbar .dropdown-toggle,
+.o_main_navbar .o_mail_navbar_item,
+.o_main_navbar .o_navbar_apps_menu .dropdown-toggle {
+    color: #eaf2fb !important;
+}
+
+.o_main_navbar .o_menu_sections .o_nav_entry:hover,
+.o_main_navbar .o_menu_sections .o_nav_entry:focus,
+.o_main_navbar .o_menu_sections .o_nav_entry.active {
+    color: #ffffff !important;
+}
+
+/* Buttons */
 .o_web_client .btn-primary,
 .o_web_client .btn-primary:hover,
 .o_web_client .btn-primary:focus,
 .o_web_client .btn-primary:active {
-    background-color: #0b3a66;
-    border-color: #0b3a66;
-}
-
-.o_web_client a,
-.o_web_client .text-primary {
-    color: #145a96 !important;
+    background-color: #0a2f57;
+    border-color: #0a2f57;
 }
