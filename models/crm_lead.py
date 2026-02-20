@@ -161,7 +161,12 @@ class CrmLead(models.Model):
         string="Agente aduanal",
         domain="[('x_contact_role','=','agente_aduanal')]",
     )
-    x_patente_agente = fields.Char(string="Patente", readonly=True)
+    x_patente_agente = fields.Char(
+        string="Patente",
+        related="x_agente_aduanal_id.x_patente_aduanal",
+        store=True,
+        readonly=True,
+    )
     x_curp_agente = fields.Char(string="CURP agente / apoderado")
 
     x_tipo_despacho = fields.Selection(
@@ -317,15 +322,10 @@ class CrmLead(models.Model):
         for rec in self:
             agent = rec.x_agente_aduanal_id
             if not agent:
-                rec.x_patente_agente = False
                 continue
-            rec.x_patente_agente = agent.x_patente_aduanal or False
             rec.x_curp_agente = agent.x_curp or rec.x_curp_agente
 
     def write(self, vals):
-        if "x_agente_aduanal_id" in vals and "x_patente_agente" not in vals:
-            agent = self.env["res.partner"].browse(vals.get("x_agente_aduanal_id"))
-            vals["x_patente_agente"] = agent.x_patente_aduanal or False
         return super().write(vals)
     
     @api.onchange("x_modo_transporte")
@@ -795,12 +795,6 @@ class CrmLead(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # Conserva patente al crear desde formulario (campo readonly no viaja en vals)
-        for vals in vals_list:
-            if "x_agente_aduanal_id" in vals and "x_patente_agente" not in vals:
-                agent = self.env["res.partner"].browse(vals.get("x_agente_aduanal_id"))
-                vals["x_patente_agente"] = agent.x_patente_aduanal or False
-
         create_flags = [bool(vals.pop("x_create_pedimento", False)) for vals in vals_list]
         leads = super().create(vals_list)
         for i, lead in enumerate(leads):
