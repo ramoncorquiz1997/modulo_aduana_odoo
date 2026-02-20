@@ -127,8 +127,8 @@
           <page string="Transporte" name="mi_modulo_transporte">
             <group>
               <group string="Guías">
-                <field name="x_bl_awb"/>
-                <field name="x_house_bl_awb"/>
+                <field name="x_tipo_guia"/>
+                <field name="x_guia_manifiesto"/>
                 <field name="x_booking" modifiers='{"invisible":[["x_modo_transporte","!=","maritimo"]]}'/>
               </group>
               <group string="Equipo">

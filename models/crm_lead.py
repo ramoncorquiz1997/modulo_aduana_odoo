@@ -435,8 +435,14 @@ class CrmLead(models.Model):
     x_numero_paquetes = fields.Integer(string="Número de paquetes")
 
     # --- Transporte / guías ---
-    x_bl_awb = fields.Char(string="BL / AWB (Master)")
-    x_house_bl_awb = fields.Char(string="House BL / AWB")
+    x_tipo_guia = fields.Selection(
+        selection=[
+            ("M", "M - Master"),
+            ("H", "H - House"),
+        ],
+        string="Identificador de guía",
+    )
+    x_guia_manifiesto = fields.Char(string="Guía o manifiesto", size=20)
     x_booking = fields.Char(string="Booking")
     x_num_contenedor = fields.Char(string="Número de contenedor")
     x_num_sello = fields.Char(string="Número de sello")
