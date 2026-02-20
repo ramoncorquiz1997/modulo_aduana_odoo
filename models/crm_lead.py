@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import base64
 import io
+import logging
 import re
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
@@ -9,6 +10,8 @@ try:
     from PyPDF2 import PdfReader
 except Exception:  # pragma: no cover
     PdfReader = None
+
+_logger = logging.getLogger(__name__)
 
 
 class CrmLead(models.Model):
@@ -336,7 +339,11 @@ class CrmLead(models.Model):
             rec.x_curp_agente = agent.x_curp or rec.x_curp_agente
 
     def write(self, vals):
-        return super().write(vals)
+        res = super().write(vals)
+        if "x_bl_file" in vals and not self.env.context.get("skip_bl_autoparse"):
+            for rec in self:
+                rec._autofill_from_bl(onchange_mode=False)
+        return res
     
     @api.onchange("x_modo_transporte")
     def _onchange_x_modo_transporte_set_default_codes(self):
@@ -437,15 +444,26 @@ class CrmLead(models.Model):
                     return (m.group(1) or "").strip()
             return False
 
+        # Container number can come glued with "/40'" or other chars.
+        container = False
+        for tok in re.findall(r"[A-Z0-9'/-]+", clean.upper()):
+            candidate = re.sub(r"[^A-Z0-9]", "", tok)
+            if re.match(r"^[A-Z]{4}\d{7}$", candidate):
+                container = candidate
+                break
+
         return {
             "bl_no": _pick([
                 r"\bB/?L\s*(?:NO\.?|NUMBER)?\s*[:#]?\s*([A-Z0-9\-]+)",
                 r"\bMBL\s*[:#]?\s*([A-Z0-9\-]+)",
                 r"\bMASTER\s*B/?L\s*[:#]?\s*([A-Z0-9\-]+)",
             ]),
-            "container": _pick([r"\b([A-Z]{4}\d{7})\b"]),
+            "booking": _pick([
+                r"\bBOOKING(?:\s*NO\.?)?\s*[:#]?\s*([A-Z0-9\-]+)",
+            ]),
+            "container": container,
             "seal": _pick([r"\b(?:SEAL\s*NO\.?\s*[:#]?\s*|/)([A-Z0-9]{6,})\b"]),
-            "kgs": _pick([r"(\d+(?:\.\d+)?)\s*KGS\b"]),
+            "kgs": _pick([r"(\d{1,6}(?:\.\d{1,3})?)\s*KGS\b"]),
             "cbm": _pick([r"(\d+(?:\.\d+)?)\s*CBM\b"]),
             "bultos": _pick([
                 r"/\s*(\d+)\s+[A-Z ]{2,20}/",
@@ -461,15 +479,63 @@ class CrmLead(models.Model):
         if not self.x_bl_file:
             raise UserError(_("Sube primero el archivo B/L en PDF en el lead."))
 
-        pdf_bytes = base64.b64decode(self.x_bl_file)
-        parsed = self._parse_bl_text(self._extract_bl_pdf_text(pdf_bytes))
-        if not any(parsed.values()):
-            raise UserError(_("No se detectaron datos utiles en el B/L. Revisa calidad del PDF."))
+        self._autofill_from_bl(onchange_mode=False, raise_if_empty=True)
 
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("B/L procesado"),
+                "message": _("Campos logísticos del lead actualizados. Al crear pedimento se arrastran desde aquí."),
+                "type": "success",
+                "sticky": False,
+            },
+        }
+
+    @api.onchange("x_bl_file")
+    def _onchange_x_bl_file_autoread(self):
+        for rec in self:
+            rec._autofill_from_bl(onchange_mode=True)
+
+    def _autofill_from_bl(self, onchange_mode=False, raise_if_empty=False):
+        self.ensure_one()
+        if not self.x_bl_file:
+            return
+        try:
+            pdf_bytes = base64.b64decode(self.x_bl_file)
+            parsed = self._parse_bl_text(self._extract_bl_pdf_text(pdf_bytes))
+        except Exception:
+            _logger.exception("B/L parse error on lead %s (%s)", self.id, self.name)
+            if raise_if_empty:
+                raise
+            return
+
+        vals = self._bl_vals_from_parsed(parsed)
+        if not vals:
+            _logger.warning("B/L parsed without mapped values on lead %s (%s).", self.id, self.name)
+            if raise_if_empty:
+                raise UserError(_("No se detectaron datos utiles en el B/L. Revisa calidad del PDF."))
+            return
+
+        missing = [k for k, v in parsed.items() if not v and k in ("bl_no", "booking", "container", "seal", "bultos", "kgs", "cbm")]
+        if missing:
+            _logger.warning("B/L parse parcial lead %s: faltantes=%s", self.id, ",".join(missing))
+        _logger.info("B/L parse lead %s: extraidos=%s", self.id, ",".join(sorted(vals.keys())))
+
+        vals["x_bl_last_read"] = fields.Datetime.now()
+        if onchange_mode:
+            for key, value in vals.items():
+                self[key] = value
+        else:
+            self.with_context(skip_bl_autoparse=True).write(vals)
+
+    def _bl_vals_from_parsed(self, parsed):
         vals = {}
         if parsed.get("bl_no"):
             vals["x_guia_manifiesto"] = parsed["bl_no"]
             vals["x_tipo_guia"] = "M"
+        if parsed.get("booking"):
+            vals["x_booking"] = parsed["booking"]
         if parsed.get("container"):
             vals["x_num_contenedor"] = parsed["container"]
         if parsed.get("seal"):
@@ -496,20 +562,7 @@ class CrmLead(models.Model):
         if parsed.get("vessel"):
             note = f"B/L vessel/voy: {parsed['vessel']}"
             vals["description"] = f"{(self.description or '').strip()}\n{note}".strip()
-
-        vals["x_bl_last_read"] = fields.Datetime.now()
-        self.write(vals)
-
-        return {
-            "type": "ir.actions.client",
-            "tag": "display_notification",
-            "params": {
-                "title": _("B/L procesado"),
-                "message": _("Campos logísticos del lead actualizados. Al crear pedimento se arrastran desde aquí."),
-                "type": "success",
-                "sticky": False,
-            },
-        }
+        return vals
 
     @api.depends("x_docs_faltantes_text")
     def _compute_x_docs_completos(self):
@@ -898,8 +951,12 @@ class CrmLead(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        has_bl_file = [bool(vals.get("x_bl_file")) for vals in vals_list]
         create_flags = [bool(vals.pop("x_create_pedimento", False)) for vals in vals_list]
         leads = super().create(vals_list)
+        for i, lead in enumerate(leads):
+            if has_bl_file[i]:
+                lead._autofill_from_bl(onchange_mode=False)
         for i, lead in enumerate(leads):
             # Solo crea automaticamente si el flujo lo pide por contexto/flag.
             create_flag = self.env.context.get("create_pedimento") or create_flags[i]

@@ -22,11 +22,6 @@
         <!-- BOTÓN EN HEADER -->
         <xpath expr="//header" position="inside">
           <button name="action_crear_pedimento" type="object" string="Crear pedimento" class="btn-secondary"/>
-          <button name="action_read_bl"
-                  type="object"
-                  string="Leer B/L"
-                  class="btn-primary"
-                  icon="fa-file-pdf-o"/>
         </xpath>
 
         <xpath expr="//notebook" position="inside">
@@ -130,7 +125,6 @@
                 <field name="x_bl_file" filename="x_bl_filename"/>
                 <field name="x_bl_filename"/>
                 <field name="x_bl_last_read" readonly="1"/>
-                <button name="action_read_bl" type="object" string="Leer B/L y llenar" class="btn-secondary"/>
               </group>
               <group string="Guías">
                 <field name="x_tipo_guia"/>
