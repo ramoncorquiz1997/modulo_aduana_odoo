@@ -27,4 +27,9 @@
     "license": "LGPL-3",
     "application": False,
     "installable": True,
+    "assets": {
+        "web.assets_backend": [
+            "modulo_aduana_odoo/static/src/scss/aduana_theme.scss",
+        ],
+    },
 }

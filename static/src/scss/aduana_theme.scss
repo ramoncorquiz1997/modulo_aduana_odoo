@@ -1,0 +1,20 @@
+/* Aduana maritime palette: replace purple accents with navy blue */
+
+:root {
+    --o-brand-odoo: #0b3a66;
+    --o-enterprise-primary-color: #0b3a66;
+    --o-enterprise-action-color: #145a96;
+}
+
+.o_web_client .btn-primary,
+.o_web_client .btn-primary:hover,
+.o_web_client .btn-primary:focus,
+.o_web_client .btn-primary:active {
+    background-color: #0b3a66;
+    border-color: #0b3a66;
+}
+
+.o_web_client a,
+.o_web_client .text-primary {
+    color: #145a96 !important;
+}
