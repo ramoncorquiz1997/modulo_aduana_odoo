@@ -12,6 +12,7 @@ access_mx_ped_aduana_seccion,mx.ped.aduana.seccion,model_mx_ped_aduana_seccion,,
 access_mx_ped_um,mx.ped.um,model_mx_ped_um,,1,1,1,1
 access_mx_ped_fraccion,mx.ped.fraccion,model_mx_ped_fraccion,,1,1,1,1
 access_mx_ped_fraccion_tasa,mx.ped.fraccion.tasa,model_mx_ped_fraccion_tasa,,1,1,1,1
+access_mx_ped_tipo_contenedor,mx.ped.tipo.contenedor,model_mx_ped_tipo_contenedor,,1,1,1,1
 access_aduana_pedimento,aduana.pedimento,model_aduana_pedimento,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_aduana_partida,aduana.partida,model_aduana_partida,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_aduana_partida_identificador,aduana.partida.identificador,model_aduana_partida_identificador,modulo_aduana_odoo.group_aduana_user,1,1,1,1

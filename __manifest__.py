@@ -17,6 +17,7 @@
         "views/mx_ped_clave_views.xml",
         "views/mx_ped_aduana_seccion_views.xml",
         "views/mx_ped_fraccion_views.xml",
+        "views/mx_ped_tipo_contenedor_views.xml",
         "views/mx_ped_layout_views.xml",
         "views/crm_lead_views.xml",
         "views/account_move_views.xml",
