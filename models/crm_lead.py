@@ -239,6 +239,22 @@ class CrmLead(models.Model):
     x_transportista_id = fields.Many2one(
         comodel_name="res.partner",
         string="Transportista",
+        domain="[('x_contact_role','=','transportista')]",
+    )
+    x_transportista_rfc = fields.Char(
+        string="RFC transportista",
+        related="x_transportista_id.vat",
+        readonly=True,
+    )
+    x_transportista_curp = fields.Char(
+        string="CURP transportista",
+        related="x_transportista_id.x_curp",
+        readonly=True,
+    )
+    x_transportista_domicilio = fields.Char(
+        string="Domicilio fiscal transportista",
+        related="x_transportista_id.contact_address",
+        readonly=True,
     )
     x_transporte_pais_id = fields.Many2one(
         comodel_name="res.country",
@@ -323,6 +339,12 @@ class CrmLead(models.Model):
             self.x_medio_transporte_arribo = code
         if not self.x_medio_transporte_entrada_salida:
             self.x_medio_transporte_entrada_salida = code
+
+    @api.onchange("x_transportista_id")
+    def _onchange_x_transportista_id(self):
+        for rec in self:
+            if rec.x_transportista_id and not rec.x_transporte_pais_id:
+                rec.x_transporte_pais_id = rec.x_transportista_id.country_id
 
     @api.onchange("x_fraccion_arancelaria_id")
     def _onchange_x_fraccion_arancelaria_id(self):
@@ -585,6 +607,7 @@ class CrmLead(models.Model):
     x_transportista_salida = fields.Many2one(
         comodel_name="res.partner",
         string="Transportista (salida)",
+        domain="[('x_contact_role','=','transportista')]",
     )
 
     x_fecha_cruce = fields.Date(string="Fecha de cruce")

@@ -35,6 +35,7 @@ class ResPartner(models.Model):
         [
             ("cliente", "Cliente"),
             ("agente_aduanal", "Agente Aduanal"),
+            ("transportista", "Transportista"),
             ("proveedor", "Proveedor"),
             ("otro", "Otro"),
         ],

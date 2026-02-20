@@ -136,7 +136,10 @@
                 <field name="x_num_sello"/>
               </group>
               <group string="Transportista">
-                <field name="x_transportista_id"/>
+                <field name="x_transportista_id" domain="[('x_contact_role','=','transportista')]"/>
+                <field name="x_transportista_rfc" readonly="1"/>
+                <field name="x_transportista_curp" readonly="1"/>
+                <field name="x_transportista_domicilio" readonly="1"/>
                 <field name="x_transporte_pais_id"/>
                 <field name="x_transporte_identificador"/>
               </group>
@@ -263,7 +266,7 @@
             <group>
               <group string="Salida">
                 <field name="x_punto_salida"/>
-                <field name="x_transportista_salida"/>
+                <field name="x_transportista_salida" domain="[('x_contact_role','=','transportista')]"/>
                 <field name="x_fecha_cruce"/>
                 <field name="x_fecha_zarpe"/>
                 <field name="x_fecha_vuelo"/>
