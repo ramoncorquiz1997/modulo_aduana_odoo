@@ -161,7 +161,12 @@ class CrmLead(models.Model):
         string="Agente aduanal",
         domain="[('x_contact_role','=','agente_aduanal')]",
     )
-    x_patente_agente = fields.Char(string="Patente")
+    x_patente_agente = fields.Char(
+        string="Patente",
+        related="x_agente_aduanal_id.x_patente_aduanal",
+        store=True,
+        readonly=True,
+    )
     x_curp_agente = fields.Char(string="CURP agente / apoderado")
 
     x_tipo_despacho = fields.Selection(
@@ -318,7 +323,6 @@ class CrmLead(models.Model):
             agent = rec.x_agente_aduanal_id
             if not agent:
                 continue
-            rec.x_patente_agente = agent.x_patente_aduanal or rec.x_patente_agente
             rec.x_curp_agente = agent.x_curp or rec.x_curp_agente
     
     @api.onchange("x_modo_transporte")
