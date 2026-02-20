@@ -17,12 +17,28 @@
 .o_main_navbar .o_mail_navbar_item,
 .o_main_navbar .o_navbar_apps_menu .dropdown-toggle {
     color: #eaf2fb !important;
+    background-color: transparent !important;
 }
 
 .o_main_navbar .o_menu_sections .o_nav_entry:hover,
 .o_main_navbar .o_menu_sections .o_nav_entry:focus,
 .o_main_navbar .o_menu_sections .o_nav_entry.active {
     color: #ffffff !important;
+    background-color: #114173 !important;
+}
+
+/* Some themes mark active tabs with li classes instead of link classes */
+.o_main_navbar .o_menu_sections li.active > a,
+.o_main_navbar .o_menu_sections li.show > a,
+.o_main_navbar .o_menu_sections li > a.active {
+    background-color: #114173 !important;
+    color: #ffffff !important;
+}
+
+/* Remove remaining purple border accents on top menu */
+.o_main_navbar .o_menu_sections .o_nav_entry,
+.o_main_navbar .o_menu_brand {
+    border-color: #1f5c95 !important;
 }
 
 /* Buttons */
