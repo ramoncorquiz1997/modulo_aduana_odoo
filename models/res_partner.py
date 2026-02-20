@@ -64,6 +64,13 @@ class ResPartner(models.Model):
     def _wa_send_message(self, to, payload):
         token = self._wa_param("modulo_aduana_odoo.whatsapp_token")
         phone_number_id = self._wa_param("modulo_aduana_odoo.whatsapp_phone_number_id")
+        _logger.info(
+            "WA send init partner=%s to=%s has_token=%s phone_number_id=%s",
+            self.id,
+            to,
+            bool(token),
+            phone_number_id or "",
+        )
         if not token or not phone_number_id:
             raise UserError("Falta configurar WhatsApp en Parametros del sistema (token y phone_number_id).")
         url = f"https://graph.facebook.com/v22.0/{phone_number_id}/messages"
@@ -73,14 +80,26 @@ class ResPartner(models.Model):
         }
         body = {"messaging_product": "whatsapp", "to": to}
         body.update(payload)
+        _logger.info("WA request url=%s payload_type=%s", url, payload.get("type"))
         resp = requests.post(url, headers=headers, data=json.dumps(body), timeout=20)
+        _logger.info("WA response status=%s body=%s", resp.status_code, resp.text[:1000])
         if resp.status_code >= 300:
             raise UserError(f"No se pudo enviar WhatsApp ({resp.status_code}): {resp.text}")
         return resp
 
     def action_request_missing_documents(self):
+        sent_to = []
         for rec in self:
             to = rec._wa_normalize_phone(rec.mobile or rec.phone)
+            _logger.info(
+                "WA request docs partner=%s name=%s mobile=%s phone=%s normalized=%s has_csf=%s",
+                rec.id,
+                rec.name,
+                rec.mobile or "",
+                rec.phone or "",
+                to,
+                bool(rec.x_csf_file),
+            )
             if not to:
                 raise UserError("El contacto no tiene telefono/mobile valido para WhatsApp.")
 
@@ -115,7 +134,17 @@ class ResPartner(models.Model):
                 },
             }
             rec._wa_send_message(to, payload)
-        return True
+            sent_to.append(to)
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "WhatsApp",
+                "message": f"Solicitud enviada a: {', '.join(sent_to)}",
+                "type": "success",
+                "sticky": False,
+            },
+        }
 
     def _extract_csf_values(self, encoded_pdf):
         if not encoded_pdf or not decode:
