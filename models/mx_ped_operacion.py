@@ -537,75 +537,147 @@ class MxPedOperacion(models.Model):
                 % (", ".join(sorted(allowed, key=lambda x: int(x))), ", ".join(invalid))
             )
 
+    def _build_record_plan(self):
+        """Construye el plan de registros aplicable y una traza de decisiones."""
+        self.ensure_one()
+        rule = self.estructura_regla_id or self._resolve_estructura_regla()
+        clave_policy = self._get_clave_policy_map()
+
+        states = {}
+        trace = []
+
+        if rule:
+            for line in rule.line_ids:
+                code = (line.registro_codigo or "").strip()
+                if not code:
+                    continue
+                min_occ = max(line.min_occurs or 0, 0)
+                max_occ = max(line.max_occurs or 0, 0)
+                req_min = max(min_occ, 1) if line.required else min_occ
+                state = states.setdefault(code, {
+                    "min": 0,
+                    "max": 0,
+                    "required": False,
+                    "forbidden": False,
+                    "identifier": "",
+                    "contributors": [],
+                })
+                state["required"] = state["required"] or bool(req_min)
+                state["min"] = max(state["min"], req_min)
+                if max_occ:
+                    state["max"] = max_occ if not state["max"] else min(state["max"], max_occ)
+                state["contributors"].append(f"estructura:{rule.id}")
+                trace.append({
+                    "source": "estructura",
+                    "rule_id": rule.id,
+                    "record_code": code,
+                    "required": line.required,
+                    "min": req_min,
+                    "max": max_occ,
+                })
+
+        for code, policy in clave_policy.items():
+            state = states.setdefault(code, {
+                "min": 0,
+                "max": 0,
+                "required": False,
+                "forbidden": False,
+                "identifier": "",
+                "contributors": [],
+            })
+            policy_type = policy.get("policy")
+            min_occ = max(policy.get("min") or 0, 0)
+            max_occ = max(policy.get("max") or 0, 0)
+            identifier = (policy.get("identifier") or "").strip().upper()
+
+            if policy_type == "forbidden":
+                state["forbidden"] = True
+                state["required"] = False
+                state["min"] = 0
+                state["max"] = 0
+            elif policy_type == "required" and not state["forbidden"]:
+                req_min = max(min_occ, 1)
+                state["required"] = True
+                state["min"] = max(state["min"], req_min)
+            elif policy_type == "optional" and not state["forbidden"]:
+                state["min"] = max(state["min"], min_occ)
+
+            if max_occ and not state["forbidden"]:
+                state["max"] = max_occ if not state["max"] else min(state["max"], max_occ)
+            if identifier:
+                state["identifier"] = identifier
+
+            state["contributors"].append(f"clave:{self.clave_pedimento_id.id}")
+            trace.append({
+                "source": "clave",
+                "clave_id": self.clave_pedimento_id.id,
+                "record_code": code,
+                "policy": policy_type,
+                "min": min_occ,
+                "max": max_occ,
+                "identifier": identifier,
+            })
+
+        # Precedencia explicita: forbidden siempre gana sobre required.
+        for state in states.values():
+            if state["forbidden"]:
+                state["required"] = False
+                state["min"] = 0
+                state["max"] = 0
+
+        return {
+            "rule": rule,
+            "states": states,
+            "trace": trace,
+        }
+
     def _get_allowed_codes_from_regla(self):
         self.ensure_one()
-        clave_policy = self._get_clave_policy_map()
-        if clave_policy:
-            allowed = {code for code, rule in clave_policy.items() if rule.get("policy") != "forbidden"}
-            forbidden = {code for code, rule in clave_policy.items() if rule.get("policy") == "forbidden"}
-            return allowed - forbidden
+        plan = self._build_record_plan()
+        states = plan["states"]
 
-        rule = self.estructura_regla_id or self._resolve_estructura_regla()
-        if not rule:
+        # Sin regla base no restringimos layout para evitar omisiones no deseadas.
+        if not plan["rule"]:
             return None
-        codes = [line.registro_codigo for line in rule.line_ids if line.registro_codigo]
-        return set(codes) if codes else None
+
+        allowed = {code for code, state in states.items() if not state.get("forbidden")}
+        return allowed if allowed else None
 
     def _validate_registros_vs_estructura(self):
         self.ensure_one()
         counts = Counter((r.codigo or "") for r in self.registro_ids)
         errors = []
 
-        rule = self.estructura_regla_id or self._resolve_estructura_regla()
-        if rule:
-            for line in rule.line_ids:
-                code = line.registro_codigo or ""
-                present = counts.get(code, 0)
-                min_occ = max(line.min_occurs or 0, 0)
-                max_occ = max(line.max_occurs or 0, 0)
-                req_min = max(min_occ, 1) if line.required else min_occ
-                if present < req_min:
-                    errors.append(_("Falta registro %s (min %s, actual %s).") % (code, req_min, present))
-                if max_occ and present > max_occ:
-                    errors.append(_("Registro %s excede maximo (%s > %s).") % (code, present, max_occ))
+        plan = self._build_record_plan()
+        states = plan["states"]
 
-        clave_policy = self._get_clave_policy_map()
-        for code, policy in clave_policy.items():
+        for code, state in states.items():
             present = counts.get(code, 0)
-            policy_type = policy.get("policy")
-            min_occ = max(policy.get("min") or 0, 0)
-            max_occ = max(policy.get("max") or 0, 0)
-            if policy_type == "required":
-                req_min = max(min_occ, 1)
-                if present < req_min:
-                    errors.append(_("Clave %s exige registro %s (min %s, actual %s).") % (
-                        self.clave_pedimento_id.code,
-                        code,
-                        req_min,
-                        present,
-                    ))
-            elif policy_type == "forbidden" and present > 0:
-                errors.append(_("Clave %s prohibe registro %s y se encontraron %s.") % (
-                    self.clave_pedimento_id.code,
-                    code,
-                    present,
-                ))
+            min_occ = max(state.get("min") or 0, 0)
+            max_occ = max(state.get("max") or 0, 0)
+
+            if state.get("forbidden"):
+                if present > 0:
+                    errors.append(_("Registro %s esta prohibido para este contexto y se encontraron %s.") % (code, present))
+                continue
+
+            if state.get("required") and present < max(min_occ, 1):
+                errors.append(_("Falta registro %s (min %s, actual %s).") % (code, max(min_occ, 1), present))
+            elif min_occ and present < min_occ:
+                errors.append(_("Falta registro %s (min %s, actual %s).") % (code, min_occ, present))
 
             if max_occ and present > max_occ:
-                errors.append(_("Registro %s excede maximo para clave (%s > %s).") % (code, present, max_occ))
+                errors.append(_("Registro %s excede maximo (%s > %s).") % (code, present, max_occ))
 
-            required_identifier = policy.get("identifier")
-            if required_identifier and code == "507" and present:
+            identifier = (state.get("identifier") or "").strip().upper()
+            if identifier and present:
                 has_identifier = any(
-                    self._payload_has_token(reg.valores, required_identifier)
+                    self._payload_has_token(reg.valores, identifier)
                     for reg in self.registro_ids
-                    if (reg.codigo or "") == "507"
+                    if (reg.codigo or "") == code
                 )
                 if not has_identifier:
-                    errors.append(
-                        _("Clave %s exige identificador %s en registro 507.")
-                        % (self.clave_pedimento_id.code, required_identifier)
-                    )
+                    errors.append(_("Registro %s exige identificador %s.") % (code, identifier))
 
         if errors:
             raise UserError("\n".join(errors))
