@@ -64,11 +64,11 @@ class MxPedEstructuraReglaLine(models.Model):
     )
     sequence = fields.Integer(default=10)
     registro_tipo_id = fields.Many2one(
-        "aduana.layout_registro_tipo",
-        string="Registro (catalogo)",
+        "mx.ped.layout.registro",
+        string="Registro (catalogo layout)",
         required=True,
         ondelete="restrict",
-        help="Selecciona el tipo de registro del catalogo tecnico.",
+        help="Selecciona el registro desde tu catalogo de Registros (Layout).",
     )
     registro_codigo = fields.Char(string="Codigo registro", readonly=True, size=3)
     required = fields.Boolean(string="Obligatorio", default=True)
@@ -90,13 +90,13 @@ class MxPedEstructuraReglaLine(models.Model):
         for vals in vals_list:
             registro_tipo_id = vals.get("registro_tipo_id")
             if registro_tipo_id and not vals.get("registro_codigo"):
-                tipo = self.env["aduana.layout_registro_tipo"].browse(registro_tipo_id)
+                tipo = self.env["mx.ped.layout.registro"].browse(registro_tipo_id)
                 vals["registro_codigo"] = tipo.codigo or False
         return super().create(vals_list)
 
     def write(self, vals):
         if vals.get("registro_tipo_id"):
-            tipo = self.env["aduana.layout_registro_tipo"].browse(vals["registro_tipo_id"])
+            tipo = self.env["mx.ped.layout.registro"].browse(vals["registro_tipo_id"])
             vals["registro_codigo"] = tipo.codigo or False
         return super().write(vals)
 
