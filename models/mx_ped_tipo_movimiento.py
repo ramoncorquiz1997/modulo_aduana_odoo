@@ -22,6 +22,23 @@ class MxPedTipoMovimiento(models.Model):
         ("mx_ped_tipo_movimiento_code_uniq", "unique(code)", "La clave del tipo de movimiento debe ser unica."),
     ]
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("code") is not None:
+                vals["code"] = str(vals["code"]).strip()
+                if vals["code"].isdigit():
+                    vals["code"] = str(int(vals["code"]))
+        return super().create(vals_list)
+
+    def write(self, vals):
+        vals = dict(vals)
+        if vals.get("code") is not None:
+            vals["code"] = str(vals["code"]).strip()
+            if vals["code"].isdigit():
+                vals["code"] = str(int(vals["code"]))
+        return super().write(vals)
+
     @api.depends("code", "name")
     def _compute_display_name(self):
         for rec in self:
@@ -35,4 +52,3 @@ class MxPedTipoMovimiento(models.Model):
                 raise ValidationError(_("La clave debe ser numerica (1, 2, 3, ...)."))
             if int(code) < 1 or int(code) > 9:
                 raise ValidationError(_("La clave debe estar entre 1 y 9."))
-            rec.code = str(int(code))
