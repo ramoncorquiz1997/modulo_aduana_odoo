@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- LIST (ANTES TREE) -->
     <record id="view_mx_ped_clave_list" model="ir.ui.view">
         <field name="name">mx.ped.clave.list</field>
         <field name="model">mx.ped.clave</field>
@@ -11,13 +10,13 @@
                 <field name="name"/>
                 <field name="tipo_operacion"/>
                 <field name="regimen"/>
-                <field name="requiere_immex"/>
+                <field name="tipo_movimiento_id"/>
+                <field name="saai_structure_type"/>
                 <field name="active"/>
             </list>
         </field>
     </record>
 
-    <!-- FORM -->
     <record id="view_mx_ped_clave_form" model="ir.ui.view">
         <field name="name">mx.ped.clave.form</field>
         <field name="model">mx.ped.clave</field>
@@ -27,13 +26,27 @@
                     <group>
                         <group>
                             <field name="code" placeholder="Ej. A1, A4, V1"/>
-                            <field name="name" placeholder="Ej. Importación definitiva"/>
+                            <field name="name" placeholder="Ej. Importacion definitiva"/>
                             <field name="active"/>
                         </group>
                         <group>
                             <field name="tipo_operacion"/>
                             <field name="regimen"/>
                             <field name="requiere_immex"/>
+                            <field name="requires_series"/>
+                            <field name="is_virtual"/>
+                        </group>
+                    </group>
+
+                    <group string="Disparadores SAAI">
+                        <group>
+                            <field name="tipo_movimiento_id"/>
+                            <field name="saai_structure_type"/>
+                        </group>
+                        <group>
+                            <field name="requires_reg_552"/>
+                            <field name="omits_reg_502"/>
+                            <field name="requires_identificador_re"/>
                         </group>
                     </group>
 
@@ -46,12 +59,27 @@
                             <field name="note" placeholder="Notas / reglas internas"/>
                         </group>
                     </group>
+
+                    <notebook>
+                        <page string="Politica de registros">
+                            <field name="registro_policy_ids">
+                                <list editable="bottom">
+                                    <field name="sequence"/>
+                                    <field name="registro_codigo"/>
+                                    <field name="policy"/>
+                                    <field name="min_occurs"/>
+                                    <field name="max_occurs"/>
+                                    <field name="required_identifier_code"/>
+                                    <field name="notes"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <!-- ACTION -->
     <record id="action_mx_ped_clave" model="ir.actions.act_window">
         <field name="name">Claves de pedimento</field>
         <field name="res_model">mx.ped.clave</field>
@@ -63,12 +91,10 @@
         </field>
     </record>
 
-    <!-- MENUS -->
-        <menuitem id="menu_mx_ped_catalogos" name="Catálogos" parent="mx_ped_operacion_menu_root" sequence="20"/>
+    <menuitem id="menu_mx_ped_catalogos" name="Catalogos" parent="mx_ped_operacion_menu_root" sequence="20"/>
     <menuitem id="menu_mx_ped_clave" name="Claves de pedimento"
               parent="menu_mx_ped_catalogos"
               action="action_mx_ped_clave"
               sequence="10"/>
 
 </odoo>
-

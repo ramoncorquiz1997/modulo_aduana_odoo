@@ -341,6 +341,8 @@ class MxPedOperacion(models.Model):
     @api.onchange("clave_pedimento_id", "tipo_operacion", "regimen")
     def _onchange_estructura_regla_context(self):
         for rec in self:
+            if rec.clave_pedimento_id and rec.clave_pedimento_id.tipo_movimiento_id:
+                rec.tipo_movimiento = rec.clave_pedimento_id.tipo_movimiento_id.code
             rec.estructura_regla_id = rec._resolve_estructura_regla()
 
     @api.onchange("es_rectificacion", "formas_pago_claves")
@@ -353,10 +355,11 @@ class MxPedOperacion(models.Model):
         for rec in self:
             rec.estructura_escenario = rec._detect_escenario_estructura()
 
-    @api.constrains("tipo_movimiento", "acuse_validacion")
+    @api.constrains("tipo_movimiento", "acuse_validacion", "clave_pedimento_id")
     def _check_acuse_validacion(self):
         for rec in self:
-            if rec.tipo_movimiento in ("2", "3", "8"):
+            mov = rec._get_tipo_movimiento_effective()
+            if mov in ("2", "3", "8"):
                 acuse = (rec.acuse_validacion or "").strip()
                 if not acuse:
                     raise ValidationError(
@@ -380,17 +383,70 @@ class MxPedOperacion(models.Model):
             "target": "current",
         }
 
+    def _get_tipo_movimiento_effective(self):
+        self.ensure_one()
+        if self.clave_pedimento_id and self.clave_pedimento_id.tipo_movimiento_id:
+            return self.clave_pedimento_id.tipo_movimiento_id.code
+        return self.tipo_movimiento
+
+    def _get_clave_policy_map(self):
+        self.ensure_one()
+        policy_map = {}
+        clave = self.clave_pedimento_id
+        if not clave:
+            return policy_map
+
+        for line in clave.registro_policy_ids:
+            code = (line.registro_codigo or "").strip()
+            if not code:
+                continue
+            policy_map[code] = {
+                "policy": line.policy,
+                "min": max(line.min_occurs or 0, 0),
+                "max": max(line.max_occurs or 0, 0),
+                "identifier": (line.required_identifier_code or "").strip().upper(),
+            }
+
+        # Compatibilidad con banderas antiguas para transicion.
+        if clave.requires_reg_552:
+            rule = policy_map.get("552", {"policy": "required", "min": 1, "max": 0, "identifier": ""})
+            rule["policy"] = "required"
+            rule["min"] = max(rule.get("min", 0), 1)
+            policy_map["552"] = rule
+        if clave.omits_reg_502:
+            policy_map["502"] = {"policy": "forbidden", "min": 0, "max": 0, "identifier": ""}
+        if clave.requires_identificador_re:
+            rule = policy_map.get("507", {"policy": "required", "min": 1, "max": 0, "identifier": ""})
+            if not rule.get("identifier"):
+                rule["identifier"] = "RE"
+            policy_map["507"] = rule
+
+        return policy_map
+
+    def _payload_has_token(self, payload, token):
+        token = (token or "").strip().upper()
+        if not token:
+            return True
+        payload = payload or {}
+        for value in payload.values():
+            if isinstance(value, str):
+                tokens = {part.upper() for part in re.findall(r"[A-Za-z0-9]+", value)}
+                if token in tokens:
+                    return True
+        return False
+
     def _resolve_estructura_regla(self):
         self.ensure_one()
-        if not self.tipo_movimiento:
+        mov = self._get_tipo_movimiento_effective()
+        if not mov:
             return self.env["mx.ped.estructura.regla"]
         detected_escenario = self._detect_escenario_estructura()
         rules = self.env["mx.ped.estructura.regla"].search(
             [
                 ("active", "=", True),
                 "|",
-                ("tipo_movimiento_id.code", "=", self.tipo_movimiento),
-                ("tipo_movimiento", "=", self.tipo_movimiento),
+                ("tipo_movimiento_id.code", "=", mov),
+                ("tipo_movimiento", "=", mov),
             ],
             order="priority desc, id desc",
         )
@@ -421,7 +477,11 @@ class MxPedOperacion(models.Model):
 
     def _detect_escenario_estructura(self):
         self.ensure_one()
-        mov = self.tipo_movimiento
+        clave_structure = (self.clave_pedimento_id.saai_structure_type or "auto") if self.clave_pedimento_id else "auto"
+        if clave_structure and clave_structure != "auto":
+            return clave_structure
+
+        mov = self._get_tipo_movimiento_effective()
         if mov == "1":
             if self._is_rectificacion():
                 return "rectificacion"
@@ -462,7 +522,7 @@ class MxPedOperacion(models.Model):
 
     def _validate_confirmacion_pago_formas(self):
         self.ensure_one()
-        if self.tipo_movimiento != "8":
+        if self._get_tipo_movimiento_effective() != "8":
             return
         allowed = {"5", "6", "8", "9", "13", "14", "16", "18", "21"}
         current = self._parse_formas_pago_claves()
@@ -479,6 +539,12 @@ class MxPedOperacion(models.Model):
 
     def _get_allowed_codes_from_regla(self):
         self.ensure_one()
+        clave_policy = self._get_clave_policy_map()
+        if clave_policy:
+            allowed = {code for code, rule in clave_policy.items() if rule.get("policy") != "forbidden"}
+            forbidden = {code for code, rule in clave_policy.items() if rule.get("policy") == "forbidden"}
+            return allowed - forbidden
+
         rule = self.estructura_regla_id or self._resolve_estructura_regla()
         if not rule:
             return None
@@ -487,21 +553,60 @@ class MxPedOperacion(models.Model):
 
     def _validate_registros_vs_estructura(self):
         self.ensure_one()
-        rule = self.estructura_regla_id or self._resolve_estructura_regla()
-        if not rule:
-            return
         counts = Counter((r.codigo or "") for r in self.registro_ids)
         errors = []
-        for line in rule.line_ids:
-            code = line.registro_codigo or ""
+
+        rule = self.estructura_regla_id or self._resolve_estructura_regla()
+        if rule:
+            for line in rule.line_ids:
+                code = line.registro_codigo or ""
+                present = counts.get(code, 0)
+                min_occ = max(line.min_occurs or 0, 0)
+                max_occ = max(line.max_occurs or 0, 0)
+                req_min = max(min_occ, 1) if line.required else min_occ
+                if present < req_min:
+                    errors.append(_("Falta registro %s (min %s, actual %s).") % (code, req_min, present))
+                if max_occ and present > max_occ:
+                    errors.append(_("Registro %s excede maximo (%s > %s).") % (code, present, max_occ))
+
+        clave_policy = self._get_clave_policy_map()
+        for code, policy in clave_policy.items():
             present = counts.get(code, 0)
-            min_occ = max(line.min_occurs or 0, 0)
-            max_occ = max(line.max_occurs or 0, 0)
-            req_min = max(min_occ, 1) if line.required else min_occ
-            if present < req_min:
-                errors.append(_("Falta registro %s (min %s, actual %s).") % (code, req_min, present))
+            policy_type = policy.get("policy")
+            min_occ = max(policy.get("min") or 0, 0)
+            max_occ = max(policy.get("max") or 0, 0)
+            if policy_type == "required":
+                req_min = max(min_occ, 1)
+                if present < req_min:
+                    errors.append(_("Clave %s exige registro %s (min %s, actual %s).") % (
+                        self.clave_pedimento_id.code,
+                        code,
+                        req_min,
+                        present,
+                    ))
+            elif policy_type == "forbidden" and present > 0:
+                errors.append(_("Clave %s prohibe registro %s y se encontraron %s.") % (
+                    self.clave_pedimento_id.code,
+                    code,
+                    present,
+                ))
+
             if max_occ and present > max_occ:
-                errors.append(_("Registro %s excede maximo (%s > %s).") % (code, present, max_occ))
+                errors.append(_("Registro %s excede maximo para clave (%s > %s).") % (code, present, max_occ))
+
+            required_identifier = policy.get("identifier")
+            if required_identifier and code == "507" and present:
+                has_identifier = any(
+                    self._payload_has_token(reg.valores, required_identifier)
+                    for reg in self.registro_ids
+                    if (reg.codigo or "") == "507"
+                )
+                if not has_identifier:
+                    errors.append(
+                        _("Clave %s exige identificador %s en registro 507.")
+                        % (self.clave_pedimento_id.code, required_identifier)
+                    )
+
         if errors:
             raise UserError("\n".join(errors))
 
@@ -1043,6 +1148,7 @@ class MxPedOperacion(models.Model):
             "patente": "patente",
             "clave_pedimento": "clave_pedimento",
             "tipo_operacion": "tipo_operacion",
+            "tipo_movimiento": "tipo_movimiento",
             "regimen": "regimen",
             "incoterm": "incoterm",
             "fraccion_arancelaria": "x_fraccion_arancelaria_principal",
@@ -1083,8 +1189,10 @@ class MxPedOperacion(models.Model):
             if raw in ("exportacion", "2", "02"):
                 return "2"
             return ""
+        if source_norm in ("tipomovimiento", "xtipomovimiento"):
+            return self._get_tipo_movimiento_effective() or ""
         if source_norm in ("acusevalidacion", "xacusevalidacion"):
-            if self.tipo_movimiento not in ("2", "3", "8"):
+            if self._get_tipo_movimiento_effective() not in ("2", "3", "8"):
                 return "NULO"
 
         if source_model == "operacion":
@@ -1111,9 +1219,10 @@ class MxPedOperacion(models.Model):
             from_rule = self._get_allowed_codes_from_regla()
             if from_rule is not None:
                 return from_rule
-            if self.tipo_movimiento in ("2", "3"):
+            mov = self._get_tipo_movimiento_effective()
+            if mov in ("2", "3"):
                 return {"500", "800", "801"}
-            if self.tipo_movimiento == "8":
+            if mov == "8":
                 return {"500", "801"}
             return None
 

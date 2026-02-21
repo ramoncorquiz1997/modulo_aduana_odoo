@@ -8,6 +8,7 @@ access_mx_ped_layout_registro,mx.ped.layout.registro,model_mx_ped_layout_registr
 access_mx_ped_layout_campo,mx.ped.layout.campo,model_mx_ped_layout_campo,,1,1,1,1
 access_mx_ped_registro,mx.ped.registro,model_mx_ped_registro,,1,1,1,1
 access_mx_ped_clave,mx.ped.clave,model_mx_ped_clave,,1,1,1,1
+access_mx_ped_clave_regla_registro,mx.ped.clave.regla.registro,model_mx_ped_clave_regla_registro,,1,1,1,1
 access_mx_ped_aduana_seccion,mx.ped.aduana.seccion,model_mx_ped_aduana_seccion,,1,1,1,1
 access_mx_ped_um,mx.ped.um,model_mx_ped_um,,1,1,1,1
 access_mx_ped_fraccion,mx.ped.fraccion,model_mx_ped_fraccion,,1,1,1,1
