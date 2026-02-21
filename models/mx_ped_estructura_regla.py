@@ -63,7 +63,14 @@ class MxPedEstructuraReglaLine(models.Model):
         index=True,
     )
     sequence = fields.Integer(default=10)
-    registro_codigo = fields.Char(string="Codigo registro", required=True, size=3)
+    registro_tipo_id = fields.Many2one(
+        "aduana.layout_registro_tipo",
+        string="Registro (catalogo)",
+        required=True,
+        ondelete="restrict",
+        help="Selecciona el tipo de registro del catalogo tecnico.",
+    )
+    registro_codigo = fields.Char(string="Codigo registro", readonly=True, size=3)
     required = fields.Boolean(string="Obligatorio", default=True)
     min_occurs = fields.Integer(string="Min ocurrencias", default=1)
     max_occurs = fields.Integer(
@@ -72,9 +79,34 @@ class MxPedEstructuraReglaLine(models.Model):
         help="Usa 0 para ilimitado.",
     )
 
-    @api.constrains("registro_codigo", "min_occurs", "max_occurs")
+    @api.onchange("registro_tipo_id")
+    def _onchange_registro_tipo_id(self):
+        for rec in self:
+            if rec.registro_tipo_id and rec.registro_tipo_id.codigo:
+                rec.registro_codigo = rec.registro_tipo_id.codigo
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            registro_tipo_id = vals.get("registro_tipo_id")
+            if registro_tipo_id and not vals.get("registro_codigo"):
+                tipo = self.env["aduana.layout_registro_tipo"].browse(registro_tipo_id)
+                vals["registro_codigo"] = tipo.codigo or False
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if vals.get("registro_tipo_id"):
+            tipo = self.env["aduana.layout_registro_tipo"].browse(vals["registro_tipo_id"])
+            vals["registro_codigo"] = tipo.codigo or False
+        return super().write(vals)
+
+    @api.constrains("registro_tipo_id", "registro_codigo", "min_occurs", "max_occurs")
     def _check_line(self):
         for rec in self:
+            if rec.registro_tipo_id and rec.registro_tipo_id.codigo:
+                rec.registro_codigo = rec.registro_tipo_id.codigo
+            if not rec.registro_codigo:
+                raise ValidationError(_("Debes seleccionar un registro del catalogo."))
             if not (rec.registro_codigo or "").isdigit():
                 raise ValidationError(_("El codigo de registro debe ser numerico (ej. 500, 506)."))
             if len(rec.registro_codigo) != 3:

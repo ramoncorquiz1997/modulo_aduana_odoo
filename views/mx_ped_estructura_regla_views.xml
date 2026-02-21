@@ -9,8 +9,6 @@
         <list>
           <field name="name"/>
           <field name="tipo_movimiento"/>
-          <field name="tipo_operacion"/>
-          <field name="regimen"/>
           <field name="clave_pedimento_id"/>
           <field name="priority"/>
           <field name="active"/>
@@ -32,8 +30,6 @@
               </group>
               <group>
                 <field name="tipo_movimiento"/>
-                <field name="tipo_operacion"/>
-                <field name="regimen"/>
                 <field name="clave_pedimento_id"/>
               </group>
             </group>
@@ -41,12 +37,17 @@
               <field name="line_ids">
                 <list editable="bottom">
                   <field name="sequence"/>
-                  <field name="registro_codigo"/>
+                  <field name="registro_tipo_id"/>
+                  <field name="registro_codigo" readonly="1"/>
                   <field name="required"/>
                   <field name="min_occurs"/>
                   <field name="max_occurs"/>
                 </list>
               </field>
+            </group>
+            <group string="Opciones avanzadas" col="2">
+              <field name="tipo_operacion"/>
+              <field name="regimen"/>
             </group>
           </sheet>
         </form>
