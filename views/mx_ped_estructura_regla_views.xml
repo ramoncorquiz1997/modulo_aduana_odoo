@@ -9,6 +9,7 @@
         <list>
           <field name="name"/>
           <field name="tipo_movimiento_id"/>
+          <field name="escenario"/>
           <field name="clave_pedimento_id"/>
           <field name="priority"/>
           <field name="active"/>
@@ -30,6 +31,7 @@
               </group>
               <group>
                 <field name="tipo_movimiento_id"/>
+                <field name="escenario"/>
                 <field name="clave_pedimento_id"/>
               </group>
             </group>

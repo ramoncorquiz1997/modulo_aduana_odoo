@@ -94,6 +94,31 @@ class MxPedOperacion(models.Model):
         string="Tipo de movimiento",
         default="1",
     )
+    es_rectificacion = fields.Boolean(
+        string="Rectificacion",
+        help="Usa esta marca cuando el movimiento 1 corresponda a rectificacion.",
+    )
+    formas_pago_claves = fields.Char(
+        string="Formas de pago (claves)",
+        help="Solo para movimiento 8. Captura claves separadas por coma, ej. 5,6,8,9",
+    )
+    estructura_escenario = fields.Selection(
+        [
+            ("normal", "Pedimento normal"),
+            ("transito", "Transito"),
+            ("rectificacion", "Rectificacion"),
+            ("eliminacion_desistimiento", "Eliminacion / Desistimiento"),
+            ("industria_automotriz", "Industria automotriz"),
+            ("complementario", "Complementario"),
+            ("despacho_anticipado", "Despacho anticipado"),
+            ("confirmacion_pago", "Confirmacion de pago"),
+            ("global_complementario", "Global complementario"),
+            ("generico", "Generico"),
+        ],
+        string="Escenario de estructura",
+        compute="_compute_estructura_escenario",
+        store=False,
+    )
     aduana_seccion_entrada_salida_id = fields.Many2one(
         "mx.ped.aduana.seccion",
         string="Aduana-seccion entrada/salida",
@@ -307,12 +332,26 @@ class MxPedOperacion(models.Model):
         for rec in self:
             if rec.tipo_movimiento not in ("2", "3", "8"):
                 rec.acuse_validacion = False
+            if rec.tipo_movimiento != "1":
+                rec.es_rectificacion = False
+            if rec.tipo_movimiento != "8":
+                rec.formas_pago_claves = False
             rec.estructura_regla_id = rec._resolve_estructura_regla()
 
     @api.onchange("clave_pedimento_id", "tipo_operacion", "regimen")
     def _onchange_estructura_regla_context(self):
         for rec in self:
             rec.estructura_regla_id = rec._resolve_estructura_regla()
+
+    @api.onchange("es_rectificacion", "formas_pago_claves")
+    def _onchange_estructura_regla_flags(self):
+        for rec in self:
+            rec.estructura_regla_id = rec._resolve_estructura_regla()
+
+    @api.depends("tipo_movimiento", "clave_pedimento_id", "es_rectificacion")
+    def _compute_estructura_escenario(self):
+        for rec in self:
+            rec.estructura_escenario = rec._detect_escenario_estructura()
 
     @api.constrains("tipo_movimiento", "acuse_validacion")
     def _check_acuse_validacion(self):
@@ -345,6 +384,7 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         if not self.tipo_movimiento:
             return self.env["mx.ped.estructura.regla"]
+        detected_escenario = self._detect_escenario_estructura()
         rules = self.env["mx.ped.estructura.regla"].search(
             [
                 ("active", "=", True),
@@ -358,6 +398,10 @@ class MxPedOperacion(models.Model):
         best_score = -1
         for rule in rules:
             score = 0
+            if rule.escenario and rule.escenario != "generico":
+                if rule.escenario != detected_escenario:
+                    continue
+                score += 4
             if rule.clave_pedimento_id:
                 if rule.clave_pedimento_id != self.clave_pedimento_id:
                     continue
@@ -374,6 +418,64 @@ class MxPedOperacion(models.Model):
                 best = rule
                 best_score = score
         return best
+
+    def _detect_escenario_estructura(self):
+        self.ensure_one()
+        mov = self.tipo_movimiento
+        if mov == "1":
+            if self._is_rectificacion():
+                return "rectificacion"
+            if self._is_transito():
+                return "transito"
+            return "normal"
+        if mov in ("2", "3"):
+            return "eliminacion_desistimiento"
+        if mov == "5":
+            return "industria_automotriz"
+        if mov == "6":
+            return "complementario"
+        if mov == "7":
+            return "despacho_anticipado"
+        if mov == "8":
+            return "confirmacion_pago"
+        if mov == "9":
+            return "global_complementario"
+        return "generico"
+
+    def _is_transito(self):
+        self.ensure_one()
+        code = (self.clave_pedimento_id.code or "").upper()
+        return bool(code and (code.startswith("T") or code in {"TR"}))
+
+    def _is_rectificacion(self):
+        self.ensure_one()
+        if self.es_rectificacion:
+            return True
+        return any((line.codigo or "") == "701" for line in self.registro_ids)
+
+    def _parse_formas_pago_claves(self):
+        self.ensure_one()
+        raw = (self.formas_pago_claves or "").strip()
+        if not raw:
+            return set()
+        return {token for token in re.findall(r"\d+", raw)}
+
+    def _validate_confirmacion_pago_formas(self):
+        self.ensure_one()
+        if self.tipo_movimiento != "8":
+            return
+        allowed = {"5", "6", "8", "9", "13", "14", "16", "18", "21"}
+        current = self._parse_formas_pago_claves()
+        if not current:
+            raise ValidationError(
+                _("Para tipo de movimiento 8, captura las formas de pago (claves).")
+            )
+        invalid = sorted(current - allowed, key=lambda x: int(x))
+        if invalid:
+            raise ValidationError(
+                _("Tipo de movimiento 8 solo permite formas de pago %s. No permitidas: %s")
+                % (", ".join(sorted(allowed, key=lambda x: int(x))), ", ".join(invalid))
+            )
 
     def _get_allowed_codes_from_regla(self):
         self.ensure_one()
@@ -632,6 +734,7 @@ class MxPedOperacion(models.Model):
 
     def action_export_txt(self):
         self.ensure_one()
+        self._validate_confirmacion_pago_formas()
         if not self.layout_id:
             raise UserError(_("Falta seleccionar un layout en la operación."))
         if not self.registro_ids:
@@ -661,6 +764,7 @@ class MxPedOperacion(models.Model):
 
     def action_export_xml(self):
         self.ensure_one()
+        self._validate_confirmacion_pago_formas()
         if not self.layout_id:
             raise UserError(_("Falta seleccionar un layout en la operación."))
         if not self.registro_ids:

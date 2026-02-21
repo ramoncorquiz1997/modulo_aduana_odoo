@@ -54,6 +54,8 @@
               <group string="Clasificaci?n">
                 <field name="tipo_operacion"/>
                 <field name="tipo_movimiento"/>
+                <field name="es_rectificacion" invisible="tipo_movimiento != '1'"/>
+                <field name="formas_pago_claves" invisible="tipo_movimiento != '8'" required="tipo_movimiento == '8'"/>
                 <field name="regimen"/>
                 <field name="incoterm"/>
                 <field name="aduana_seccion_despacho_id"/>
@@ -67,6 +69,7 @@
                 <field name="acuse_validacion"
                        invisible="tipo_movimiento not in ('2','3','8')"
                        required="tipo_movimiento in ('2','3','8')"/>
+                <field name="estructura_escenario" readonly="1"/>
                 <field name="estructura_regla_id"/>
                 <field name="layout_id"/>
                 <field name="currency_id"/>

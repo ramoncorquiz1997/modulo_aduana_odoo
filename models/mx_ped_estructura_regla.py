@@ -32,6 +32,23 @@ class MxPedEstructuraRegla(models.Model):
         ondelete="restrict",
         required=True,
     )
+    escenario = fields.Selection(
+        [
+            ("generico", "Generico"),
+            ("normal", "Pedimento normal"),
+            ("transito", "Transito"),
+            ("rectificacion", "Rectificacion"),
+            ("eliminacion_desistimiento", "Eliminacion / Desistimiento"),
+            ("industria_automotriz", "Industria automotriz"),
+            ("complementario", "Complementario"),
+            ("despacho_anticipado", "Despacho anticipado"),
+            ("confirmacion_pago", "Confirmacion de pago"),
+            ("global_complementario", "Global complementario"),
+        ],
+        string="Escenario",
+        default="generico",
+        required=True,
+    )
     clave_pedimento_id = fields.Many2one("mx.ped.clave", string="Clave de pedimento (opcional)")
     tipo_operacion = fields.Selection(
         [("importacion", "Importacion"), ("exportacion", "Exportacion"), ("ambas", "Ambas")],
