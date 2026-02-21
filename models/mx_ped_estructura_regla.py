@@ -147,13 +147,13 @@ class MxPedEstructuraReglaLine(models.Model):
     @api.constrains("registro_tipo_id", "registro_codigo", "min_occurs", "max_occurs")
     def _check_line(self):
         for rec in self:
-            if rec.registro_tipo_id and rec.registro_tipo_id.codigo:
-                rec.registro_codigo = rec.registro_tipo_id.codigo
-            if not rec.registro_codigo:
+            # En constraints nunca escribas al mismo registro: solo valida.
+            codigo = (rec.registro_codigo or rec.registro_tipo_id.codigo or "").strip()
+            if not codigo:
                 raise ValidationError(_("Debes seleccionar un registro del catalogo."))
-            if not (rec.registro_codigo or "").isdigit():
+            if not codigo.isdigit():
                 raise ValidationError(_("El codigo de registro debe ser numerico (ej. 500, 506)."))
-            if len(rec.registro_codigo) != 3:
+            if len(codigo) != 3:
                 raise ValidationError(_("El codigo de registro debe tener 3 digitos."))
             if rec.min_occurs < 0:
                 raise ValidationError(_("Min ocurrencias no puede ser negativo."))
