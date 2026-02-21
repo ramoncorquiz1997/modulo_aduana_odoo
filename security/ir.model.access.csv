@@ -13,6 +13,8 @@ access_mx_ped_um,mx.ped.um,model_mx_ped_um,,1,1,1,1
 access_mx_ped_fraccion,mx.ped.fraccion,model_mx_ped_fraccion,,1,1,1,1
 access_mx_ped_fraccion_tasa,mx.ped.fraccion.tasa,model_mx_ped_fraccion_tasa,,1,1,1,1
 access_mx_ped_tipo_contenedor,mx.ped.tipo.contenedor,model_mx_ped_tipo_contenedor,,1,1,1,1
+access_mx_ped_estructura_regla_admin,mx.ped.estructura.regla.admin,model_mx_ped_estructura_regla,base.group_system,1,1,1,1
+access_mx_ped_estructura_regla_line_admin,mx.ped.estructura.regla.line.admin,model_mx_ped_estructura_regla_line,base.group_system,1,1,1,1
 access_mx_ped_numero_control_admin,mx.ped.numero.control.admin,model_mx_ped_numero_control,base.group_system,1,1,1,1
 access_mx_ped_numero_control_log_admin,mx.ped.numero.control.log.admin,model_mx_ped_numero_control_log,base.group_system,1,0,0,0
 access_mx_wa_session_admin,mx.wa.session.admin,model_mx_wa_session,base.group_system,1,1,1,1

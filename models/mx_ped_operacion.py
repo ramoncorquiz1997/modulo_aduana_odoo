@@ -2,6 +2,7 @@
 import base64
 import io
 import re
+from collections import Counter
 import xml.etree.ElementTree as ET
 
 from odoo import api, fields, models, _
@@ -194,6 +195,11 @@ class MxPedOperacion(models.Model):
         string="Layout",
         help="Define los registros y campos del archivo de validación.",
     )
+    estructura_regla_id = fields.Many2one(
+        "mx.ped.estructura.regla",
+        string="Regla de estructura",
+        help="Define qué registros debe contener la operación según tipo de movimiento.",
+    )
 
     registro_ids = fields.One2many(
         comodel_name="mx.ped.registro",
@@ -301,6 +307,12 @@ class MxPedOperacion(models.Model):
         for rec in self:
             if rec.tipo_movimiento not in ("2", "3", "8"):
                 rec.acuse_validacion = False
+            rec.estructura_regla_id = rec._resolve_estructura_regla()
+
+    @api.onchange("clave_pedimento_id", "tipo_operacion", "regimen")
+    def _onchange_estructura_regla_context(self):
+        for rec in self:
+            rec.estructura_regla_id = rec._resolve_estructura_regla()
 
     @api.constrains("tipo_movimiento", "acuse_validacion")
     def _check_acuse_validacion(self):
@@ -327,6 +339,94 @@ class MxPedOperacion(models.Model):
             "domain": [("operacion_id", "=", self.id)],
             "context": {"default_operacion_id": self.id},
             "target": "current",
+        }
+
+    def _resolve_estructura_regla(self):
+        self.ensure_one()
+        if not self.tipo_movimiento:
+            return self.env["mx.ped.estructura.regla"]
+        rules = self.env["mx.ped.estructura.regla"].search(
+            [("active", "=", True), ("tipo_movimiento", "=", self.tipo_movimiento)],
+            order="priority desc, id desc",
+        )
+        best = self.env["mx.ped.estructura.regla"]
+        best_score = -1
+        for rule in rules:
+            score = 0
+            if rule.clave_pedimento_id:
+                if rule.clave_pedimento_id != self.clave_pedimento_id:
+                    continue
+                score += 3
+            if rule.tipo_operacion and rule.tipo_operacion != "ambas":
+                if rule.tipo_operacion != self.tipo_operacion:
+                    continue
+                score += 2
+            if rule.regimen and rule.regimen != "cualquiera":
+                if rule.regimen != self.regimen:
+                    continue
+                score += 1
+            if score > best_score:
+                best = rule
+                best_score = score
+        return best
+
+    def _get_allowed_codes_from_regla(self):
+        self.ensure_one()
+        rule = self.estructura_regla_id or self._resolve_estructura_regla()
+        if not rule:
+            return None
+        codes = [line.registro_codigo for line in rule.line_ids if line.registro_codigo]
+        return set(codes) if codes else None
+
+    def _validate_registros_vs_estructura(self):
+        self.ensure_one()
+        rule = self.estructura_regla_id or self._resolve_estructura_regla()
+        if not rule:
+            return
+        counts = Counter((r.codigo or "") for r in self.registro_ids)
+        errors = []
+        for line in rule.line_ids:
+            code = line.registro_codigo or ""
+            present = counts.get(code, 0)
+            min_occ = max(line.min_occurs or 0, 0)
+            max_occ = max(line.max_occurs or 0, 0)
+            req_min = max(min_occ, 1) if line.required else min_occ
+            if present < req_min:
+                errors.append(_("Falta registro %s (min %s, actual %s).") % (code, req_min, present))
+            if max_occ and present > max_occ:
+                errors.append(_("Registro %s excede maximo (%s > %s).") % (code, present, max_occ))
+        if errors:
+            raise UserError("\n".join(errors))
+
+    def action_preparar_estructura(self):
+        for rec in self:
+            rule = rec.estructura_regla_id or rec._resolve_estructura_regla()
+            if not rule:
+                raise UserError(_("No existe una regla de estructura para este contexto."))
+            rec.estructura_regla_id = rule
+            counts = Counter((r.codigo or "") for r in rec.registro_ids)
+            new_lines = []
+            for line in rule.line_ids.sorted(lambda l: (l.sequence, l.id)):
+                needed = max(line.min_occurs or 0, 0) - counts.get(line.registro_codigo, 0)
+                seq_base = counts.get(line.registro_codigo, 0)
+                for i in range(max(needed, 0)):
+                    new_lines.append((0, 0, {
+                        "codigo": line.registro_codigo,
+                        "secuencia": seq_base + i + 1,
+                        "valores": {},
+                    }))
+                counts[line.registro_codigo] = counts.get(line.registro_codigo, 0) + max(needed, 0)
+            if new_lines:
+                rec.write({"registro_ids": new_lines})
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Estructura preparada"),
+                "message": _("Registros base agregados según regla de estructura."),
+                "type": "success",
+                "sticky": False,
+            },
         }
 
     def _get_invoice_partner(self):
@@ -531,6 +631,7 @@ class MxPedOperacion(models.Model):
             raise UserError(_("Falta seleccionar un layout en la operación."))
         if not self.registro_ids:
             raise UserError(_("No hay registros capturados para exportar."))
+        self._validate_registros_vs_estructura()
 
         lines = []
         for reg in self.registro_ids.sorted(lambda r: (r.codigo, r.secuencia or 0)):
@@ -559,6 +660,7 @@ class MxPedOperacion(models.Model):
             raise UserError(_("Falta seleccionar un layout en la operación."))
         if not self.registro_ids:
             raise UserError(_("No hay registros capturados para exportar."))
+        self._validate_registros_vs_estructura()
 
         root = ET.Element("pedimento", layout=(self.layout_id.name or ""))
         for reg in self.registro_ids.sorted(lambda r: (r.codigo, r.secuencia or 0)):
@@ -897,6 +999,9 @@ class MxPedOperacion(models.Model):
             raise UserError(_("La operación no tiene Lead asociado."))
 
         def _allowed_codes():
+            from_rule = self._get_allowed_codes_from_regla()
+            if from_rule is not None:
+                return from_rule
             if self.tipo_movimiento in ("2", "3"):
                 return {"500", "800", "801"}
             if self.tipo_movimiento == "8":
