@@ -346,7 +346,12 @@ class MxPedOperacion(models.Model):
         if not self.tipo_movimiento:
             return self.env["mx.ped.estructura.regla"]
         rules = self.env["mx.ped.estructura.regla"].search(
-            [("active", "=", True), ("tipo_movimiento", "=", self.tipo_movimiento)],
+            [
+                ("active", "=", True),
+                "|",
+                ("tipo_movimiento_id.code", "=", self.tipo_movimiento),
+                ("tipo_movimiento", "=", self.tipo_movimiento),
+            ],
             order="priority desc, id desc",
         )
         best = self.env["mx.ped.estructura.regla"]

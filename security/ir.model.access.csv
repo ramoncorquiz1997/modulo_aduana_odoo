@@ -12,6 +12,7 @@ access_mx_ped_aduana_seccion,mx.ped.aduana.seccion,model_mx_ped_aduana_seccion,,
 access_mx_ped_um,mx.ped.um,model_mx_ped_um,,1,1,1,1
 access_mx_ped_fraccion,mx.ped.fraccion,model_mx_ped_fraccion,,1,1,1,1
 access_mx_ped_fraccion_tasa,mx.ped.fraccion.tasa,model_mx_ped_fraccion_tasa,,1,1,1,1
+access_mx_ped_tipo_movimiento_admin,mx.ped.tipo.movimiento.admin,model_mx_ped_tipo_movimiento,base.group_system,1,1,1,1
 access_mx_ped_tipo_contenedor,mx.ped.tipo.contenedor,model_mx_ped_tipo_contenedor,,1,1,1,1
 access_mx_ped_estructura_regla_admin,mx.ped.estructura.regla.admin,model_mx_ped_estructura_regla,base.group_system,1,1,1,1
 access_mx_ped_estructura_regla_line_admin,mx.ped.estructura.regla.line.admin,model_mx_ped_estructura_regla_line,base.group_system,1,1,1,1

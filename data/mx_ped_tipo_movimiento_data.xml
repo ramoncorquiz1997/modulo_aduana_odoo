@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+  <record id="mx_ped_tipo_movimiento_1" model="mx.ped.tipo.movimiento">
+    <field name="code">1</field>
+    <field name="name">Pedimento Nuevo</field>
+  </record>
+  <record id="mx_ped_tipo_movimiento_2" model="mx.ped.tipo.movimiento">
+    <field name="code">2</field>
+    <field name="name">Eliminacion</field>
+  </record>
+  <record id="mx_ped_tipo_movimiento_3" model="mx.ped.tipo.movimiento">
+    <field name="code">3</field>
+    <field name="name">Desistimiento</field>
+  </record>
+  <record id="mx_ped_tipo_movimiento_4" model="mx.ped.tipo.movimiento">
+    <field name="code">4</field>
+    <field name="name">Uso futuro</field>
+  </record>
+  <record id="mx_ped_tipo_movimiento_5" model="mx.ped.tipo.movimiento">
+    <field name="code">5</field>
+    <field name="name">Informe de la Industria Automotriz</field>
+  </record>
+  <record id="mx_ped_tipo_movimiento_6" model="mx.ped.tipo.movimiento">
+    <field name="code">6</field>
+    <field name="name">Pedimento Complementario</field>
+  </record>
+  <record id="mx_ped_tipo_movimiento_7" model="mx.ped.tipo.movimiento">
+    <field name="code">7</field>
+    <field name="name">Despacho Anticipado</field>
+  </record>
+  <record id="mx_ped_tipo_movimiento_8" model="mx.ped.tipo.movimiento">
+    <field name="code">8</field>
+    <field name="name">Confirmacion de Pago</field>
+  </record>
+  <record id="mx_ped_tipo_movimiento_9" model="mx.ped.tipo.movimiento">
+    <field name="code">9</field>
+    <field name="name">Global Complementario</field>
+  </record>
+</odoo>

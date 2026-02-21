@@ -8,7 +8,7 @@
       <field name="arch" type="xml">
         <list>
           <field name="name"/>
-          <field name="tipo_movimiento"/>
+          <field name="tipo_movimiento_id"/>
           <field name="clave_pedimento_id"/>
           <field name="priority"/>
           <field name="active"/>
@@ -29,7 +29,7 @@
                 <field name="priority"/>
               </group>
               <group>
-                <field name="tipo_movimiento"/>
+                <field name="tipo_movimiento_id"/>
                 <field name="clave_pedimento_id"/>
               </group>
             </group>

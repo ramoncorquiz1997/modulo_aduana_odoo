@@ -23,7 +23,13 @@ class MxPedEstructuraRegla(models.Model):
             ("8", "8 - Confirmacion de pago"),
             ("9", "9 - Global complementario"),
         ],
+        string="Tipo de movimiento (legacy)",
+        help="Campo legado, se mantiene por compatibilidad de datos existentes.",
+    )
+    tipo_movimiento_id = fields.Many2one(
+        "mx.ped.tipo.movimiento",
         string="Tipo de movimiento",
+        ondelete="restrict",
         required=True,
     )
     clave_pedimento_id = fields.Many2one("mx.ped.clave", string="Clave de pedimento (opcional)")
@@ -49,6 +55,27 @@ class MxPedEstructuraRegla(models.Model):
         string="Registros requeridos",
         copy=True,
     )
+
+    @api.onchange("tipo_movimiento_id")
+    def _onchange_tipo_movimiento_id(self):
+        for rec in self:
+            if rec.tipo_movimiento_id and rec.tipo_movimiento_id.code:
+                rec.tipo_movimiento = rec.tipo_movimiento_id.code
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            tm_id = vals.get("tipo_movimiento_id")
+            if tm_id and not vals.get("tipo_movimiento"):
+                tm = self.env["mx.ped.tipo.movimiento"].browse(tm_id)
+                vals["tipo_movimiento"] = tm.code
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if vals.get("tipo_movimiento_id") and not vals.get("tipo_movimiento"):
+            tm = self.env["mx.ped.tipo.movimiento"].browse(vals["tipo_movimiento_id"])
+            vals["tipo_movimiento"] = tm.code
+        return super().write(vals)
 
 
 class MxPedEstructuraReglaLine(models.Model):

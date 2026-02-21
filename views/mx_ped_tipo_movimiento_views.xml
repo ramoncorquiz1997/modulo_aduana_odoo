@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <record id="mx_ped_tipo_movimiento_view_list" model="ir.ui.view">
+      <field name="name">mx.ped.tipo.movimiento.list</field>
+      <field name="model">mx.ped.tipo.movimiento</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="code"/>
+          <field name="name"/>
+          <field name="active"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="mx_ped_tipo_movimiento_view_form" model="ir.ui.view">
+      <field name="name">mx.ped.tipo.movimiento.form</field>
+      <field name="model">mx.ped.tipo.movimiento</field>
+      <field name="arch" type="xml">
+        <form string="Tipo de movimiento">
+          <sheet>
+            <group>
+              <field name="code"/>
+              <field name="name"/>
+              <field name="active"/>
+            </group>
+            <group>
+              <field name="notes"/>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="mx_ped_tipo_movimiento_action" model="ir.actions.act_window">
+      <field name="name">Tipos de Movimiento</field>
+      <field name="res_model">mx.ped.tipo.movimiento</field>
+      <field name="view_mode">list,form</field>
+      <field name="groups_id" eval="[(4, ref('base.group_system'))]"/>
+    </record>
+
+    <menuitem id="mx_ped_tipo_movimiento_menu"
+              name="Tipos de Movimiento"
+              parent="mx_ped_operacion_menu_root"
+              action="mx_ped_tipo_movimiento_action"
+              sequence="74"
+              groups="base.group_system"/>
+
+  </data>
+</odoo>
