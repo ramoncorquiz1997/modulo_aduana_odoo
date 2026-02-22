@@ -817,7 +817,12 @@ class MxPedOperacion(models.Model):
     def _format_txt_value(self, campo, val):
         txt = str(val)
 
-        # Normaliza tipo de operación (1/2). Si el layout pide 2 dígitos, se rellena.
+        # Sanea caracteres de control para no romper el TXT por renglones/columnas.
+        txt = txt.replace("\r", " ").replace("\n", " ").replace("\t", " ")
+        txt = txt.replace("|", " ")
+        txt = " ".join(txt.split())
+
+        # Normaliza tipo de operaci?n (1/2). Si el layout pide 2 d?gitos, se rellena.
         source_name = (
             campo.source_field_id.name
             if getattr(campo, "source_field_id", False)
