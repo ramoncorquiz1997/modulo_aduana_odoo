@@ -48,11 +48,11 @@
             </div>
 
             <group>
-              <group string="Vinculaci?n">
+              <group string="Vinculación">
                 <field name="lead_id"/>
               </group>
 
-              <group string="Clasificaci?n">
+              <group string="Clasificación">
                 <field name="show_acuse_ui" invisible="1"/>
                 <field name="show_formas_pago_ui" invisible="1"/>
                 <field name="tipo_operacion"/>
