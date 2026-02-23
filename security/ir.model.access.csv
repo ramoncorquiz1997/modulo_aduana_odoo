@@ -1,6 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_mx_ped_operacion,mx.ped.operacion,model_mx_ped_operacion,,1,1,1,1
 access_mx_ped_partida,mx.ped.partida,model_mx_ped_partida,,1,1,1,1
+access_crm_lead_operacion_line,crm.lead.operacion.line,model_crm_lead_operacion_line,,1,1,1,1
 access_mx_ped_documento,mx.ped.documento,model_mx_ped_documento,,1,1,1,1
 access_mx_ped_evento,mx.ped.evento,model_mx_ped_evento,,1,1,1,1
 access_mx_ped_layout,mx.ped.layout,model_mx_ped_layout,,1,1,1,1

@@ -221,25 +221,38 @@
                 <field name="x_proveedor_invoice_number"/>
                 <field name="x_condiciones_pago"/>
                 <field name="x_tipo_compra"/>
+                <field name="x_tratado_aplicable"/>
+                <field name="x_pedimento_rectificacion"/>
               </group>
-              <group string="Regulaciones">
+              <group string="Resumen regulatorio (desde partidas)">
+                <field name="x_resumen_permisos" readonly="1"/>
+                <field name="x_resumen_rrna" readonly="1"/>
+                <field name="x_resumen_noms" readonly="1"/>
+                <field name="x_resumen_etiquetado" readonly="1"/>
+                <button name="action_migrar_importacion_legacy"
+                        type="object"
+                        string="Migrar datos legacy a partidas"
+                        class="btn-secondary"/>
                 <field name="x_permisos_ids" widget="many2many_tags"/>
                 <field name="x_normas_noms_text"/>
                 <field name="x_etiquetado"/>
                 <field name="x_cumplimiento_noms"/>
                 <field name="x_certificado_origen"/>
-                <field name="x_tratado_aplicable"/>
-                <field name="x_pedimento_rectificacion"/>
               </group>
             </group>
 
             <group>
               <group string="Impuestos (estimados)">
+                <field name="x_override_estimados"/>
                 <field name="x_iva_estimado"/>
                 <field name="x_igi_estimado"/>
                 <field name="x_dta_estimado"/>
                 <field name="x_prv_estimado"/>
                 <field name="x_total_impuestos_estimado"/>
+                <field name="x_iva_estimado_manual" invisible="not x_override_estimados"/>
+                <field name="x_igi_estimado_manual" invisible="not x_override_estimados"/>
+                <field name="x_dta_estimado_manual" invisible="not x_override_estimados"/>
+                <field name="x_prv_estimado_manual" invisible="not x_override_estimados"/>
                 <field name="x_total_pagado_real"/>
               </group>
               <group string="Recinto / entrega">
@@ -251,6 +264,27 @@
               </group>
             </group>
 
+          </page>
+
+          <page string="Mercancias / Partidas" name="mi_modulo_partidas_import"
+                invisible="x_tipo_operacion != 'importacion'">
+            <field name="x_operacion_line_ids" context="{'default_lead_id': id}">
+              <list editable="bottom">
+                <field name="sequence"/>
+                <field name="name"/>
+                <field name="fraccion_arancelaria"/>
+                <field name="nico"/>
+                <field name="permisos_ids" widget="many2many_tags"/>
+                <field name="rrna_ids" widget="many2many_tags"/>
+                <field name="noms_text"/>
+                <field name="requiere_etiquetado"/>
+                <field name="cumplimiento_noms"/>
+                <field name="igi_estimado"/>
+                <field name="iva_estimado"/>
+                <field name="dta_estimado"/>
+                <field name="prv_estimado"/>
+              </list>
+            </field>
           </page>
 
           <page string="Exportación" name="mi_modulo_exportacion"

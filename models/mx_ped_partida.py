@@ -38,6 +38,34 @@ class MxPedPartida(models.Model):
     pais_vendedor_id = fields.Many2one("res.country", string="País vendedor")
 
     observaciones = fields.Text()
+    permisos_ids = fields.Many2many(
+        "crm.tag",
+        "mx_ped_partida_permiso_tag_rel",
+        "partida_id",
+        "tag_id",
+        string="Permisos",
+    )
+    rrna_ids = fields.Many2many(
+        "crm.tag",
+        "mx_ped_partida_rrna_tag_rel",
+        "partida_id",
+        "tag_id",
+        string="Regulaciones importacion",
+    )
+    noms_text = fields.Text(string="NOM / Normas aplicables")
+    requiere_etiquetado = fields.Boolean(string="Requiere etiquetado")
+    cumplimiento_noms = fields.Selection(
+        [
+            ("pendiente", "Pendiente"),
+            ("cumple", "Cumple"),
+            ("no_aplica", "No aplica"),
+        ],
+        string="Cumplimiento NOM",
+    )
+    iva_estimado = fields.Monetary(string="IVA estimado", currency_field="currency_id")
+    igi_estimado = fields.Monetary(string="IGI estimado", currency_field="currency_id")
+    dta_estimado = fields.Monetary(string="DTA estimado", currency_field="currency_id")
+    prv_estimado = fields.Monetary(string="PRV estimado", currency_field="currency_id")
 
     @api.onchange("fraccion_id")
     def _onchange_fraccion_id(self):

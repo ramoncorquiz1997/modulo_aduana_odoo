@@ -110,6 +110,14 @@
                     <field name="unidad_tarifa"/>
                     <field name="cantidad_tarifa"/>
                     <field name="valor_aduana"/>
+                    <field name="permisos_ids" widget="many2many_tags"/>
+                    <field name="rrna_ids" widget="many2many_tags"/>
+                    <field name="requiere_etiquetado"/>
+                    <field name="cumplimiento_noms"/>
+                    <field name="igi_estimado"/>
+                    <field name="iva_estimado"/>
+                    <field name="dta_estimado"/>
+                    <field name="prv_estimado"/>
                   </list>
                 </field>
               </page>

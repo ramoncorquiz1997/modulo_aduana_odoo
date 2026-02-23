@@ -210,10 +210,10 @@ class CrmLead(models.Model):
 
     # --- Logística / embarque ---
     _MEDIO_TRANSPORTE_SELECTION = [
-        ("01", "01 - Mar?timo"),
+        ("01", "01 - Marítimo"),
         ("02", "02 - Ferroviario de doble estiba"),
         ("03", "03 - Carretero-ferroviario"),
-        ("04", "04 - A?reo"),
+        ("04", "04 - Aéreo"),
         ("05", "05 - Postal"),
         ("06", "06 - Ferroviario"),
         ("07", "07 - Carretero"),
@@ -730,16 +730,41 @@ class CrmLead(models.Model):
         string="Tipo de compra",
     )
 
+    x_override_estimados = fields.Boolean(
+        string="Override estimados",
+        help="Permite capturar impuestos estimados manuales en cabecera.",
+    )
+    x_iva_estimado_manual = fields.Monetary(string="IVA estimado manual", currency_field="x_currency_id")
+    x_igi_estimado_manual = fields.Monetary(string="IGI estimado manual", currency_field="x_currency_id")
+    x_dta_estimado_manual = fields.Monetary(string="DTA estimado manual", currency_field="x_currency_id")
+    x_prv_estimado_manual = fields.Monetary(string="PRV estimado manual", currency_field="x_currency_id")
+
+    x_operacion_line_ids = fields.One2many(
+        comodel_name="crm.lead.operacion.line",
+        inverse_name="lead_id",
+        string="Mercancias / Partidas",
+        copy=True,
+    )
+    x_resumen_permisos = fields.Char(string="Resumen permisos", compute="_compute_x_import_summaries", store=False)
+    x_resumen_rrna = fields.Char(string="Resumen RRNA", compute="_compute_x_import_summaries", store=False)
+    x_resumen_noms = fields.Text(string="Resumen NOMs", compute="_compute_x_import_summaries", store=False)
+    x_resumen_etiquetado = fields.Char(
+        string="Resumen etiquetado",
+        compute="_compute_x_import_summaries",
+        store=False,
+    )
+
+    # Legacy cabecera: se conservan para compatibilidad y migracion.
     x_permisos_ids = fields.Many2many(
         comodel_name="crm.tag",
         relation="crm_lead_permisos_tag_rel",
         column1="lead_id",
         column2="tag_id",
-        string="Permisos / regulaciones (import)",
+        string="Permisos / regulaciones (import) [Legacy]",
     )
 
-    x_normas_noms_text = fields.Text(string="NOM / Normas aplicables")
-    x_etiquetado = fields.Boolean(string="Requiere etiquetado")
+    x_normas_noms_text = fields.Text(string="NOM / Normas aplicables [Legacy]")
+    x_etiquetado = fields.Boolean(string="Requiere etiquetado [Legacy]")
 
     x_cumplimiento_noms = fields.Selection(
         selection=[
@@ -747,21 +772,48 @@ class CrmLead(models.Model):
             ("cumple", "Cumple"),
             ("no_aplica", "No aplica"),
         ],
-        string="Cumplimiento NOM",
+        string="Cumplimiento NOM [Legacy]",
     )
 
     x_certificado_origen = fields.Boolean(string="Certificado de origen")
     x_tratado_aplicable = fields.Char(string="Tratado aplicable")
     x_pedimento_rectificacion = fields.Boolean(string="Pedimento en rectificación")
 
-    x_iva_estimado = fields.Monetary(string="IVA estimado", currency_field="x_currency_id")
-    x_igi_estimado = fields.Monetary(string="IGI estimado", currency_field="x_currency_id")
-    x_dta_estimado = fields.Monetary(string="DTA estimado", currency_field="x_currency_id")
-    x_prv_estimado = fields.Monetary(string="PRV estimado", currency_field="x_currency_id")
+    x_iva_estimado = fields.Monetary(
+        string="IVA estimado",
+        currency_field="x_currency_id",
+        compute="_compute_x_impuestos_estimados",
+        inverse="_inverse_x_impuestos_estimados",
+        store=True,
+    )
+    x_igi_estimado = fields.Monetary(
+        string="IGI estimado",
+        currency_field="x_currency_id",
+        compute="_compute_x_impuestos_estimados",
+        inverse="_inverse_x_impuestos_estimados",
+        store=True,
+    )
+    x_dta_estimado = fields.Monetary(
+        string="DTA estimado",
+        currency_field="x_currency_id",
+        compute="_compute_x_impuestos_estimados",
+        inverse="_inverse_x_impuestos_estimados",
+        store=True,
+    )
+    x_prv_estimado = fields.Monetary(
+        string="PRV estimado",
+        currency_field="x_currency_id",
+        compute="_compute_x_impuestos_estimados",
+        inverse="_inverse_x_impuestos_estimados",
+        store=True,
+    )
 
     x_total_impuestos_estimado = fields.Monetary(
         string="Total impuestos (estimado)",
         currency_field="x_currency_id",
+        compute="_compute_x_impuestos_estimados",
+        inverse="_inverse_x_impuestos_estimados",
+        store=True,
     )
 
     x_total_pagado_real = fields.Monetary(
@@ -943,6 +995,96 @@ class CrmLead(models.Model):
                 reverse=True
             )[:1] or False
 
+    @api.depends(
+        "x_operacion_line_ids",
+        "x_operacion_line_ids.permisos_ids",
+        "x_operacion_line_ids.rrna_ids",
+        "x_operacion_line_ids.noms_text",
+        "x_operacion_line_ids.requiere_etiquetado",
+    )
+    def _compute_x_import_summaries(self):
+        for rec in self:
+            permiso_names = sorted({name for name in rec.x_operacion_line_ids.mapped("permisos_ids.name") if name})
+            rrna_names = sorted({name for name in rec.x_operacion_line_ids.mapped("rrna_ids.name") if name})
+            noms_texts = sorted({
+                txt.strip()
+                for txt in rec.x_operacion_line_ids.mapped("noms_text")
+                if (txt or "").strip()
+            })
+            tagged = len(rec.x_operacion_line_ids.filtered("requiere_etiquetado"))
+            total = len(rec.x_operacion_line_ids)
+
+            rec.x_resumen_permisos = ", ".join(permiso_names) if permiso_names else "Sin permisos"
+            rec.x_resumen_rrna = ", ".join(rrna_names) if rrna_names else "Sin RRNA"
+            rec.x_resumen_noms = "\n".join(noms_texts) if noms_texts else "Sin NOMs"
+            rec.x_resumen_etiquetado = f"{tagged}/{total} con etiquetado" if total else "Sin partidas"
+
+    @api.depends(
+        "x_override_estimados",
+        "x_iva_estimado_manual",
+        "x_igi_estimado_manual",
+        "x_dta_estimado_manual",
+        "x_prv_estimado_manual",
+        "x_operacion_line_ids.iva_estimado",
+        "x_operacion_line_ids.igi_estimado",
+        "x_operacion_line_ids.dta_estimado",
+        "x_operacion_line_ids.prv_estimado",
+    )
+    def _compute_x_impuestos_estimados(self):
+        for rec in self:
+            if rec.x_override_estimados:
+                rec.x_iva_estimado = rec.x_iva_estimado_manual
+                rec.x_igi_estimado = rec.x_igi_estimado_manual
+                rec.x_dta_estimado = rec.x_dta_estimado_manual
+                rec.x_prv_estimado = rec.x_prv_estimado_manual
+            else:
+                rec.x_iva_estimado = sum(rec.x_operacion_line_ids.mapped("iva_estimado"))
+                rec.x_igi_estimado = sum(rec.x_operacion_line_ids.mapped("igi_estimado"))
+                rec.x_dta_estimado = sum(rec.x_operacion_line_ids.mapped("dta_estimado"))
+                rec.x_prv_estimado = sum(rec.x_operacion_line_ids.mapped("prv_estimado"))
+            rec.x_total_impuestos_estimado = (
+                rec.x_iva_estimado + rec.x_igi_estimado + rec.x_dta_estimado + rec.x_prv_estimado
+            )
+
+    def _inverse_x_impuestos_estimados(self):
+        for rec in self:
+            if not rec.x_override_estimados:
+                continue
+            rec.x_iva_estimado_manual = rec.x_iva_estimado
+            rec.x_igi_estimado_manual = rec.x_igi_estimado
+            rec.x_dta_estimado_manual = rec.x_dta_estimado
+            rec.x_prv_estimado_manual = rec.x_prv_estimado
+
+    def action_migrar_importacion_legacy(self):
+        for rec in self:
+            if rec.x_operacion_line_ids:
+                lines = rec.x_operacion_line_ids
+            else:
+                line_vals = {
+                    "lead_id": rec.id,
+                    "name": rec.x_descripcion_mercancia or rec.name or _("Partida"),
+                    "fraccion_arancelaria": rec.x_fraccion_arancelaria_principal or rec.x_fraccion_arancelaria,
+                    "noms_text": rec.x_normas_noms_text,
+                    "requiere_etiquetado": rec.x_etiquetado,
+                    "cumplimiento_noms": rec.x_cumplimiento_noms,
+                }
+                lines = self.env["crm.lead.operacion.line"].create(line_vals)
+
+            if rec.x_permisos_ids:
+                lines.write({"permisos_ids": [(6, 0, rec.x_permisos_ids.ids)]})
+                lines.write({"rrna_ids": [(6, 0, rec.x_permisos_ids.ids)]})
+
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Migracion importacion"),
+                "message": _("Se migraron datos legacy de cabecera a partidas."),
+                "type": "success",
+                "sticky": False,
+            },
+        }
+
     def action_crear_pedimento(self):
         """
         Crea una cabecera (mx.ped.operacion) desde el lead copiando datos base.
@@ -980,6 +1122,24 @@ class CrmLead(models.Model):
             "semaforo": self.x_semaforo,
             "observaciones": (self.x_incidente_text or ""),
         })
+
+        for idx, line in enumerate(self.x_operacion_line_ids.sorted(lambda l: (l.sequence or 0, l.id)), start=1):
+            self.env["mx.ped.partida"].create({
+                "operacion_id": op.id,
+                "numero_partida": idx,
+                "fraccion_arancelaria": line.fraccion_arancelaria,
+                "nico": line.nico,
+                "descripcion": line.name,
+                "permisos_ids": [(6, 0, line.permisos_ids.ids)],
+                "rrna_ids": [(6, 0, line.rrna_ids.ids)],
+                "noms_text": line.noms_text,
+                "requiere_etiquetado": line.requiere_etiquetado,
+                "cumplimiento_noms": line.cumplimiento_noms,
+                "igi_estimado": line.igi_estimado,
+                "iva_estimado": line.iva_estimado,
+                "dta_estimado": line.dta_estimado,
+                "prv_estimado": line.prv_estimado,
+            })
 
         return {
             "type": "ir.actions.act_window",
@@ -1026,3 +1186,49 @@ class CrmLead(models.Model):
             "res_id": self.x_pedimento_id.id,
             "target": "current",
         }
+
+
+class CrmLeadOperacionLine(models.Model):
+    _name = "crm.lead.operacion.line"
+    _description = "Caso - Mercancia / Partida Importacion"
+    _order = "sequence asc, id asc"
+
+    lead_id = fields.Many2one("crm.lead", required=True, ondelete="cascade", index=True)
+    sequence = fields.Integer(default=10)
+    name = fields.Char(string="Descripcion", required=True)
+    fraccion_arancelaria = fields.Char(string="Fraccion arancelaria", size=10)
+    nico = fields.Char(string="NICO", size=2)
+    permisos_ids = fields.Many2many(
+        "crm.tag",
+        "crm_lead_operacion_line_permiso_tag_rel",
+        "line_id",
+        "tag_id",
+        string="Permisos",
+    )
+    rrna_ids = fields.Many2many(
+        "crm.tag",
+        "crm_lead_operacion_line_rrna_tag_rel",
+        "line_id",
+        "tag_id",
+        string="Regulaciones importacion",
+    )
+    noms_text = fields.Text(string="NOM / Normas aplicables")
+    requiere_etiquetado = fields.Boolean(string="Requiere etiquetado")
+    cumplimiento_noms = fields.Selection(
+        [
+            ("pendiente", "Pendiente"),
+            ("cumple", "Cumple"),
+            ("no_aplica", "No aplica"),
+        ],
+        string="Cumplimiento NOM",
+        default="pendiente",
+    )
+    currency_id = fields.Many2one(
+        related="lead_id.x_currency_id",
+        string="Moneda",
+        readonly=True,
+    )
+    igi_estimado = fields.Monetary(string="IGI estimado", currency_field="currency_id")
+    iva_estimado = fields.Monetary(string="IVA estimado", currency_field="currency_id")
+    dta_estimado = fields.Monetary(string="DTA estimado", currency_field="currency_id")
+    prv_estimado = fields.Monetary(string="PRV estimado", currency_field="currency_id")
