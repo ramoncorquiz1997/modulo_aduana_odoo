@@ -1984,8 +1984,6 @@ class MxPedOperacion(models.Model):
             "tipo_movimiento": "tipo_movimiento",
             "regimen": "regimen",
             "incoterm": "incoterm",
-            "fraccion_arancelaria": "x_fraccion_arancelaria_principal",
-            "descripcion_mercancia": "x_descripcion_mercancia",
             "moneda": "currency_id",
             "pais_origen": "x_pais_origen_id",
             "pais_destino": "x_pais_destino_id",

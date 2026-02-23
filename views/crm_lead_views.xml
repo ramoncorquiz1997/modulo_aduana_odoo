@@ -9,7 +9,7 @@
       <field name="arch" type="xml">
 
         <!-- SMART BUTTON -->
-        <xpath expr="//div[@class='oe_button_box']" position="inside">
+        <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
           <button type="action"
                   name="%(modulo_aduana_odoo.mx_ped_operacion_action)d"
                   class="oe_stat_button"
@@ -60,16 +60,7 @@
             </group>
           </page>
 
-          <page string="Mercancía" name="mi_modulo_mercancia">
-            <group>
-              <group string="Descripción">
-                <field name="x_fraccion_arancelaria_id"/>
-                <field name="x_fraccion_arancelaria_principal" readonly="1"/>
-                <field name="x_descripcion_mercancia"/>
-                <field name="x_currency_id"/>
-              </group>
-            </group>
-          </page>
+          
 
           <page string="Partes" name="mi_modulo_partes">
             <group>

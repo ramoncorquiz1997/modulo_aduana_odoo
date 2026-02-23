@@ -94,7 +94,6 @@ class CrmLead(models.Model):
     )
 
     # --- Operación / mercancía (legacy / resumen) ---
-    x_fraccion_arancelaria = fields.Char(string="Fracción arancelaria")
 
     x_currency_id = fields.Many2one(
         comodel_name="res.currency",
@@ -200,13 +199,6 @@ class CrmLead(models.Model):
         store=True,
         readonly=True,
     )
-    x_fraccion_arancelaria_id = fields.Many2one(
-        comodel_name="mx.ped.fraccion",
-        string="Fracción arancelaria principal",
-        domain=[("active", "=", True)],
-    )
-    x_fraccion_arancelaria_principal = fields.Char(string="Fracción arancelaria principal")
-    x_descripcion_mercancia = fields.Text(string="Descripción de mercancía")
 
     # --- Logística / embarque ---
     _MEDIO_TRANSPORTE_SELECTION = [
@@ -410,15 +402,6 @@ class CrmLead(models.Model):
         for rec in self:
             if rec.x_transportista_id and not rec.x_transporte_pais_id:
                 rec.x_transporte_pais_id = rec.x_transportista_id.country_id
-
-    @api.onchange("x_fraccion_arancelaria_id")
-    def _onchange_x_fraccion_arancelaria_id(self):
-        for rec in self:
-            fraccion = rec.x_fraccion_arancelaria_id
-            if not fraccion:
-                continue
-            rec.x_fraccion_arancelaria_principal = fraccion.code
-            rec.x_descripcion_mercancia = fraccion.name
 
     def action_generate_pedimento_xml(self):
         self.ensure_one()
@@ -1062,8 +1045,7 @@ class CrmLead(models.Model):
             else:
                 line_vals = {
                     "lead_id": rec.id,
-                    "name": rec.x_descripcion_mercancia or rec.name or _("Partida"),
-                    "fraccion_arancelaria": rec.x_fraccion_arancelaria_principal or rec.x_fraccion_arancelaria,
+                    "name": rec.name or _("Partida"),
                     "noms_text": rec.x_normas_noms_text,
                     "requiere_etiquetado": rec.x_etiquetado,
                     "cumplimiento_noms": rec.x_cumplimiento_noms,
@@ -1123,7 +1105,14 @@ class CrmLead(models.Model):
             "observaciones": (self.x_incidente_text or ""),
         })
 
-        for idx, line in enumerate(self.x_operacion_line_ids.sorted(lambda l: (l.sequence or 0, l.id)), start=1):
+        lineas = self.x_operacion_line_ids
+        if not lineas:
+            lineas = self.env["crm.lead.operacion.line"].create({
+                "lead_id": self.id,
+                "name": self.name or _("Partida"),
+            })
+
+        for idx, line in enumerate(lineas.sorted(lambda l: (l.sequence or 0, l.id)), start=1):
             self.env["mx.ped.partida"].create({
                 "operacion_id": op.id,
                 "numero_partida": idx,
