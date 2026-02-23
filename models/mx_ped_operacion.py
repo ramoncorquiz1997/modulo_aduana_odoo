@@ -1557,7 +1557,43 @@ class MxPedOperacion(models.Model):
 
         if campo.tipo == "N":
             txt = "".join(ch for ch in txt if ch.isdigit())
+        # Normaliza paises a clave corta cuando el campo es de pais y longitud pequena.
+        # Evita errores tipo "excede longitud 3" por valores como "MEXICO".
+        source_norm = (source_name or "").strip().lower()
+        if (
+            campo.tipo in ("A", "AN")
+            and campo.longitud
+            and campo.longitud <= 3
+            and ("pais" in source_norm or "country" in source_norm)
+        ):
+            txt = self._normalize_country_token(txt, campo.longitud)
         return txt
+
+    def _normalize_country_token(self, raw_value, max_len):
+        token = (raw_value or "").strip()
+        if not token:
+            return ""
+
+        # Si ya cabe, no tocar.
+        if len(token) <= max_len:
+            return token
+
+        upper = token.upper()
+        country_model = self.env["res.country"].sudo()
+
+        country = country_model.search([("code", "=", upper)], limit=1)
+        if not country:
+            country = country_model.search([("name", "=ilike", token)], limit=1)
+        if not country:
+            country = country_model.search([("name", "ilike", token)], limit=1)
+
+        if country and country.code:
+            code = country.code.strip().upper()
+            if len(code) <= max_len:
+                return code
+
+        # Ultimo recurso: truncar para no romper exportacion.
+        return token[:max_len]
 
     def _build_txt_line(self, layout_registro, valores):
         layout = layout_registro.layout_id
