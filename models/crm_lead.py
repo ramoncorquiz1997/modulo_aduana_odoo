@@ -106,7 +106,11 @@ class CrmLead(models.Model):
         currency_field="x_currency_id",
     )
 
-    x_peso_kg = fields.Float(string="Peso (kg)")
+    x_peso_kg = fields.Float(
+        string="Peso (kg)",
+        compute="_compute_x_totales_partidas",
+        store=True,
+    )
     x_tipo_cambio = fields.Float(string="Tipo de cambio", digits=(16, 5))
 
     x_incrementable_fletes = fields.Monetary(
@@ -604,9 +608,9 @@ class CrmLead(models.Model):
         currency_field="x_currency_id",
     )
 
-    x_bultos = fields.Integer(string="Bultos")
-    x_peso_bruto = fields.Float(string="Peso bruto")
-    x_peso_neto = fields.Float(string="Peso neto")
+    x_bultos = fields.Integer(string="Bultos", compute="_compute_x_totales_partidas", store=True)
+    x_peso_bruto = fields.Float(string="Peso bruto", compute="_compute_x_totales_partidas", store=True)
+    x_peso_neto = fields.Float(string="Peso neto", compute="_compute_x_totales_partidas", store=True)
     x_volumen_cbm = fields.Float(string="Volumen (CBM)")
 
     x_tipo_empaque = fields.Selection(
@@ -999,6 +1003,22 @@ class CrmLead(models.Model):
             rec.x_resumen_etiquetado = f"{tagged}/{total} con etiquetado" if total else "Sin partidas"
 
     @api.depends(
+        "x_operacion_line_ids",
+        "x_operacion_line_ids.packages_line",
+        "x_operacion_line_ids.gross_weight_line",
+        "x_operacion_line_ids.net_weight_line",
+        "x_operacion_line_ids.value_mxn",
+    )
+    def _compute_x_totales_partidas(self):
+        for rec in self:
+            lines = rec.x_operacion_line_ids
+            rec.x_bultos = int(sum(lines.mapped("packages_line") or [0]))
+            rec.x_peso_bruto = sum(lines.mapped("gross_weight_line") or [0.0])
+            rec.x_peso_neto = sum(lines.mapped("net_weight_line") or [0.0])
+            rec.x_peso_kg = rec.x_peso_bruto
+            rec.x_valor_mercancia = sum(lines.mapped("value_mxn") or [0.0])
+
+    @api.depends(
         "x_override_estimados",
         "x_iva_estimado_manual",
         "x_igi_estimado_manual",
@@ -1142,6 +1162,12 @@ class CrmLead(models.Model):
                 "numero_partida": idx,
                 "fraccion_id": line.fraccion_id.id or False,
                 "fraccion_arancelaria": line.fraccion_arancelaria,
+                "uom_id": line.uom_id.id or False,
+                "quantity": line.quantity,
+                "packages_line": line.packages_line,
+                "gross_weight_line": line.gross_weight_line,
+                "net_weight_line": line.net_weight_line,
+                "value_usd": line.value_usd,
                 "nico": line.nico,
                 "descripcion": line.name,
                 "nom_ids": [(6, 0, line.nom_ids.ids)],
@@ -1224,6 +1250,18 @@ class CrmLeadOperacionLine(models.Model):
     )
     fraccion_arancelaria = fields.Char(string="Fraccion arancelaria", size=10)
     nico = fields.Char(string="NICO", size=2)
+    quantity = fields.Float(string="Cantidad", digits=(16, 6), default=1.0)
+    uom_id = fields.Many2one("mx.ped.um", string="Unidad de medida")
+    packages_line = fields.Integer(string="Bultos", default=0)
+    gross_weight_line = fields.Float(string="Peso bruto", digits=(16, 3))
+    net_weight_line = fields.Float(string="Peso neto", digits=(16, 3))
+    value_usd = fields.Float(string="Valor USD", digits=(16, 2))
+    value_mxn = fields.Float(
+        string="Valor MXN",
+        digits=(16, 2),
+        compute="_compute_value_mxn",
+        store=True,
+    )
     nom_ids = fields.Many2many(
         "mx.nom",
         "crm_lead_operacion_line_nom_rel",
@@ -1279,6 +1317,22 @@ class CrmLeadOperacionLine(models.Model):
                 or any(rec.nom_ids.mapped("requires_labeling"))
             )
 
+    @api.depends("value_usd", "lead_id.x_tipo_cambio")
+    def _compute_value_mxn(self):
+        for rec in self:
+            tc = rec.lead_id.x_tipo_cambio or 0.0
+            rec.value_mxn = (rec.value_usd or 0.0) * tc
+
+    @api.constrains("quantity", "value_usd")
+    def _check_required_trade_fields(self):
+        for rec in self:
+            if not rec.quantity:
+                raise UserError(_("La linea requiere cantidad."))
+            if rec.quantity <= 0:
+                raise UserError(_("La cantidad por linea debe ser mayor a cero."))
+            if rec.value_usd is False or rec.value_usd is None or rec.value_usd <= 0:
+                raise UserError(_("La linea requiere valor USD mayor a cero."))
+
     @api.onchange("fraccion_id")
     def _onchange_fraccion_id(self):
         for rec in self:
@@ -1291,6 +1345,8 @@ class CrmLeadOperacionLine(models.Model):
             rec.nico = rec.nico_id.code if rec.nico_id else fraccion.nico
             if not rec.name:
                 rec.name = fraccion.name
+            if fraccion.um_id:
+                rec.uom_id = fraccion.um_id.id
             rec.nom_ids = [(6, 0, fraccion.nom_default_ids.ids)]
             rec.permiso_ids = [(6, 0, fraccion.permiso_default_ids.ids)]
             rec.rrna_ids = [(6, 0, fraccion.rrna_default_ids.ids)]

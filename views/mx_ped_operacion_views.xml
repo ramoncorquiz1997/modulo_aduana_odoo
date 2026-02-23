@@ -107,6 +107,13 @@
                     <field name="fraccion_arancelaria"/>
                     <field name="nico_id"/>
                     <field name="nico"/>
+                    <field name="quantity"/>
+                    <field name="uom_id"/>
+                    <field name="packages_line"/>
+                    <field name="gross_weight_line"/>
+                    <field name="net_weight_line"/>
+                    <field name="value_usd"/>
+                    <field name="value_mxn" readonly="1"/>
                     <field name="descripcion"/>
                     <field name="unidad_tarifa"/>
                     <field name="cantidad_tarifa"/>
@@ -123,6 +130,42 @@
                     <field name="dta_estimado"/>
                     <field name="prv_estimado"/>
                   </list>
+                  <form string="Partida pedimento">
+                    <group>
+                      <group string="Mercancia">
+                        <field name="numero_partida"/>
+                        <field name="fraccion_id"/>
+                        <field name="fraccion_arancelaria"/>
+                        <field name="nico_id"/>
+                        <field name="nico" readonly="1"/>
+                        <field name="descripcion"/>
+                      </group>
+                      <group string="Cantidades y valor">
+                        <field name="quantity"/>
+                        <field name="uom_id"/>
+                        <field name="packages_line"/>
+                        <field name="gross_weight_line"/>
+                        <field name="net_weight_line"/>
+                        <field name="value_usd"/>
+                        <field name="value_mxn" readonly="1"/>
+                      </group>
+                    </group>
+                    <group string="Regulatorio">
+                      <field name="nom_ids" widget="many2many_tags"/>
+                      <field name="permiso_ids" widget="many2many_tags"/>
+                      <field name="rrna_ids" widget="many2many_tags"/>
+                      <field name="labeling_required" readonly="1"/>
+                      <field name="nom_compliance_status"/>
+                      <field name="docs_reference"/>
+                      <field name="notes_regulatorias"/>
+                    </group>
+                    <group string="Impuestos estimados">
+                      <field name="igi_estimado"/>
+                      <field name="iva_estimado"/>
+                      <field name="dta_estimado"/>
+                      <field name="prv_estimado"/>
+                    </group>
+                  </form>
                 </field>
               </page>
               <page string="Registros">

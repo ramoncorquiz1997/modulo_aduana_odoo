@@ -1,4 +1,5 @@
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class MxPedPartida(models.Model):
@@ -24,6 +25,18 @@ class MxPedPartida(models.Model):
     )
     nico = fields.Char(size=2)
     descripcion = fields.Text()
+    quantity = fields.Float(string="Cantidad", digits=(16, 6), default=1.0)
+    uom_id = fields.Many2one("mx.ped.um", string="Unidad de medida")
+    packages_line = fields.Integer(string="Bultos", default=0)
+    gross_weight_line = fields.Float(string="Peso bruto", digits=(16, 3))
+    net_weight_line = fields.Float(string="Peso neto", digits=(16, 3))
+    value_usd = fields.Float(string="Valor USD", digits=(16, 2))
+    value_mxn = fields.Float(
+        string="Valor MXN",
+        digits=(16, 2),
+        compute="_compute_value_mxn",
+        store=True,
+    )
 
     unidad_tarifa = fields.Char(size=10)
     cantidad_tarifa = fields.Float(digits=(16, 5))
@@ -93,6 +106,22 @@ class MxPedPartida(models.Model):
                 or any(rec.nom_ids.mapped("requires_labeling"))
             )
 
+    @api.depends("value_usd", "operacion_id.lead_id.x_tipo_cambio")
+    def _compute_value_mxn(self):
+        for rec in self:
+            tc = rec.operacion_id.lead_id.x_tipo_cambio or 0.0
+            rec.value_mxn = (rec.value_usd or 0.0) * tc
+
+    @api.constrains("quantity", "value_usd")
+    def _check_required_trade_fields(self):
+        for rec in self:
+            if not rec.quantity:
+                raise ValidationError("La partida requiere cantidad.")
+            if rec.quantity <= 0:
+                raise ValidationError("La cantidad por partida debe ser mayor a cero.")
+            if rec.value_usd is False or rec.value_usd is None or rec.value_usd <= 0:
+                raise ValidationError("La partida requiere valor USD mayor a cero.")
+
     @api.onchange("fraccion_id")
     def _onchange_fraccion_id(self):
         for rec in self:
@@ -107,6 +136,7 @@ class MxPedPartida(models.Model):
                 rec.descripcion = fraccion.name
             if fraccion.um_id:
                 rec.unidad_tarifa = fraccion.um_id.code
+                rec.uom_id = fraccion.um_id.id
             rec.nom_ids = [(6, 0, fraccion.nom_default_ids.ids)]
             rec.permiso_ids = [(6, 0, fraccion.permiso_default_ids.ids)]
             rec.rrna_ids = [(6, 0, fraccion.rrna_default_ids.ids)]
