@@ -9,6 +9,7 @@ from . import mx_ped_registro
 from . import mx_ped_clave
 from . import mx_ped_aduana_seccion
 from . import mx_ped_fraccion
+from . import mx_ped_regulatorio
 from . import mx_ped_tipo_movimiento
 from . import mx_ped_tipo_contenedor
 from . import mx_ped_numero_control

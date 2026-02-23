@@ -72,17 +72,38 @@
                     <group>
                         <field name="name"/>
                     </group>
-                    <group string="Tasas">
-                        <field name="tasa_ids" context="{'default_fraccion_id': id}">
-                            <list editable="bottom">
-                                <field name="tipo_operacion"/>
-                                <field name="territorio"/>
-                                <field name="igi"/>
-                                <field name="iva"/>
-                                <field name="note"/>
-                            </list>
-                        </field>
-                    </group>
+                    <notebook>
+                        <page string="Tasas">
+                            <field name="tasa_ids" context="{'default_fraccion_id': id}">
+                                <list editable="bottom">
+                                    <field name="tipo_operacion"/>
+                                    <field name="territorio"/>
+                                    <field name="igi"/>
+                                    <field name="iva"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Regulatorio">
+                            <group>
+                                <group>
+                                    <field name="requires_labeling_default"/>
+                                    <field name="nom_default_ids" widget="many2many_tags"/>
+                                    <field name="permiso_default_ids" widget="many2many_tags"/>
+                                    <field name="rrna_default_ids" widget="many2many_tags"/>
+                                </group>
+                            </group>
+                            <group string="NICO sugeridos por fraccion">
+                                <field name="nico_ids" context="{'default_fraccion_id': id}">
+                                    <list editable="bottom">
+                                        <field name="code"/>
+                                        <field name="name"/>
+                                        <field name="active"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>

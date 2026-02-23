@@ -12,5 +12,11 @@
       <field name="category_id" ref="module_category_aduana"/>
       <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
     </record>
+
+    <record id="group_aduana_regulatorio" model="res.groups">
+      <field name="name">Aduana Regulatorio Admin</field>
+      <field name="category_id" ref="module_category_aduana"/>
+      <field name="implied_ids" eval="[(4, ref('modulo_aduana_odoo.group_aduana_user'))]"/>
+    </record>
   </data>
 </odoo>

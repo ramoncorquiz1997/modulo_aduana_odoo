@@ -105,15 +105,19 @@
                     <field name="numero_partida"/>
                     <field name="fraccion_id"/>
                     <field name="fraccion_arancelaria"/>
+                    <field name="nico_id"/>
                     <field name="nico"/>
                     <field name="descripcion"/>
                     <field name="unidad_tarifa"/>
                     <field name="cantidad_tarifa"/>
                     <field name="valor_aduana"/>
-                    <field name="permisos_ids" widget="many2many_tags"/>
+                    <field name="nom_ids" widget="many2many_tags"/>
+                    <field name="permiso_ids" widget="many2many_tags"/>
                     <field name="rrna_ids" widget="many2many_tags"/>
-                    <field name="requiere_etiquetado"/>
-                    <field name="cumplimiento_noms"/>
+                    <field name="labeling_required" readonly="1"/>
+                    <field name="nom_compliance_status"/>
+                    <field name="docs_reference"/>
+                    <field name="notes_regulatorias"/>
                     <field name="igi_estimado"/>
                     <field name="iva_estimado"/>
                     <field name="dta_estimado"/>

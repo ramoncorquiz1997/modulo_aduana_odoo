@@ -41,3 +41,11 @@ access_aduana_catalogo_tipo_operacion,aduana.catalogo.tipo_operacion,model_aduan
 access_aduana_catalogo_regimen,aduana.catalogo.regimen,model_aduana_catalogo_regimen,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_aduana_catalogo_aduana,aduana.catalogo.aduana,model_aduana_catalogo_aduana,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_aduana_catalogo_clave_pedimento,aduana.catalogo.clave_pedimento,model_aduana_catalogo_clave_pedimento,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_nom_user,mx.nom.user,model_mx_nom,modulo_aduana_odoo.group_aduana_user,1,0,0,0
+access_mx_nom_reg,mx.nom.reg,model_mx_nom,modulo_aduana_odoo.group_aduana_regulatorio,1,1,1,1
+access_mx_rrna_user,mx.rrna.user,model_mx_rrna,modulo_aduana_odoo.group_aduana_user,1,0,0,0
+access_mx_rrna_reg,mx.rrna.reg,model_mx_rrna,modulo_aduana_odoo.group_aduana_regulatorio,1,1,1,1
+access_mx_permiso_user,mx.permiso.user,model_mx_permiso,modulo_aduana_odoo.group_aduana_user,1,0,0,0
+access_mx_permiso_reg,mx.permiso.reg,model_mx_permiso,modulo_aduana_odoo.group_aduana_regulatorio,1,1,1,1
+access_mx_nico_user,mx.nico.user,model_mx_nico,modulo_aduana_odoo.group_aduana_user,1,0,0,0
+access_mx_nico_reg,mx.nico.reg,model_mx_nico,modulo_aduana_odoo.group_aduana_regulatorio,1,1,1,1

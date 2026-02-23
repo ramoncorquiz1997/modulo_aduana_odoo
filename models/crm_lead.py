@@ -980,26 +980,22 @@ class CrmLead(models.Model):
 
     @api.depends(
         "x_operacion_line_ids",
-        "x_operacion_line_ids.permisos_ids",
+        "x_operacion_line_ids.permiso_ids",
         "x_operacion_line_ids.rrna_ids",
-        "x_operacion_line_ids.noms_text",
-        "x_operacion_line_ids.requiere_etiquetado",
+        "x_operacion_line_ids.nom_ids",
+        "x_operacion_line_ids.labeling_required",
     )
     def _compute_x_import_summaries(self):
         for rec in self:
-            permiso_names = sorted({name for name in rec.x_operacion_line_ids.mapped("permisos_ids.name") if name})
+            permiso_names = sorted({name for name in rec.x_operacion_line_ids.mapped("permiso_ids.name") if name})
             rrna_names = sorted({name for name in rec.x_operacion_line_ids.mapped("rrna_ids.name") if name})
-            noms_texts = sorted({
-                txt.strip()
-                for txt in rec.x_operacion_line_ids.mapped("noms_text")
-                if (txt or "").strip()
-            })
-            tagged = len(rec.x_operacion_line_ids.filtered("requiere_etiquetado"))
+            nom_names = sorted({name for name in rec.x_operacion_line_ids.mapped("nom_ids.code") if name})
+            tagged = len(rec.x_operacion_line_ids.filtered("labeling_required"))
             total = len(rec.x_operacion_line_ids)
 
             rec.x_resumen_permisos = ", ".join(permiso_names) if permiso_names else "Sin permisos"
             rec.x_resumen_rrna = ", ".join(rrna_names) if rrna_names else "Sin RRNA"
-            rec.x_resumen_noms = "\n".join(noms_texts) if noms_texts else "Sin NOMs"
+            rec.x_resumen_noms = ", ".join(nom_names) if nom_names else "Sin NOMs"
             rec.x_resumen_etiquetado = f"{tagged}/{total} con etiquetado" if total else "Sin partidas"
 
     @api.depends(
@@ -1039,6 +1035,9 @@ class CrmLead(models.Model):
             rec.x_prv_estimado_manual = rec.x_prv_estimado
 
     def action_migrar_importacion_legacy(self):
+        nom_model = self.env["mx.nom"].sudo()
+        permiso_model = self.env["mx.permiso"].sudo()
+        rrna_model = self.env["mx.rrna"].sudo()
         for rec in self:
             if rec.x_operacion_line_ids:
                 lines = rec.x_operacion_line_ids
@@ -1046,15 +1045,40 @@ class CrmLead(models.Model):
                 line_vals = {
                     "lead_id": rec.id,
                     "name": rec.name or _("Partida"),
-                    "noms_text": rec.x_normas_noms_text,
-                    "requiere_etiquetado": rec.x_etiquetado,
-                    "cumplimiento_noms": rec.x_cumplimiento_noms,
+                    "nom_compliance_status": rec.x_cumplimiento_noms or "pendiente",
                 }
                 lines = self.env["crm.lead.operacion.line"].create(line_vals)
 
             if rec.x_permisos_ids:
-                lines.write({"permisos_ids": [(6, 0, rec.x_permisos_ids.ids)]})
-                lines.write({"rrna_ids": [(6, 0, rec.x_permisos_ids.ids)]})
+                permiso_ids = []
+                rrna_ids = []
+                for tag in rec.x_permisos_ids:
+                    code = (tag.name or "").strip()[:64]
+                    permiso = permiso_model.search([("code", "=", code)], limit=1)
+                    if not permiso:
+                        permiso = permiso_model.create({"code": code or "LEGACY", "name": tag.name or code})
+                    permiso_ids.append(permiso.id)
+
+                    rrna = rrna_model.search([("code", "=", code)], limit=1)
+                    if not rrna:
+                        rrna = rrna_model.create({"code": code or "LEGACY", "name": tag.name or code})
+                    rrna_ids.append(rrna.id)
+                lines.write({"permiso_ids": [(6, 0, permiso_ids)]})
+                lines.write({"rrna_ids": [(6, 0, rrna_ids)]})
+
+            text_nom = (rec.x_normas_noms_text or "").strip()
+            if text_nom:
+                code = text_nom.split()[0][:64]
+                nom = nom_model.search([("code", "=", code)], limit=1)
+                if not nom:
+                    nom = nom_model.create({
+                        "code": code or "LEGACY_NOM",
+                        "name": text_nom[:255],
+                        "requires_labeling": bool(rec.x_etiquetado),
+                    })
+                lines.write({"nom_ids": [(4, nom.id)]})
+            if rec.x_etiquetado and not text_nom:
+                lines.write({"notes_regulatorias": _("Legacy: requiere etiquetado en cabecera.")})
 
         return {
             "type": "ir.actions.client",
@@ -1120,11 +1144,13 @@ class CrmLead(models.Model):
                 "fraccion_arancelaria": line.fraccion_arancelaria,
                 "nico": line.nico,
                 "descripcion": line.name,
-                "permisos_ids": [(6, 0, line.permisos_ids.ids)],
+                "nom_ids": [(6, 0, line.nom_ids.ids)],
+                "permiso_ids": [(6, 0, line.permiso_ids.ids)],
                 "rrna_ids": [(6, 0, line.rrna_ids.ids)],
-                "noms_text": line.noms_text,
-                "requiere_etiquetado": line.requiere_etiquetado,
-                "cumplimiento_noms": line.cumplimiento_noms,
+                "labeling_required": line.labeling_required,
+                "nom_compliance_status": line.nom_compliance_status,
+                "docs_reference": line.docs_reference,
+                "notes_regulatorias": line.notes_regulatorias,
                 "igi_estimado": line.igi_estimado,
                 "iva_estimado": line.iva_estimado,
                 "dta_estimado": line.dta_estimado,
@@ -1191,25 +1217,40 @@ class CrmLeadOperacionLine(models.Model):
         string="Fraccion arancelaria",
         domain=[("active", "=", True)],
     )
+    nico_id = fields.Many2one(
+        "mx.nico",
+        string="NICO",
+        domain="[('fraccion_id', '=', fraccion_id)]",
+    )
     fraccion_arancelaria = fields.Char(string="Fraccion arancelaria", size=10)
     nico = fields.Char(string="NICO", size=2)
-    permisos_ids = fields.Many2many(
-        "crm.tag",
-        "crm_lead_operacion_line_permiso_tag_rel",
+    nom_ids = fields.Many2many(
+        "mx.nom",
+        "crm_lead_operacion_line_nom_rel",
         "line_id",
-        "tag_id",
+        "nom_id",
+        string="NOM",
+    )
+    permiso_ids = fields.Many2many(
+        "mx.permiso",
+        "crm_lead_operacion_line_permiso_rel",
+        "line_id",
+        "permiso_id",
         string="Permisos",
     )
     rrna_ids = fields.Many2many(
-        "crm.tag",
-        "crm_lead_operacion_line_rrna_tag_rel",
+        "mx.rrna",
+        "crm_lead_operacion_line_rrna_rel",
         "line_id",
-        "tag_id",
-        string="Regulaciones importacion",
+        "rrna_id",
+        string="RRNA",
     )
-    noms_text = fields.Text(string="NOM / Normas aplicables")
-    requiere_etiquetado = fields.Boolean(string="Requiere etiquetado")
-    cumplimiento_noms = fields.Selection(
+    labeling_required = fields.Boolean(
+        string="Requiere etiquetado",
+        compute="_compute_labeling_required",
+        store=True,
+    )
+    nom_compliance_status = fields.Selection(
         [
             ("pendiente", "Pendiente"),
             ("cumple", "Cumple"),
@@ -1218,6 +1259,8 @@ class CrmLeadOperacionLine(models.Model):
         string="Cumplimiento NOM",
         default="pendiente",
     )
+    docs_reference = fields.Char(string="Referencia documentos")
+    notes_regulatorias = fields.Text(string="Notas regulatorias")
     currency_id = fields.Many2one(
         related="lead_id.x_currency_id",
         string="Moneda",
@@ -1228,6 +1271,14 @@ class CrmLeadOperacionLine(models.Model):
     dta_estimado = fields.Monetary(string="DTA estimado", currency_field="currency_id")
     prv_estimado = fields.Monetary(string="PRV estimado", currency_field="currency_id")
 
+    @api.depends("nom_ids", "nom_ids.requires_labeling", "fraccion_id.requires_labeling_default")
+    def _compute_labeling_required(self):
+        for rec in self:
+            rec.labeling_required = bool(
+                rec.fraccion_id.requires_labeling_default
+                or any(rec.nom_ids.mapped("requires_labeling"))
+            )
+
     @api.onchange("fraccion_id")
     def _onchange_fraccion_id(self):
         for rec in self:
@@ -1235,6 +1286,37 @@ class CrmLeadOperacionLine(models.Model):
             if not fraccion:
                 continue
             rec.fraccion_arancelaria = fraccion.code
-            rec.nico = fraccion.nico
+            if rec.nico_id and rec.nico_id.fraccion_id != fraccion:
+                rec.nico_id = False
+            rec.nico = rec.nico_id.code if rec.nico_id else fraccion.nico
             if not rec.name:
                 rec.name = fraccion.name
+            rec.nom_ids = [(6, 0, fraccion.nom_default_ids.ids)]
+            rec.permiso_ids = [(6, 0, fraccion.permiso_default_ids.ids)]
+            rec.rrna_ids = [(6, 0, fraccion.rrna_default_ids.ids)]
+
+    @api.onchange("nico_id")
+    def _onchange_nico_id(self):
+        for rec in self:
+            rec.nico = rec.nico_id.code if rec.nico_id else (rec.fraccion_id.nico if rec.fraccion_id else False)
+
+    def action_load_regulatory_defaults(self):
+        for rec in self:
+            fraccion = rec.fraccion_id
+            if not fraccion:
+                continue
+            rec.nom_ids = [(6, 0, fraccion.nom_default_ids.ids)]
+            rec.permiso_ids = [(6, 0, fraccion.permiso_default_ids.ids)]
+            rec.rrna_ids = [(6, 0, fraccion.rrna_default_ids.ids)]
+        return True
+
+    def get_regulatory_summary_text(self):
+        self.ensure_one()
+        noms = ", ".join(self.nom_ids.mapped("code"))
+        permisos = ", ".join(self.permiso_ids.mapped("code"))
+        rrna = ", ".join(self.rrna_ids.mapped("code"))
+        return (
+            f"NOM: {noms or 'N/A'} ({self.nom_compliance_status or 'pendiente'}) | "
+            f"PERMISO: {permisos or 'N/A'} | "
+            f"RRNA: {rrna or 'N/A'}"
+        )

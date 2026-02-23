@@ -17,6 +17,11 @@ class MxPedPartida(models.Model):
     numero_partida = fields.Integer()
     fraccion_id = fields.Many2one("mx.ped.fraccion", string="Fraccion arancelaria")
     fraccion_arancelaria = fields.Char(size=20, index=True)
+    nico_id = fields.Many2one(
+        "mx.nico",
+        string="NICO",
+        domain="[('fraccion_id', '=', fraccion_id)]",
+    )
     nico = fields.Char(size=2)
     descripcion = fields.Text()
 
@@ -34,38 +39,59 @@ class MxPedPartida(models.Model):
         related="operacion_id.currency_id", store=True, readonly=True
     )
 
-    pais_origen_id = fields.Many2one("res.country", string="País origen")
-    pais_vendedor_id = fields.Many2one("res.country", string="País vendedor")
+    pais_origen_id = fields.Many2one("res.country", string="Pais origen")
+    pais_vendedor_id = fields.Many2one("res.country", string="Pais vendedor")
 
     observaciones = fields.Text()
-    permisos_ids = fields.Many2many(
-        "crm.tag",
-        "mx_ped_partida_permiso_tag_rel",
+    nom_ids = fields.Many2many(
+        "mx.nom",
+        "mx_ped_partida_nom_rel",
         "partida_id",
-        "tag_id",
+        "nom_id",
+        string="NOM",
+    )
+    permiso_ids = fields.Many2many(
+        "mx.permiso",
+        "mx_ped_partida_permiso_rel",
+        "partida_id",
+        "permiso_id",
         string="Permisos",
     )
     rrna_ids = fields.Many2many(
-        "crm.tag",
-        "mx_ped_partida_rrna_tag_rel",
+        "mx.rrna",
+        "mx_ped_partida_rrna_rel",
         "partida_id",
-        "tag_id",
-        string="Regulaciones importacion",
+        "rrna_id",
+        string="RRNA",
     )
-    noms_text = fields.Text(string="NOM / Normas aplicables")
-    requiere_etiquetado = fields.Boolean(string="Requiere etiquetado")
-    cumplimiento_noms = fields.Selection(
+    labeling_required = fields.Boolean(
+        string="Requiere etiquetado",
+        compute="_compute_labeling_required",
+        store=True,
+    )
+    nom_compliance_status = fields.Selection(
         [
             ("pendiente", "Pendiente"),
             ("cumple", "Cumple"),
             ("no_aplica", "No aplica"),
         ],
         string="Cumplimiento NOM",
+        default="pendiente",
     )
+    docs_reference = fields.Char(string="Referencia documentos")
+    notes_regulatorias = fields.Text(string="Notas regulatorias")
     iva_estimado = fields.Monetary(string="IVA estimado", currency_field="currency_id")
     igi_estimado = fields.Monetary(string="IGI estimado", currency_field="currency_id")
     dta_estimado = fields.Monetary(string="DTA estimado", currency_field="currency_id")
     prv_estimado = fields.Monetary(string="PRV estimado", currency_field="currency_id")
+
+    @api.depends("nom_ids", "nom_ids.requires_labeling", "fraccion_id.requires_labeling_default")
+    def _compute_labeling_required(self):
+        for rec in self:
+            rec.labeling_required = bool(
+                rec.fraccion_id.requires_labeling_default
+                or any(rec.nom_ids.mapped("requires_labeling"))
+            )
 
     @api.onchange("fraccion_id")
     def _onchange_fraccion_id(self):
@@ -74,8 +100,29 @@ class MxPedPartida(models.Model):
             if not fraccion:
                 continue
             rec.fraccion_arancelaria = fraccion.code
-            rec.nico = fraccion.nico
+            if rec.nico_id and rec.nico_id.fraccion_id != fraccion:
+                rec.nico_id = False
+            rec.nico = rec.nico_id.code if rec.nico_id else fraccion.nico
             if not rec.descripcion:
                 rec.descripcion = fraccion.name
             if fraccion.um_id:
                 rec.unidad_tarifa = fraccion.um_id.code
+            rec.nom_ids = [(6, 0, fraccion.nom_default_ids.ids)]
+            rec.permiso_ids = [(6, 0, fraccion.permiso_default_ids.ids)]
+            rec.rrna_ids = [(6, 0, fraccion.rrna_default_ids.ids)]
+
+    @api.onchange("nico_id")
+    def _onchange_nico_id(self):
+        for rec in self:
+            rec.nico = rec.nico_id.code if rec.nico_id else (rec.fraccion_id.nico if rec.fraccion_id else False)
+
+    def get_regulatory_summary_text(self):
+        self.ensure_one()
+        noms = ", ".join(self.nom_ids.mapped("code"))
+        permisos = ", ".join(self.permiso_ids.mapped("code"))
+        rrna = ", ".join(self.rrna_ids.mapped("code"))
+        return (
+            f"NOM: {noms or 'N/A'} ({self.nom_compliance_status or 'pendiente'}) | "
+            f"PERMISO: {permisos or 'N/A'} | "
+            f"RRNA: {rrna or 'N/A'}"
+        )

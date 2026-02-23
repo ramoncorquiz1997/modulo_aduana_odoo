@@ -224,10 +224,10 @@
                         type="object"
                         string="Migrar datos legacy a partidas"
                         class="btn-secondary"/>
-                <field name="x_permisos_ids" widget="many2many_tags"/>
-                <field name="x_normas_noms_text"/>
-                <field name="x_etiquetado"/>
-                <field name="x_cumplimiento_noms"/>
+                <field name="x_permisos_ids" widget="many2many_tags" invisible="1"/>
+                <field name="x_normas_noms_text" invisible="1"/>
+                <field name="x_etiquetado" invisible="1"/>
+                <field name="x_cumplimiento_noms" invisible="1"/>
                 <field name="x_certificado_origen"/>
               </group>
             </group>
@@ -265,16 +265,23 @@
                 <field name="name"/>
                 <field name="fraccion_id"/>
                 <field name="fraccion_arancelaria" readonly="1"/>
-                <field name="nico"/>
-                <field name="permisos_ids" widget="many2many_tags"/>
+                <field name="nico_id"/>
+                <field name="nico" readonly="1"/>
+                <field name="nom_ids" widget="many2many_tags"/>
+                <field name="permiso_ids" widget="many2many_tags"/>
                 <field name="rrna_ids" widget="many2many_tags"/>
-                <field name="noms_text"/>
-                <field name="requiere_etiquetado"/>
-                <field name="cumplimiento_noms"/>
+                <field name="labeling_required" readonly="1"/>
+                <field name="nom_compliance_status"/>
+                <field name="docs_reference"/>
+                <field name="notes_regulatorias"/>
                 <field name="igi_estimado"/>
                 <field name="iva_estimado"/>
                 <field name="dta_estimado"/>
                 <field name="prv_estimado"/>
+                <button name="action_load_regulatory_defaults"
+                        type="object"
+                        string="Defaults"
+                        class="btn-link"/>
               </list>
             </field>
           </page>

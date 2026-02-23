@@ -20,6 +20,7 @@
         "views/mx_ped_rulepack_views.xml",
         "views/mx_ped_aduana_seccion_views.xml",
         "views/mx_ped_fraccion_views.xml",
+        "views/mx_ped_regulatorio_views.xml",
         "views/mx_ped_tipo_movimiento_views.xml",
         "views/mx_ped_tipo_contenedor_views.xml",
         "views/mx_ped_estructura_regla_views.xml",

@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <record id="view_mx_nom_list" model="ir.ui.view">
+      <field name="name">mx.nom.list</field>
+      <field name="model">mx.nom</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="code"/>
+          <field name="name"/>
+          <field name="authority"/>
+          <field name="requires_labeling"/>
+          <field name="doc_required"/>
+          <field name="active"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="view_mx_nom_form" model="ir.ui.view">
+      <field name="name">mx.nom.form</field>
+      <field name="model">mx.nom</field>
+      <field name="arch" type="xml">
+        <form>
+          <sheet>
+            <group>
+              <group>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="authority"/>
+                <field name="requires_labeling"/>
+                <field name="doc_required"/>
+                <field name="active"/>
+              </group>
+              <group>
+                <field name="valid_from"/>
+                <field name="valid_to"/>
+                <field name="reference_url"/>
+              </group>
+            </group>
+            <group>
+              <field name="notes"/>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="view_mx_nom_search" model="ir.ui.view">
+      <field name="name">mx.nom.search</field>
+      <field name="model">mx.nom</field>
+      <field name="arch" type="xml">
+        <search>
+          <field name="code"/>
+          <field name="name"/>
+          <field name="authority"/>
+          <filter name="active" string="Activos" domain="[('active','=',True)]"/>
+        </search>
+      </field>
+    </record>
+
+    <record id="action_mx_nom" model="ir.actions.act_window">
+      <field name="name">Catalogo NOM</field>
+      <field name="res_model">mx.nom</field>
+      <field name="view_mode">list,form</field>
+      <field name="search_view_id" ref="view_mx_nom_search"/>
+    </record>
+
+    <record id="view_mx_rrna_list" model="ir.ui.view">
+      <field name="name">mx.rrna.list</field>
+      <field name="model">mx.rrna</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="code"/>
+          <field name="name"/>
+          <field name="type"/>
+          <field name="authority"/>
+          <field name="active"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="view_mx_rrna_form" model="ir.ui.view">
+      <field name="name">mx.rrna.form</field>
+      <field name="model">mx.rrna</field>
+      <field name="arch" type="xml">
+        <form>
+          <sheet>
+            <group>
+              <group>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="type"/>
+                <field name="authority"/>
+                <field name="active"/>
+              </group>
+              <group>
+                <field name="valid_from"/>
+                <field name="valid_to"/>
+                <field name="reference_url"/>
+              </group>
+            </group>
+            <group>
+              <field name="notes"/>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="view_mx_rrna_search" model="ir.ui.view">
+      <field name="name">mx.rrna.search</field>
+      <field name="model">mx.rrna</field>
+      <field name="arch" type="xml">
+        <search>
+          <field name="code"/>
+          <field name="name"/>
+          <field name="type"/>
+          <field name="authority"/>
+          <filter name="active" string="Activos" domain="[('active','=',True)]"/>
+        </search>
+      </field>
+    </record>
+
+    <record id="action_mx_rrna" model="ir.actions.act_window">
+      <field name="name">Catalogo RRNA</field>
+      <field name="res_model">mx.rrna</field>
+      <field name="view_mode">list,form</field>
+      <field name="search_view_id" ref="view_mx_rrna_search"/>
+    </record>
+
+    <record id="view_mx_permiso_list" model="ir.ui.view">
+      <field name="name">mx.permiso.list</field>
+      <field name="model">mx.permiso</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="code"/>
+          <field name="name"/>
+          <field name="authority"/>
+          <field name="document_type"/>
+          <field name="requires_expiration"/>
+          <field name="active"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="view_mx_permiso_form" model="ir.ui.view">
+      <field name="name">mx.permiso.form</field>
+      <field name="model">mx.permiso</field>
+      <field name="arch" type="xml">
+        <form>
+          <sheet>
+            <group>
+              <group>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="authority"/>
+                <field name="document_type"/>
+                <field name="requires_expiration"/>
+                <field name="active"/>
+              </group>
+              <group>
+                <field name="valid_from"/>
+                <field name="valid_to"/>
+                <field name="reference_url"/>
+              </group>
+            </group>
+            <group>
+              <field name="notes"/>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="view_mx_permiso_search" model="ir.ui.view">
+      <field name="name">mx.permiso.search</field>
+      <field name="model">mx.permiso</field>
+      <field name="arch" type="xml">
+        <search>
+          <field name="code"/>
+          <field name="name"/>
+          <field name="authority"/>
+          <filter name="active" string="Activos" domain="[('active','=',True)]"/>
+        </search>
+      </field>
+    </record>
+
+    <record id="action_mx_permiso" model="ir.actions.act_window">
+      <field name="name">Catalogo Permisos</field>
+      <field name="res_model">mx.permiso</field>
+      <field name="view_mode">list,form</field>
+      <field name="search_view_id" ref="view_mx_permiso_search"/>
+    </record>
+
+    <record id="view_mx_nico_list" model="ir.ui.view">
+      <field name="name">mx.nico.list</field>
+      <field name="model">mx.nico</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="fraccion_id"/>
+          <field name="code"/>
+          <field name="name"/>
+          <field name="active"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="view_mx_nico_form" model="ir.ui.view">
+      <field name="name">mx.nico.form</field>
+      <field name="model">mx.nico</field>
+      <field name="arch" type="xml">
+        <form>
+          <sheet>
+            <group>
+              <field name="fraccion_id"/>
+              <field name="code"/>
+              <field name="name"/>
+              <field name="active"/>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="action_mx_nico" model="ir.actions.act_window">
+      <field name="name">Catalogo NICO</field>
+      <field name="res_model">mx.nico</field>
+      <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_mx_nom"
+              name="Catalogo NOM"
+              parent="menu_mx_ped_catalogos"
+              action="action_mx_nom"
+              sequence="45"/>
+    <menuitem id="menu_mx_permiso"
+              name="Catalogo Permisos"
+              parent="menu_mx_ped_catalogos"
+              action="action_mx_permiso"
+              sequence="46"/>
+    <menuitem id="menu_mx_rrna"
+              name="Catalogo RRNA"
+              parent="menu_mx_ped_catalogos"
+              action="action_mx_rrna"
+              sequence="47"/>
+    <menuitem id="menu_mx_nico"
+              name="Catalogo NICO"
+              parent="menu_mx_ped_catalogos"
+              action="action_mx_nico"
+              sequence="48"/>
+
+  </data>
+</odoo>

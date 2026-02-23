@@ -34,6 +34,29 @@ class MxPedFraccion(models.Model):
 
     um_id = fields.Many2one("mx.ped.um", string="Unidad de medida")
     tasa_ids = fields.One2many("mx.ped.fraccion.tasa", "fraccion_id", string="Tasas")
+    nico_ids = fields.One2many("mx.nico", "fraccion_id", string="NICOs")
+    nom_default_ids = fields.Many2many(
+        "mx.nom",
+        "mx_ped_fraccion_nom_default_rel",
+        "fraccion_id",
+        "nom_id",
+        string="NOM sugeridas",
+    )
+    rrna_default_ids = fields.Many2many(
+        "mx.rrna",
+        "mx_ped_fraccion_rrna_default_rel",
+        "fraccion_id",
+        "rrna_id",
+        string="RRNA sugeridas",
+    )
+    permiso_default_ids = fields.Many2many(
+        "mx.permiso",
+        "mx_ped_fraccion_permiso_default_rel",
+        "fraccion_id",
+        "permiso_id",
+        string="Permisos sugeridos",
+    )
+    requires_labeling_default = fields.Boolean(string="Etiquetado sugerido")
     active = fields.Boolean(default=True)
 
     display_name = fields.Char(compute="_compute_display_name")
