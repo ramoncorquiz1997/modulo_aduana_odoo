@@ -12,6 +12,9 @@ class MxPedRulepack(models.Model):
     code = fields.Char(required=True, index=True)
     active = fields.Boolean(default=True)
     priority = fields.Integer(default=100)
+    weight_estructura = fields.Integer(default=10)
+    weight_clave = fields.Integer(default=20)
+    weight_condition = fields.Integer(default=30)
     state = fields.Selection(
         [("draft", "Borrador"), ("active", "Activo"), ("retired", "Retirado")],
         default="draft",
@@ -230,6 +233,11 @@ class MxPedRulepackConditionRule(models.Model):
         required=True,
     )
     fraccion_id = fields.Many2one("mx.ped.fraccion", string="Fraccion (opcional)", ondelete="restrict")
+    fraccion_capitulo = fields.Char(
+        string="Capitulo (opcional)",
+        size=2,
+        help="Alternativa menos especifica a fraccion exacta.",
+    )
 
     @api.model_create_multi
     def create(self, vals_list):

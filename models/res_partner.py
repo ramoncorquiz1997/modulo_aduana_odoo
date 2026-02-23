@@ -51,6 +51,15 @@ class ResPartner(models.Model):
     x_num_autorizacion_aduanal = fields.Char(string="Num. autorizacion aduanal")
     x_csf_filename = fields.Char(string="Nombre de archivo CSF")
     x_csf_file = fields.Binary(string="CSF (PDF)")
+    x_rule_engine_strict = fields.Selection(
+        [
+            ("inherit", "Heredar global"),
+            ("strict", "Forzar STRICT"),
+            ("relaxed", "Forzar no strict"),
+        ],
+        string="Motor reglas STRICT",
+        default="inherit",
+    )
 
     def _wa_param(self, key):
         return self.env["ir.config_parameter"].sudo().get_param(key)

@@ -34,6 +34,7 @@
             <button name="action_export_xml" type="object" string="Exportar XML"/>
             <button name="action_preparar_estructura" type="object" string="Preparar estructura" class="btn-secondary"/>
             <button name="action_simular_estructura" type="object" string="Simular estructura" class="btn-secondary"/>
+            <button name="action_explain_ruleplan" type="object" string="Descargar Explain Plan" class="btn-secondary"/>
             <button name="action_cargar_desde_lead" type="object" string="Cargar desde Lead" class="btn-secondary"/>
             <button name="action_crear_factura" type="object" string="Crear factura" class="btn-secondary"/>
           </header>
@@ -62,6 +63,8 @@
                 <field name="regimen"/>
                 <field name="incoterm"/>
                 <field name="fecha_operacion"/>
+                <field name="strict_mode_policy"/>
+                <field name="strict_mode_effective" readonly="1"/>
                 <field name="aduana_seccion_despacho_id"/>
                 <field name="aduana_clave"/>
                 <field name="aduana_seccion_entrada_salida_id"/>

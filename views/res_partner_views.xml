@@ -25,6 +25,7 @@
             <group>
               <group string="Rol">
                 <field name="x_contact_role"/>
+                <field name="x_rule_engine_strict"/>
                 <field name="x_patente_aduanal" invisible="x_contact_role != 'agente_aduanal'"/>
                 <field name="x_num_autorizacion_aduanal" invisible="x_contact_role != 'agente_aduanal'"/>
               </group>

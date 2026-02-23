@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import base64
 import io
+import json
 import re
 from collections import Counter
 import xml.etree.ElementTree as ET
@@ -237,6 +238,20 @@ class MxPedOperacion(models.Model):
         ondelete="restrict",
         help="Version normativa data-driven aplicada a esta operacion.",
     )
+    strict_mode_policy = fields.Selection(
+        [
+            ("inherit", "Heredar"),
+            ("strict", "Forzar STRICT"),
+            ("relaxed", "Forzar no strict"),
+        ],
+        string="Modo STRICT",
+        default="inherit",
+    )
+    strict_mode_effective = fields.Boolean(
+        string="STRICT efectivo",
+        compute="_compute_strict_mode_effective",
+        store=False,
+    )
     rule_trace_json = fields.Json(string="Trazabilidad de reglas", readonly=True, copy=False)
     rule_trace_at = fields.Datetime(string="Ultima evaluaci?n de reglas", readonly=True, copy=False)
     show_acuse_ui = fields.Boolean(
@@ -307,6 +322,11 @@ class MxPedOperacion(models.Model):
     def _compute_invoice_count(self):
         for rec in self:
             rec.invoice_count = len(rec.invoice_ids.filtered(lambda m: m.move_type == "out_invoice"))
+
+    @api.depends("strict_mode_policy", "cliente_id.x_rule_engine_strict", "participante_id.x_rule_engine_strict")
+    def _compute_strict_mode_effective(self):
+        for rec in self:
+            rec.strict_mode_effective = rec._is_strict_mode()
 
     @api.depends("tipo_movimiento", "clave_pedimento_id", "tipo_operacion", "regimen", "fecha_operacion", "rulepack_id")
     def _compute_process_ui_flags(self):
@@ -479,44 +499,6 @@ class MxPedOperacion(models.Model):
                 "line_id": line.id,
             })
 
-        # Compatibilidad con banderas antiguas para transicion.
-        if clave.requires_reg_552:
-            policy_rules.append({
-                "code": "552",
-                "policy": "required",
-                "scope": "pedimento",
-                "priority": 10000,
-                "stop": False,
-                "min": 1,
-                "max": 0,
-                "identifier": "",
-                "line_id": 0,
-            })
-        if clave.omits_reg_502:
-            policy_rules.append({
-                "code": "502",
-                "policy": "forbidden",
-                "scope": "pedimento",
-                "priority": 10000,
-                "stop": True,
-                "min": 0,
-                "max": 0,
-                "identifier": "",
-                "line_id": 0,
-            })
-        if clave.requires_identificador_re:
-            policy_rules.append({
-                "code": "507",
-                "policy": "required",
-                "scope": "pedimento",
-                "priority": 10000,
-                "stop": False,
-                "min": 1,
-                "max": 0,
-                "identifier": "RE",
-                "line_id": 0,
-            })
-
         policy_rules.sort(key=lambda r: (-r["priority"], r["code"], r["line_id"]))
         return policy_rules
 
@@ -577,6 +559,7 @@ class MxPedOperacion(models.Model):
             if partida.numero_partida:
                 meta[partida.numero_partida] = {
                     "fraccion_id": partida.fraccion_id.id if partida.fraccion_id else False,
+                    "fraccion_capitulo": partida.fraccion_id.capitulo if partida.fraccion_id else False,
                 }
         return meta
 
@@ -601,11 +584,65 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         return self.rulepack_id or self._resolve_rulepack()
 
+    def _is_strict_mode(self):
+        self.ensure_one()
+        if self.strict_mode_policy == "strict":
+            return True
+        if self.strict_mode_policy == "relaxed":
+            return False
+
+        partner_mode = (
+            self.participante_id.x_rule_engine_strict
+            or self.cliente_id.x_rule_engine_strict
+            or "inherit"
+        )
+        if partner_mode == "strict":
+            return True
+        if partner_mode == "relaxed":
+            return False
+
+        raw = self.env["ir.config_parameter"].sudo().get_param("mx_ped.rule_engine.strict_mode", "false")
+        return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+    def _get_source_weights(self, rulepack):
+        return {
+            "estructura": int((rulepack.weight_estructura if rulepack else 10) or 10),
+            "clave": int((rulepack.weight_clave if rulepack else 20) or 20),
+            "condition": int((rulepack.weight_condition if rulepack else 30) or 30),
+        }
+
+    def _compute_specificity(self, rule, source):
+        score = 0
+        if source in ("selector", "condition", "process"):
+            if getattr(rule, "tipo_movimiento_id", False):
+                score += 30
+            if getattr(rule, "clave_pedimento_id", False):
+                score += 25
+            if hasattr(rule, "escenario_code") and getattr(rule, "escenario_code", "") not in ("", "any"):
+                score += 20
+            if getattr(rule, "regimen", "") not in ("", "cualquiera"):
+                score += 15
+            if getattr(rule, "tipo_operacion", "") not in ("", "ambas"):
+                score += 10
+            if getattr(rule, "is_virtual", "") not in ("", "any"):
+                score += 8
+            if getattr(rule, "scope", "") == "partida":
+                score += 5
+            if getattr(rule, "fraccion_id", False):
+                score += 22
+            elif getattr(rule, "fraccion_capitulo", False):
+                score += 12
+        elif source == "clave":
+            if getattr(rule, "scope", "") == "partida":
+                score += 5
+        return score
+
     def _build_rule_context(self, escenario_code=None):
         self.ensure_one()
         clave = self.clave_pedimento_id
         mov = self._get_tipo_movimiento_effective()
         fraccion_ids = {p.fraccion_id.id for p in self.partida_ids if p.fraccion_id}
+        fraccion_capitulos = {p.fraccion_id.capitulo for p in self.partida_ids if p.fraccion_id and p.fraccion_id.capitulo}
         return {
             "tipo_movimiento": mov,
             "tipo_operacion": self.tipo_operacion or "",
@@ -614,6 +651,7 @@ class MxPedOperacion(models.Model):
             "is_virtual": bool(clave and clave.is_virtual),
             "escenario": escenario_code or "",
             "fraccion_ids": fraccion_ids,
+            "fraccion_capitulos": fraccion_capitulos,
         }
 
     def _rule_condition_match(self, rule, context):
@@ -638,23 +676,54 @@ class MxPedOperacion(models.Model):
         if hasattr(rule, "fraccion_id") and rule.fraccion_id:
             if rule.fraccion_id.id not in (context.get("fraccion_ids") or set()):
                 return False
+        if hasattr(rule, "fraccion_capitulo") and (rule.fraccion_capitulo or "").strip():
+            cap = (rule.fraccion_capitulo or "").strip()
+            if cap not in (context.get("fraccion_capitulos") or set()):
+                return False
         return True
 
     def _select_rulepack_scenario(self):
         self.ensure_one()
+        strict = self._is_strict_mode()
         rulepack = self._get_rulepack_effective()
         if not rulepack:
-            return self.env["mx.ped.rulepack.scenario"], self.env["mx.ped.estructura.regla"]
+            if strict:
+                raise UserError(_("Modo STRICT: no existe rulepack vigente para la fecha de operacion."))
+            return {
+                "scenario": self.env["mx.ped.rulepack.scenario"],
+                "estructura_rule": self.env["mx.ped.estructura.regla"],
+                "winner_selector": False,
+                "selector_trace": {"candidates": [], "winner_selector_id": False},
+            }
 
         context = self._build_rule_context()
         selectors = rulepack.selector_ids.filtered(lambda r: r.active).sorted(
             key=lambda r: (-r.priority, r.sequence, r.id)
         )
         selected = self.env["mx.ped.rulepack.scenario"]
+        winner_selector = False
+        selector_candidates = []
         for selector in selectors:
-            if not self._rule_condition_match(selector, context):
+            matched = self._rule_condition_match(selector, context)
+            selector_candidates.append({
+                "selector_id": selector.id,
+                "priority": selector.priority,
+                "specificity_score": self._compute_specificity(selector, "selector"),
+                "stop": bool(selector.stop),
+                "matched": bool(matched),
+                "scenario_id": selector.scenario_id.id if selector.scenario_id else False,
+                "conditions": {
+                    "tipo_movimiento_id": selector.tipo_movimiento_id.id if selector.tipo_movimiento_id else False,
+                    "tipo_operacion": selector.tipo_operacion,
+                    "regimen": selector.regimen,
+                    "clave_pedimento_id": selector.clave_pedimento_id.id if selector.clave_pedimento_id else False,
+                    "is_virtual": selector.is_virtual,
+                },
+            })
+            if not matched:
                 continue
             selected = selector.scenario_id
+            winner_selector = selector
             if selector.stop:
                 break
 
@@ -662,8 +731,20 @@ class MxPedOperacion(models.Model):
             selected = rulepack.scenario_ids.filtered(lambda s: s.active and s.is_default)[:1]
         if not selected:
             selected = rulepack.scenario_ids.filtered(lambda s: s.active)[:1]
+        if not selected and strict:
+            raise UserError(_("Modo STRICT: no hay escenario seleccionable en el rulepack vigente."))
+        if strict and selected and not selected.estructura_regla_id:
+            raise UserError(_("Modo STRICT: el escenario seleccionado no tiene regla de estructura base."))
 
-        return selected, selected.estructura_regla_id if selected else self.env["mx.ped.estructura.regla"]
+        return {
+            "scenario": selected,
+            "estructura_rule": selected.estructura_regla_id if selected else self.env["mx.ped.estructura.regla"],
+            "winner_selector": winner_selector,
+            "selector_trace": {
+                "candidates": selector_candidates,
+                "winner_selector_id": winner_selector.id if winner_selector else False,
+            },
+        }
 
     def _get_process_stage_rules(self, stage):
         self.ensure_one()
@@ -672,15 +753,17 @@ class MxPedOperacion(models.Model):
             return self.env["mx.ped.rulepack.process.rule"]
         context = self._build_rule_context()
         rules = rulepack.process_rule_ids.filtered(lambda r: r.active and r.stage == stage).sorted(
-            key=lambda r: (-r.priority, r.sequence, r.id)
+            key=lambda r: (-r.priority, -self._compute_specificity(r, "process"), r.sequence, r.id)
         )
         return rules.filtered(lambda r: self._rule_condition_match(r, context))
 
     def _resolve_estructura_regla(self):
         self.ensure_one()
-        selected_scenario, selected_rule = self._select_rulepack_scenario()
-        if selected_rule:
-            return selected_rule
+        selected_data = self._select_rulepack_scenario()
+        if selected_data.get("estructura_rule"):
+            return selected_data["estructura_rule"]
+        if self._is_strict_mode():
+            raise UserError(_("Modo STRICT: no se pudo resolver una regla de estructura."))
         mov = self._get_tipo_movimiento_effective()
         if not mov:
             return self.env["mx.ped.estructura.regla"]
@@ -721,13 +804,16 @@ class MxPedOperacion(models.Model):
 
     def _detect_escenario_estructura(self):
         self.ensure_one()
-        selected_scenario, _selected_rule = self._select_rulepack_scenario()
+        selected_data = self._select_rulepack_scenario()
+        selected_scenario = selected_data.get("scenario")
         if selected_scenario:
             return selected_scenario.code
 
         clave_structure = (self.clave_pedimento_id.saai_structure_type or "auto") if self.clave_pedimento_id else "auto"
         if clave_structure and clave_structure != "auto":
             return clave_structure
+        if self._is_strict_mode():
+            raise UserError(_("Modo STRICT: no se pudo determinar escenario de estructura."))
         return "generico"
 
     def _is_transito(self):
@@ -789,189 +875,231 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         self._run_process_stage_checks("pre_validate")
 
+    def _normalize_structure_rules(self, estructura_rule, source_weight):
+        normalized = []
+        if not estructura_rule:
+            return normalized
+        for line in estructura_rule.line_ids.sorted(lambda l: (l.sequence, l.id)):
+            code = (line.registro_codigo or "").strip()
+            if not code:
+                continue
+            min_occ = max(line.min_occurs or 0, 0)
+            if line.required:
+                min_occ = max(min_occ, 1)
+            normalized.append({
+                "rule_id": line.id,
+                "source": "estructura",
+                "source_weight": source_weight,
+                "specificity_score": 0,
+                "priority": 0,
+                "scope": "pedimento",
+                "record_code": code,
+                "policy": "required" if line.required else "optional",
+                "min": min_occ,
+                "max": max(line.max_occurs or 0, 0),
+                "identifier": "",
+                "stop": False,
+                "active": True,
+                "applies": True,
+                "extra": {"estructura_regla_id": estructura_rule.id},
+            })
+        return normalized
+
+    def _normalize_clave_rules(self, source_weight):
+        normalized = []
+        clave = self.clave_pedimento_id
+        if not clave:
+            return normalized
+        for line in clave.registro_policy_ids.sorted(lambda l: (-l.priority, l.sequence, l.id)):
+            code = (line.registro_codigo or "").strip()
+            if not code:
+                continue
+            normalized.append({
+                "rule_id": line.id,
+                "source": "clave",
+                "source_weight": source_weight,
+                "specificity_score": self._compute_specificity(line, "clave"),
+                "priority": line.priority or 0,
+                "scope": line.scope or "pedimento",
+                "record_code": code,
+                "policy": line.policy,
+                "min": max(line.min_occurs or 0, 0),
+                "max": max(line.max_occurs or 0, 0),
+                "identifier": (line.required_identifier_code or "").strip().upper(),
+                "stop": bool(line.stop),
+                "active": True,
+                "applies": True,
+                "extra": {"clave_id": clave.id},
+            })
+        return normalized
+
+    def _normalize_condition_rules(self, condition_rules, source_weight):
+        normalized = []
+        for rule in condition_rules:
+            normalized.append({
+                "rule_id": rule.id,
+                "source": "condition",
+                "source_weight": source_weight,
+                "specificity_score": self._compute_specificity(rule, "condition"),
+                "priority": rule.priority or 0,
+                "scope": rule.scope or "pedimento",
+                "record_code": (rule.registro_codigo or "").strip(),
+                "policy": rule.policy,
+                "min": max(rule.min_occurs or 0, 0),
+                "max": max(rule.max_occurs or 0, 0),
+                "identifier": (rule.required_identifier_code or "").strip().upper(),
+                "stop": bool(rule.stop),
+                "active": bool(rule.active),
+                "applies": True,
+                "extra": {
+                    "fraccion_id": rule.fraccion_id.id if rule.fraccion_id else False,
+                    "fraccion_capitulo": (rule.fraccion_capitulo or "").strip(),
+                },
+            })
+        return normalized
+
+    def _rule_sort_key(self, item):
+        return (
+            -(item.get("priority") or 0),
+            -(item.get("specificity_score") or 0),
+            -(item.get("source_weight") or 0),
+            item.get("rule_id") or 0,
+        )
+
+    def _apply_rule_to_state(self, state, rule_item):
+        policy = rule_item.get("policy")
+        min_occ = max(rule_item.get("min") or 0, 0)
+        max_occ = max(rule_item.get("max") or 0, 0)
+        identifier = (rule_item.get("identifier") or "").strip().upper()
+
+        if policy == "forbidden":
+            state["forbidden"] = True
+            state["required"] = False
+            state["min"] = 0
+            state["max"] = 0
+        elif policy == "required" and not state.get("forbidden"):
+            state["required"] = True
+            state["min"] = max(state["min"], max(min_occ, 1))
+        elif policy == "optional" and not state.get("forbidden"):
+            state["min"] = max(state["min"], min_occ)
+
+        if max_occ and not state.get("forbidden"):
+            state["max"] = max_occ if not state["max"] else min(state["max"], max_occ)
+        if identifier:
+            state["identifier"] = identifier
+
     def _build_record_plan(self):
-        """Construye el plan de registros aplicable y una traza de decisiones."""
+        """Construye plan determinista: normaliza reglas, aplica precedencias y guarda explicabilidad."""
         self.ensure_one()
-        rule = self.estructura_regla_id or self._resolve_estructura_regla()
-        clave_policy = self._get_clave_policy_map()
-        dynamic_rules = self._get_dynamic_condition_rules()
+        selected = self._select_rulepack_scenario()
+        scenario = selected.get("scenario")
+        estructura_rule = self.estructura_regla_id or selected.get("estructura_rule") or self._resolve_estructura_regla()
+        rulepack = self._get_rulepack_effective()
+
+        weights = self._get_source_weights(rulepack)
+        condition_rules = self._get_dynamic_condition_rules()
+
+        normalized = []
+        normalized.extend(self._normalize_structure_rules(estructura_rule, weights["estructura"]))
+        normalized.extend(self._normalize_clave_rules(weights["clave"]))
+        normalized.extend(self._normalize_condition_rules(condition_rules, weights["condition"]))
+        normalized = [n for n in normalized if n.get("record_code")]
+
+        grouped = {}
+        for item in normalized:
+            key = (item.get("record_code"), item.get("scope") or "pedimento")
+            grouped.setdefault(key, []).append(item)
+        for key in list(grouped.keys()):
+            grouped[key] = sorted(grouped[key], key=self._rule_sort_key)
+
+        base_states = {}
+        for item in normalized:
+            if item.get("source") != "estructura" or (item.get("scope") or "pedimento") != "pedimento":
+                continue
+            code = item["record_code"]
+            state = base_states.setdefault(code, {"required": False, "forbidden": False, "min": 0, "max": 0, "identifier": ""})
+            self._apply_rule_to_state(state, item)
 
         states = {}
-        trace = []
+        record_resolution = {}
+        trace_rows = []
+        partida_policies = []
 
-        if rule:
-            for line in rule.line_ids:
-                code = (line.registro_codigo or "").strip()
-                if not code:
-                    continue
-                min_occ = max(line.min_occurs or 0, 0)
-                max_occ = max(line.max_occurs or 0, 0)
-                req_min = max(min_occ, 1) if line.required else min_occ
-                state = states.setdefault(code, {
-                    "min": 0,
-                    "max": 0,
-                    "required": False,
-                    "forbidden": False,
-                    "identifier": "",
-                    "contributors": [],
-                })
-                state["required"] = state["required"] or bool(req_min)
-                state["min"] = max(state["min"], req_min)
-                if max_occ:
-                    state["max"] = max_occ if not state["max"] else min(state["max"], max_occ)
-                state["contributors"].append(f"estructura:{rule.id}")
-                trace.append({
-                    "source": "estructura",
-                    "rule_id": rule.id,
+        for (code, scope), items in grouped.items():
+            if scope == "partida":
+                partida_policies.extend(items)
+                continue
+            state = dict(base_states.get(code, {"required": False, "forbidden": False, "min": 0, "max": 0, "identifier": ""}))
+            winner = None
+            blocked = False
+            candidates = []
+            for item in items:
+                row = {
+                    "rule_id": item["rule_id"],
+                    "source": item["source"],
                     "record_code": code,
-                    "required": line.required,
-                    "min": req_min,
-                    "max": max_occ,
-                })
+                    "scope": scope,
+                    "policy": item["policy"],
+                    "priority": item["priority"],
+                    "source_weight": item["source_weight"],
+                    "specificity_score": item["specificity_score"],
+                    "min": item["min"],
+                    "max": item["max"],
+                    "identifier": item["identifier"],
+                    "stop": item["stop"],
+                    "matched": True,
+                    "applied": False,
+                    "blocked": False,
+                }
+                if blocked:
+                    row["blocked"] = True
+                    candidates.append(row)
+                    continue
+                self._apply_rule_to_state(state, item)
+                row["applied"] = True
+                candidates.append(row)
+                if winner is None:
+                    winner = row
+                if item.get("stop"):
+                    blocked = True
 
-        blocked_codes = set()
-        for policy in clave_policy:
-            code = policy.get("code")
-            if not code:
-                continue
-            if code in blocked_codes:
-                continue
-            if policy.get("scope") not in ("pedimento", None, ""):
-                continue
-
-            state = states.setdefault(code, {
-                "min": 0,
-                "max": 0,
-                "required": False,
-                "forbidden": False,
-                "identifier": "",
-                "contributors": [],
-            })
-            policy_type = policy.get("policy")
-            min_occ = max(policy.get("min") or 0, 0)
-            max_occ = max(policy.get("max") or 0, 0)
-            identifier = (policy.get("identifier") or "").strip().upper()
-
-            if policy_type == "forbidden":
-                state["forbidden"] = True
+            if state.get("forbidden"):
                 state["required"] = False
                 state["min"] = 0
                 state["max"] = 0
-            elif policy_type == "required" and not state["forbidden"]:
-                req_min = max(min_occ, 1)
-                state["required"] = True
-                state["min"] = max(state["min"], req_min)
-            elif policy_type == "optional" and not state["forbidden"]:
-                state["min"] = max(state["min"], min_occ)
+            states[code] = state
+            record_resolution[f"{code}|{scope}"] = {
+                "base_state": base_states.get(code, {"required": False, "forbidden": False, "min": 0, "max": 0, "identifier": ""}),
+                "winner_rule_id": winner["rule_id"] if winner else False,
+                "winner_source": winner["source"] if winner else False,
+                "candidates": candidates,
+                "final_state": state,
+            }
+            trace_rows.extend(candidates)
 
-            if max_occ and not state["forbidden"]:
-                state["max"] = max_occ if not state["max"] else min(state["max"], max_occ)
-            if identifier:
-                state["identifier"] = identifier
-
-            state["contributors"].append(f"clave:{self.clave_pedimento_id.id}")
-            trace.append({
-                "source": "clave",
-                "clave_id": self.clave_pedimento_id.id,
-                "record_code": code,
-                "policy": policy_type,
-                "scope": policy.get("scope"),
-                "priority": policy.get("priority"),
-                "stop": policy.get("stop"),
-                "min": min_occ,
-                "max": max_occ,
-                "identifier": identifier,
-                "line_id": policy.get("line_id"),
-            })
-
-            if policy.get("stop"):
-                blocked_codes.add(code)
-
-        dynamic_policy = []
-        for d_rule in dynamic_rules:
-            dynamic_policy.append({
-                "code": (d_rule.registro_codigo or "").strip(),
-                "policy": d_rule.policy,
-                "scope": d_rule.scope or "pedimento",
-                "priority": d_rule.priority,
-                "stop": bool(d_rule.stop),
-                "min": max(d_rule.min_occurs or 0, 0),
-                "max": max(d_rule.max_occurs or 0, 0),
-                "identifier": (d_rule.required_identifier_code or "").strip().upper(),
-                "line_id": d_rule.id,
-                "fraccion_id": d_rule.fraccion_id.id if d_rule.fraccion_id else False,
-                "source": "rulepack",
-            })
-
-        dynamic_policy.sort(key=lambda r: (-r["priority"], r["code"], r["line_id"]))
-        blocked_dynamic = set()
-        for policy in dynamic_policy:
-            code = policy.get("code")
-            if not code:
-                continue
-            if code in blocked_dynamic:
-                continue
-            if policy.get("scope") not in ("pedimento", None, ""):
-                continue
-
-            state = states.setdefault(code, {
-                "min": 0,
-                "max": 0,
-                "required": False,
-                "forbidden": False,
-                "identifier": "",
-                "contributors": [],
-            })
-            policy_type = policy.get("policy")
-            min_occ = max(policy.get("min") or 0, 0)
-            max_occ = max(policy.get("max") or 0, 0)
-            identifier = (policy.get("identifier") or "").strip().upper()
-
-            if policy_type == "forbidden":
-                state["forbidden"] = True
-                state["required"] = False
-                state["min"] = 0
-                state["max"] = 0
-            elif policy_type == "required" and not state["forbidden"]:
-                state["required"] = True
-                state["min"] = max(state["min"], max(min_occ, 1))
-            elif policy_type == "optional" and not state["forbidden"]:
-                state["min"] = max(state["min"], min_occ)
-
-            if max_occ and not state["forbidden"]:
-                state["max"] = max_occ if not state["max"] else min(state["max"], max_occ)
-            if identifier:
-                state["identifier"] = identifier
-
-            state["contributors"].append("rulepack")
-            trace.append({
-                "source": "rulepack",
-                "record_code": code,
-                "policy": policy_type,
-                "scope": policy.get("scope"),
-                "priority": policy.get("priority"),
-                "stop": policy.get("stop"),
-                "min": min_occ,
-                "max": max_occ,
-                "identifier": identifier,
-                "line_id": policy.get("line_id"),
-            })
-            if policy.get("stop"):
-                blocked_dynamic.add(code)
-
-        # Precedencia explicita: forbidden siempre gana sobre required.
-        for state in states.values():
-            if state["forbidden"]:
-                state["required"] = False
-                state["min"] = 0
-                state["max"] = 0
+        diff = {"added_records": [], "removed_records": [], "changed_records": []}
+        final_keys = set(states.keys())
+        base_keys = set(base_states.keys())
+        diff["added_records"] = sorted(list(final_keys - base_keys))
+        diff["removed_records"] = sorted(list(base_keys - final_keys))
+        for code in sorted(final_keys & base_keys):
+            if states[code] != base_states[code]:
+                diff["changed_records"].append({"key": f"{code}|pedimento", "from": base_states[code], "to": states[code]})
 
         return {
-            "rule": rule,
+            "rulepack": rulepack,
+            "scenario": scenario,
+            "rule": estructura_rule,
             "states": states,
-            "trace": trace,
-            "clave_policy": clave_policy,
-            "dynamic_policy": dynamic_policy,
+            "base_states": base_states,
+            "trace": trace_rows,
+            "record_resolution": record_resolution,
+            "selector_trace": selected.get("selector_trace") or {"candidates": [], "winner_selector_id": False},
+            "winner_selector_id": selected.get("winner_selector").id if selected.get("winner_selector") else False,
+            "partida_policies": sorted(partida_policies, key=self._rule_sort_key),
+            "normalized_rules": normalized,
+            "diff_base_final": diff,
+            "weights": weights,
         }
 
     def _store_rule_trace(self, plan):
@@ -979,10 +1107,27 @@ class MxPedOperacion(models.Model):
         if not self.id or self.env.context.get("skip_rule_trace_write"):
             return
         plan = plan or {}
+        trace_rows = plan.get("trace") or []
+        truncated = False
+        if len(trace_rows) > 500:
+            trace_rows = trace_rows[:500]
+            truncated = True
         trace_payload = {
-            "rule_id": plan.get("rule").id if plan.get("rule") else False,
+            "meta": {
+                "operation_id": self.id,
+                "generated_at": fields.Datetime.now().isoformat(),
+                "strict_mode": self._is_strict_mode(),
+                "rulepack_id": plan.get("rulepack").id if plan.get("rulepack") else False,
+                "rulepack_code": plan.get("rulepack").code if plan.get("rulepack") else False,
+                "fecha_operacion": str(self.fecha_operacion or ""),
+                "trace_truncated": truncated,
+            },
+            "selector_trace": plan.get("selector_trace") or {"candidates": [], "winner_selector_id": False},
+            "winner_selector_id": plan.get("winner_selector_id") or False,
+            "records": plan.get("record_resolution") or {},
+            "diff_base_final": plan.get("diff_base_final") or {},
             "states": plan.get("states") or {},
-            "trace": plan.get("trace") or [],
+            "trace": trace_rows,
             "errors": plan.get("errors") or [],
         }
         self.with_context(skip_rule_trace_write=True).write({
@@ -1069,10 +1214,7 @@ class MxPedOperacion(models.Model):
                     errors.append(_("Registro %s exige identificador %s.") % (code, identifier))
 
         # Reglas con alcance partida: se validan por cada numero_partida.
-        partida_policies = [
-            p for p in ((plan.get("clave_policy") or []) + (plan.get("dynamic_policy") or []))
-            if (p.get("scope") or "pedimento") == "partida"
-        ]
+        partida_policies = [p for p in (plan.get("partida_policies") or []) if (p.get("scope") or "pedimento") == "partida"]
         if partida_policies:
             partida_numbers = self._get_partida_numbers_for_validation()
             partida_meta = self._get_partida_meta_map()
@@ -1090,7 +1232,7 @@ class MxPedOperacion(models.Model):
                         continue
                     per_partida_counts[(partida_num, code)] = per_partida_counts.get((partida_num, code), 0) + 1
                     for policy in partida_policies:
-                        if policy.get("code") != code:
+                        if policy.get("record_code") != code:
                             continue
                         identifier = (policy.get("identifier") or "").strip().upper()
                         if identifier and self._payload_has_token(reg.valores, identifier):
@@ -1102,11 +1244,14 @@ class MxPedOperacion(models.Model):
                     meta = partida_meta.get(partida_num, {})
                     fraccion_id = meta.get("fraccion_id")
                     for policy in partida_policies:
-                        code = policy.get("code")
+                        code = policy.get("record_code")
                         if not code or code in blocked_codes:
                             continue
-                        policy_fraccion = policy.get("fraccion_id")
+                        policy_fraccion = (policy.get("extra") or {}).get("fraccion_id")
+                        policy_capitulo = ((policy.get("extra") or {}).get("fraccion_capitulo") or "").strip()
                         if policy_fraccion and policy_fraccion != fraccion_id:
+                            continue
+                        if policy_capitulo and not str(partida_meta.get(partida_num, {}).get("fraccion_capitulo", "")).strip() == policy_capitulo:
                             continue
                         state = partida_state.setdefault(code, {
                             "required": False,
@@ -1264,6 +1409,26 @@ class MxPedOperacion(models.Model):
                 "type": "warning" if (missing or forbidden) else "success",
                 "sticky": bool(missing or forbidden),
             },
+        }
+
+    def action_explain_ruleplan(self):
+        self.ensure_one()
+        plan = self._build_record_plan()
+        self._store_rule_trace(plan)
+        payload = self.rule_trace_json or {}
+        data = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
+        attachment = self.env["ir.attachment"].create({
+            "name": f"RULEPLAN_{self.name or self.id}.json",
+            "type": "binary",
+            "datas": base64.b64encode(data),
+            "mimetype": "application/json",
+            "res_model": self._name,
+            "res_id": self.id,
+        })
+        return {
+            "type": "ir.actions.act_url",
+            "url": f"/web/content/{attachment.id}?download=true",
+            "target": "self",
         }
 
     def _get_invoice_partner(self):

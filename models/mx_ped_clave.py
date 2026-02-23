@@ -72,16 +72,16 @@ class MxPedClave(models.Model):
 
     # Banderas de compatibilidad para transicion.
     requires_reg_552 = fields.Boolean(
-        string="Exige registro 552",
-        help="Compatibilidad: fuerza presencia del registro 552.",
+        string="Exige registro 552 (deprecated)",
+        help="Deprecated: migra esta regla al rulepack (condition rules).",
     )
     omits_reg_502 = fields.Boolean(
-        string="Omite registro 502",
-        help="Compatibilidad: prohibe el registro 502 para esta clave.",
+        string="Omite registro 502 (deprecated)",
+        help="Deprecated: migra esta regla al rulepack (condition rules).",
     )
     requires_identificador_re = fields.Boolean(
-        string="Exige identificador RE",
-        help="Compatibilidad: valida identificador RE en registro 507.",
+        string="Exige identificador RE (deprecated)",
+        help="Deprecated: migra esta regla al rulepack (condition rules).",
     )
 
     registro_policy_ids = fields.One2many(
@@ -95,6 +95,11 @@ class MxPedClave(models.Model):
     vigente_desde = fields.Date(string="Vigente desde")
     vigente_hasta = fields.Date(string="Vigente hasta")
     note = fields.Text(string="Notas")
+    legacy_flags_migrated = fields.Boolean(
+        string="Legacy migrado",
+        default=False,
+        help="Marca informativa cuando las banderas legacy ya se migraron a reglas de rulepack.",
+    )
 
     display_name = fields.Char(compute="_compute_display_name", store=False)
 
@@ -129,6 +134,71 @@ class MxPedClave(models.Model):
                 raise ValidationError(_("La clave de pedimento es obligatoria."))
             if len(code) > 3:
                 raise ValidationError(_("La clave de pedimento no debe exceder 3 caracteres."))
+
+    def action_migrate_legacy_flags_to_rulepack(self):
+        rulepack = self.env["mx.ped.rulepack"].search(
+            [("active", "=", True), ("state", "=", "active")],
+            order="priority desc, fecha_inicio desc, id desc",
+            limit=1,
+        )
+        if not rulepack:
+            raise ValidationError(_("No hay rulepack activo para migrar banderas legacy."))
+
+        Condition = self.env["mx.ped.rulepack.condition.rule"]
+        for rec in self:
+            to_create = []
+            if rec.requires_reg_552:
+                to_create.append({
+                    "rulepack_id": rulepack.id,
+                    "name": f"LEGACY {rec.code}: requiere 552",
+                    "scope": "pedimento",
+                    "policy": "required",
+                    "registro_codigo": "552",
+                    "min_occurs": 1,
+                    "max_occurs": 0,
+                    "clave_pedimento_id": rec.id,
+                    "active": True,
+                })
+            if rec.omits_reg_502:
+                to_create.append({
+                    "rulepack_id": rulepack.id,
+                    "name": f"LEGACY {rec.code}: prohibe 502",
+                    "scope": "pedimento",
+                    "policy": "forbidden",
+                    "registro_codigo": "502",
+                    "min_occurs": 0,
+                    "max_occurs": 0,
+                    "clave_pedimento_id": rec.id,
+                    "stop": True,
+                    "active": True,
+                })
+            if rec.requires_identificador_re:
+                to_create.append({
+                    "rulepack_id": rulepack.id,
+                    "name": f"LEGACY {rec.code}: exige RE en 507",
+                    "scope": "pedimento",
+                    "policy": "required",
+                    "registro_codigo": "507",
+                    "required_identifier_code": "RE",
+                    "min_occurs": 1,
+                    "max_occurs": 0,
+                    "clave_pedimento_id": rec.id,
+                    "active": True,
+                })
+            for vals in to_create:
+                exists = Condition.search([
+                    ("rulepack_id", "=", vals["rulepack_id"]),
+                    ("clave_pedimento_id", "=", vals["clave_pedimento_id"]),
+                    ("registro_codigo", "=", vals["registro_codigo"]),
+                    ("policy", "=", vals["policy"]),
+                    ("scope", "=", vals["scope"]),
+                    ("required_identifier_code", "=", vals.get("required_identifier_code") or False),
+                ], limit=1)
+                if not exists:
+                    Condition.create(vals)
+            if to_create:
+                rec.legacy_flags_migrated = True
+        return True
 
 
 class MxPedClaveReglaRegistro(models.Model):

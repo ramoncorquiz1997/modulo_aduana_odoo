@@ -22,6 +22,12 @@
         <field name="model">mx.ped.clave</field>
         <field name="arch" type="xml">
             <form string="Clave de Pedimento">
+                <header>
+                    <button name="action_migrate_legacy_flags_to_rulepack"
+                            type="object"
+                            string="Migrar legacy a rulepack"
+                            class="btn-secondary"/>
+                </header>
                 <sheet>
                     <group>
                         <group>
@@ -47,6 +53,7 @@
                             <field name="requires_reg_552"/>
                             <field name="omits_reg_502"/>
                             <field name="requires_identificador_re"/>
+                            <field name="legacy_flags_migrated" readonly="1"/>
                         </group>
                     </group>
 

@@ -33,6 +33,9 @@
               <field name="fecha_inicio"/>
               <field name="fecha_fin"/>
               <field name="priority"/>
+              <field name="weight_estructura"/>
+              <field name="weight_clave"/>
+              <field name="weight_condition"/>
             </group>
           </group>
           <field name="note"/>
@@ -105,6 +108,7 @@
                   <field name="is_virtual"/>
                   <field name="escenario_code"/>
                   <field name="fraccion_id"/>
+                  <field name="fraccion_capitulo"/>
                   <field name="active"/>
                 </list>
               </field>
