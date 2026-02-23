@@ -271,6 +271,47 @@ class CrmLead(models.Model):
         related="x_transportista_id.contact_address",
         readonly=True,
     )
+    x_transportista_calle = fields.Char(
+        string="Calle transportista",
+        related="x_transportista_id.x_street_name",
+        readonly=True,
+    )
+    x_transportista_num_ext = fields.Char(
+        string="Num. exterior transportista",
+        related="x_transportista_id.x_street_number_ext",
+        readonly=True,
+    )
+    x_transportista_num_int = fields.Char(
+        string="Num. interior transportista",
+        related="x_transportista_id.x_street_number_int",
+        readonly=True,
+    )
+    x_transportista_colonia = fields.Char(
+        string="Colonia transportista",
+        related="x_transportista_id.x_colonia",
+        readonly=True,
+    )
+    x_transportista_municipio = fields.Char(
+        string="Municipio transportista",
+        related="x_transportista_id.x_municipio",
+        readonly=True,
+    )
+    x_transportista_localidad = fields.Char(
+        string="Localidad transportista",
+        related="x_transportista_id.x_localidad",
+        readonly=True,
+    )
+    x_transportista_estado_id = fields.Many2one(
+        "res.country.state",
+        string="Estado transportista",
+        related="x_transportista_id.state_id",
+        readonly=True,
+    )
+    x_transportista_cp = fields.Char(
+        string="CP transportista",
+        related="x_transportista_id.zip",
+        readonly=True,
+    )
     x_transporte_pais_id = fields.Many2one(
         comodel_name="res.country",
         string="País del medio de transporte",

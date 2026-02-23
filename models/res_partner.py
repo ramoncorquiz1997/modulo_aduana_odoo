@@ -49,6 +49,12 @@ class ResPartner(models.Model):
     x_identificacion_fiscal = fields.Char(string="Identificacion fiscal (extranjero)")
     x_patente_aduanal = fields.Char(string="Patente aduanal")
     x_num_autorizacion_aduanal = fields.Char(string="Num. autorizacion aduanal")
+    x_street_name = fields.Char(string="Calle")
+    x_street_number_ext = fields.Char(string="Numero exterior")
+    x_street_number_int = fields.Char(string="Numero interior")
+    x_colonia = fields.Char(string="Colonia")
+    x_municipio = fields.Char(string="Municipio")
+    x_localidad = fields.Char(string="Localidad")
     x_csf_filename = fields.Char(string="Nombre de archivo CSF")
     x_csf_file = fields.Binary(string="CSF (PDF)")
     x_rule_engine_strict = fields.Selection(
@@ -194,6 +200,14 @@ class ResPartner(models.Model):
                         page_data["calle"] = value
                     if "Numero exterior" in label or "NÃºmero exterior" in label:
                         page_data["n_ext"] = value
+                    if "Numero interior" in label or "NÃºmero interior" in label:
+                        page_data["n_int"] = value
+                    if "Colonia" in label:
+                        page_data["colonia"] = value
+                    if "Municipio" in label or "Demarcacion Territorial" in label:
+                        page_data["municipio"] = value
+                    if "Localidad" in label:
+                        page_data["localidad"] = value
 
             vals = {}
             if page_data.get("rfc"):
@@ -206,6 +220,17 @@ class ResPartner(models.Model):
             nexten = page_data.get("n_ext", "")
             if calle:
                 vals["street"] = ("%s %s" % (calle, nexten)).strip()
+                vals["x_street_name"] = calle
+            if page_data.get("n_ext"):
+                vals["x_street_number_ext"] = page_data["n_ext"]
+            if page_data.get("n_int"):
+                vals["x_street_number_int"] = page_data["n_int"]
+            if page_data.get("colonia"):
+                vals["x_colonia"] = page_data["colonia"]
+            if page_data.get("municipio"):
+                vals["x_municipio"] = page_data["municipio"]
+            if page_data.get("localidad"):
+                vals["x_localidad"] = page_data["localidad"]
             return vals
         except Exception:
             _logger.exception("Error procesando CSF")
@@ -217,6 +242,16 @@ class ResPartner(models.Model):
             vals = rec._extract_csf_values(rec.x_csf_file)
             for k, v in vals.items():
                 rec[k] = v
+
+    @api.onchange("x_street_name", "x_street_number_ext", "x_street_number_int")
+    def _onchange_split_address(self):
+        for rec in self:
+            if not rec.x_street_name:
+                continue
+            street = " ".join(filter(None, [rec.x_street_name, rec.x_street_number_ext]))
+            if rec.x_street_number_int:
+                street = f"{street} INT {rec.x_street_number_int}"
+            rec.street = street
 
     @api.model_create_multi
     def create(self, vals_list):

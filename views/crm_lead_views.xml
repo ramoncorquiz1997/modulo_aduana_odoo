@@ -141,6 +141,14 @@
                 <field name="x_transportista_rfc" readonly="1"/>
                 <field name="x_transportista_curp" readonly="1"/>
                 <field name="x_transportista_domicilio" readonly="1"/>
+                <field name="x_transportista_calle" readonly="1"/>
+                <field name="x_transportista_num_ext" readonly="1"/>
+                <field name="x_transportista_num_int" readonly="1"/>
+                <field name="x_transportista_colonia" readonly="1"/>
+                <field name="x_transportista_municipio" readonly="1"/>
+                <field name="x_transportista_localidad" readonly="1"/>
+                <field name="x_transportista_estado_id" readonly="1"/>
+                <field name="x_transportista_cp" readonly="1"/>
                 <field name="x_transporte_pais_id"/>
                 <field name="x_transporte_identificador"/>
               </group>

@@ -1971,6 +1971,17 @@ class MxPedOperacion(models.Model):
             "rfc_importador_exportador": "participante_rfc",
             "curp_importador_exportador": "participante_curp",
             "nombre_importador_exportador": "participante_nombre",
+            "transportista_rfc": "x_transportista_rfc",
+            "transportista_curp": "x_transportista_curp",
+            "transportista_domicilio": "x_transportista_domicilio",
+            "transportista_calle": "x_transportista_calle",
+            "transportista_num_ext": "x_transportista_num_ext",
+            "transportista_num_int": "x_transportista_num_int",
+            "transportista_colonia": "x_transportista_colonia",
+            "transportista_municipio": "x_transportista_municipio",
+            "transportista_localidad": "x_transportista_localidad",
+            "transportista_estado": "x_transportista_estado_id",
+            "transportista_cp": "x_transportista_cp",
         }
 
         source = source_field or aliases.get(field_name, field_name)
@@ -1999,6 +2010,8 @@ class MxPedOperacion(models.Model):
             return self._record_value_for_field(lead.x_exportador_id if lead else None, source)
         if source_model == "proveedor":
             return self._record_value_for_field(lead.x_proveedor_id if lead else None, source)
+        if source_model == "transportista":
+            return self._record_value_for_field(lead.x_transportista_id if lead else None, source)
 
         return self._record_value_for_field(lead, source)
 

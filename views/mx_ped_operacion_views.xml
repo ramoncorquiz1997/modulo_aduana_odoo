@@ -57,14 +57,12 @@
                 <field name="show_acuse_ui" invisible="1"/>
                 <field name="show_formas_pago_ui" invisible="1"/>
                 <field name="tipo_operacion"/>
-                <field name="es_rectificacion"/>
                 <field name="tipo_movimiento"/>
+                <field name="es_rectificacion" invisible="tipo_movimiento != '1'"/>
                 <field name="formas_pago_claves" invisible="not show_formas_pago_ui"/>
                 <field name="regimen"/>
                 <field name="incoterm"/>
                 <field name="fecha_operacion"/>
-                <field name="strict_mode_policy"/>
-                <field name="strict_mode_effective" readonly="1"/>
                 <field name="aduana_seccion_despacho_id"/>
                 <field name="aduana_clave"/>
                 <field name="aduana_seccion_entrada_salida_id"/>
@@ -75,7 +73,6 @@
                        domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
                 <field name="acuse_validacion" invisible="not show_acuse_ui"/>
                 <field name="currency_id"/>
-                <field name="layout_id"/>
               </group>
 
               <group string="Participantes">
@@ -132,6 +129,19 @@
                   <field name="estructura_regla_id" readonly="1"/>
                   <field name="rule_trace_at" readonly="1"/>
                   <field name="rule_trace_json" readonly="1"/>
+                </group>
+              </page>
+              <page string="Configuracion tecnica">
+                <group>
+                  <group>
+                    <field name="layout_id"/>
+                    <field name="strict_mode_policy"/>
+                    <field name="strict_mode_effective" readonly="1"/>
+                  </group>
+                  <group>
+                    <field name="rulepack_id" options="{'no_create': True}"/>
+                    <field name="estructura_regla_id" options="{'no_create': True}"/>
+                  </group>
                 </group>
               </page>
             </notebook>

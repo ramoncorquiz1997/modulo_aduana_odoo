@@ -35,12 +35,18 @@
                 <field name="x_identificacion_fiscal"/>
               </group>
               <group string="Domicilio">
-                <field name="street"/>
-                <field name="street2"/>
+                <field name="x_street_name"/>
+                <field name="x_street_number_ext"/>
+                <field name="x_street_number_int"/>
+                <field name="x_colonia"/>
+                <field name="x_municipio"/>
+                <field name="x_localidad"/>
                 <field name="zip"/>
                 <field name="city"/>
                 <field name="state_id"/>
                 <field name="country_id"/>
+                <field name="street"/>
+                <field name="street2"/>
               </group>
             </group>
             <group string="Documentación">
