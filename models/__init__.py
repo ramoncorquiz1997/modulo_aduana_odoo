@@ -13,6 +13,7 @@ from . import mx_ped_tipo_movimiento
 from . import mx_ped_tipo_contenedor
 from . import mx_ped_numero_control
 from . import mx_ped_estructura_regla
+from . import mx_ped_rulepack
 from . import mx_wa_session
 from . import account_move
 from . import aduana_catalogos

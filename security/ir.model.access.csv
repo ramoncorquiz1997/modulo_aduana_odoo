@@ -9,6 +9,11 @@ access_mx_ped_layout_campo,mx.ped.layout.campo,model_mx_ped_layout_campo,,1,1,1,
 access_mx_ped_registro,mx.ped.registro,model_mx_ped_registro,,1,1,1,1
 access_mx_ped_clave,mx.ped.clave,model_mx_ped_clave,,1,1,1,1
 access_mx_ped_clave_regla_registro,mx.ped.clave.regla.registro,model_mx_ped_clave_regla_registro,,1,1,1,1
+access_mx_ped_rulepack,mx.ped.rulepack,model_mx_ped_rulepack,base.group_system,1,1,1,1
+access_mx_ped_rulepack_scenario,mx.ped.rulepack.scenario,model_mx_ped_rulepack_scenario,base.group_system,1,1,1,1
+access_mx_ped_rulepack_selector,mx.ped.rulepack.selector,model_mx_ped_rulepack_selector,base.group_system,1,1,1,1
+access_mx_ped_rulepack_process_rule,mx.ped.rulepack.process.rule,model_mx_ped_rulepack_process_rule,base.group_system,1,1,1,1
+access_mx_ped_rulepack_condition_rule,mx.ped.rulepack.condition.rule,model_mx_ped_rulepack_condition_rule,base.group_system,1,1,1,1
 access_mx_ped_aduana_seccion,mx.ped.aduana.seccion,model_mx_ped_aduana_seccion,,1,1,1,1
 access_mx_ped_um,mx.ped.um,model_mx_ped_um,,1,1,1,1
 access_mx_ped_fraccion,mx.ped.fraccion,model_mx_ped_fraccion,,1,1,1,1

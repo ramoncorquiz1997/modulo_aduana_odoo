@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+  <record id="mx_ped_rulepack_default_2026" model="mx.ped.rulepack">
+    <field name="name">Rulepack SAT 2026</field>
+    <field name="code">SAT_2026_BASE</field>
+    <field name="state">active</field>
+    <field name="active">True</field>
+    <field name="priority">100</field>
+    <field name="fecha_inicio">2026-01-01</field>
+  </record>
+
+  <record id="mx_ped_rulepack_scenario_normal" model="mx.ped.rulepack.scenario">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="sequence">10</field>
+    <field name="code">normal</field>
+    <field name="name">Pedimento normal</field>
+    <field name="is_default">True</field>
+  </record>
+  <record id="mx_ped_rulepack_scenario_transito" model="mx.ped.rulepack.scenario">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="sequence">20</field>
+    <field name="code">transito</field>
+    <field name="name">Transito</field>
+  </record>
+  <record id="mx_ped_rulepack_scenario_edy" model="mx.ped.rulepack.scenario">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="sequence">30</field>
+    <field name="code">eliminacion_desistimiento</field>
+    <field name="name">Eliminacion / Desistimiento</field>
+  </record>
+  <record id="mx_ped_rulepack_scenario_complementario" model="mx.ped.rulepack.scenario">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="sequence">40</field>
+    <field name="code">complementario</field>
+    <field name="name">Complementario</field>
+  </record>
+  <record id="mx_ped_rulepack_scenario_ia" model="mx.ped.rulepack.scenario">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="sequence">50</field>
+    <field name="code">industria_automotriz</field>
+    <field name="name">Industria automotriz</field>
+  </record>
+  <record id="mx_ped_rulepack_scenario_da" model="mx.ped.rulepack.scenario">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="sequence">60</field>
+    <field name="code">despacho_anticipado</field>
+    <field name="name">Despacho anticipado</field>
+  </record>
+  <record id="mx_ped_rulepack_scenario_cp" model="mx.ped.rulepack.scenario">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="sequence">70</field>
+    <field name="code">confirmacion_pago</field>
+    <field name="name">Confirmacion de pago</field>
+  </record>
+  <record id="mx_ped_rulepack_scenario_gc" model="mx.ped.rulepack.scenario">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="sequence">80</field>
+    <field name="code">global_complementario</field>
+    <field name="name">Global complementario</field>
+  </record>
+
+  <record id="mx_ped_rulepack_selector_transito" model="mx.ped.rulepack.selector">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="priority">900</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_1"/>
+    <field name="regimen">transito</field>
+    <field name="scenario_id" ref="mx_ped_rulepack_scenario_transito"/>
+    <field name="stop">True</field>
+  </record>
+  <record id="mx_ped_rulepack_selector_2" model="mx.ped.rulepack.selector">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="priority">800</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_2"/>
+    <field name="scenario_id" ref="mx_ped_rulepack_scenario_edy"/>
+    <field name="stop">True</field>
+  </record>
+  <record id="mx_ped_rulepack_selector_3" model="mx.ped.rulepack.selector">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="priority">800</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_3"/>
+    <field name="scenario_id" ref="mx_ped_rulepack_scenario_edy"/>
+    <field name="stop">True</field>
+  </record>
+  <record id="mx_ped_rulepack_selector_5" model="mx.ped.rulepack.selector">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="priority">800</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_5"/>
+    <field name="scenario_id" ref="mx_ped_rulepack_scenario_ia"/>
+    <field name="stop">True</field>
+  </record>
+  <record id="mx_ped_rulepack_selector_6" model="mx.ped.rulepack.selector">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="priority">800</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_6"/>
+    <field name="scenario_id" ref="mx_ped_rulepack_scenario_complementario"/>
+    <field name="stop">True</field>
+  </record>
+  <record id="mx_ped_rulepack_selector_7" model="mx.ped.rulepack.selector">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="priority">800</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_7"/>
+    <field name="scenario_id" ref="mx_ped_rulepack_scenario_da"/>
+    <field name="stop">True</field>
+  </record>
+  <record id="mx_ped_rulepack_selector_8" model="mx.ped.rulepack.selector">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="priority">800</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_8"/>
+    <field name="scenario_id" ref="mx_ped_rulepack_scenario_cp"/>
+    <field name="stop">True</field>
+  </record>
+  <record id="mx_ped_rulepack_selector_9" model="mx.ped.rulepack.selector">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="priority">800</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_9"/>
+    <field name="scenario_id" ref="mx_ped_rulepack_scenario_gc"/>
+    <field name="stop">True</field>
+  </record>
+  <record id="mx_ped_rulepack_selector_1" model="mx.ped.rulepack.selector">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="priority">700</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_1"/>
+    <field name="scenario_id" ref="mx_ped_rulepack_scenario_normal"/>
+    <field name="stop">True</field>
+  </record>
+
+  <record id="mx_ped_rulepack_process_load_m2" model="mx.ped.rulepack.process.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Mov 2 solo registros 500/800/801</field>
+    <field name="stage">load_from_lead</field>
+    <field name="action_type">allow_only_records</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_2"/>
+    <field name="payload_json" eval="{'codes': ['500', '800', '801']}"/>
+  </record>
+  <record id="mx_ped_rulepack_process_load_m3" model="mx.ped.rulepack.process.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Mov 3 solo registros 500/800/801</field>
+    <field name="stage">load_from_lead</field>
+    <field name="action_type">allow_only_records</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_3"/>
+    <field name="payload_json" eval="{'codes': ['500', '800', '801']}"/>
+  </record>
+  <record id="mx_ped_rulepack_process_load_m8" model="mx.ped.rulepack.process.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Mov 8 solo registros 500/801</field>
+    <field name="stage">load_from_lead</field>
+    <field name="action_type">allow_only_records</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_8"/>
+    <field name="payload_json" eval="{'codes': ['500', '801']}"/>
+  </record>
+
+  <record id="mx_ped_rulepack_process_acuse_m2" model="mx.ped.rulepack.process.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Mov 2 requiere acuse validacion</field>
+    <field name="stage">pre_validate</field>
+    <field name="action_type">require_field</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_2"/>
+    <field name="payload_json" eval="{'field': 'acuse_validacion', 'length': 8, 'forbidden_value': '00000000'}"/>
+  </record>
+  <record id="mx_ped_rulepack_process_acuse_m3" model="mx.ped.rulepack.process.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Mov 3 requiere acuse validacion</field>
+    <field name="stage">pre_validate</field>
+    <field name="action_type">require_field</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_3"/>
+    <field name="payload_json" eval="{'field': 'acuse_validacion', 'length': 8, 'forbidden_value': '00000000'}"/>
+  </record>
+  <record id="mx_ped_rulepack_process_acuse_m8" model="mx.ped.rulepack.process.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Mov 8 requiere acuse validacion</field>
+    <field name="stage">pre_validate</field>
+    <field name="action_type">require_field</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_8"/>
+    <field name="payload_json" eval="{'field': 'acuse_validacion', 'length': 8, 'forbidden_value': '00000000'}"/>
+  </record>
+  <record id="mx_ped_rulepack_process_formas_m8" model="mx.ped.rulepack.process.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Mov 8 valida formas de pago</field>
+    <field name="stage">pre_validate</field>
+    <field name="action_type">require_formas_pago</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_8"/>
+    <field name="payload_json" eval="{'allowed': ['5', '6', '8', '9', '13', '14', '16', '18', '21']}"/>
+  </record>
+</odoo>

@@ -225,6 +225,18 @@ class MxPedOperacion(models.Model):
         string="Regla de estructura",
         help="Define qu? registros debe contener la operaci?n seg?n tipo de movimiento.",
     )
+    fecha_operacion = fields.Date(
+        string="Fecha operacion",
+        default=lambda self: fields.Date.context_today(self),
+        required=True,
+        help="Se usa para resolver automaticamente el rulepack normativo vigente.",
+    )
+    rulepack_id = fields.Many2one(
+        "mx.ped.rulepack",
+        string="Rulepack normativo",
+        ondelete="restrict",
+        help="Version normativa data-driven aplicada a esta operacion.",
+    )
     rule_trace_json = fields.Json(string="Trazabilidad de reglas", readonly=True, copy=False)
     rule_trace_at = fields.Datetime(string="Ultima evaluaci?n de reglas", readonly=True, copy=False)
 
@@ -286,6 +298,23 @@ class MxPedOperacion(models.Model):
         for rec in self:
             rec.invoice_count = len(rec.invoice_ids.filtered(lambda m: m.move_type == "out_invoice"))
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        for rec in records:
+            rec.rulepack_id = rec._resolve_rulepack()
+            rec.estructura_regla_id = rec._resolve_estructura_regla()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        trigger_fields = {"fecha_operacion", "tipo_operacion", "regimen", "clave_pedimento_id", "tipo_movimiento"}
+        if trigger_fields.intersection(vals.keys()):
+            for rec in self:
+                rec.rulepack_id = rec._resolve_rulepack()
+                rec.estructura_regla_id = rec._resolve_estructura_regla()
+        return res
+
     @api.onchange("lead_id")
     def _onchange_lead_id_fill_defaults(self):
         if not self.lead_id:
@@ -332,24 +361,21 @@ class MxPedOperacion(models.Model):
     @api.onchange("tipo_movimiento")
     def _onchange_tipo_movimiento_clear_acuse(self):
         for rec in self:
-            if rec.tipo_movimiento not in ("2", "3", "8"):
-                rec.acuse_validacion = False
-            if rec.tipo_movimiento != "1":
-                rec.es_rectificacion = False
-            if rec.tipo_movimiento != "8":
-                rec.formas_pago_claves = False
+            rec.rulepack_id = rec._resolve_rulepack()
             rec.estructura_regla_id = rec._resolve_estructura_regla()
 
-    @api.onchange("clave_pedimento_id", "tipo_operacion", "regimen")
+    @api.onchange("clave_pedimento_id", "tipo_operacion", "regimen", "fecha_operacion")
     def _onchange_estructura_regla_context(self):
         for rec in self:
             if rec.clave_pedimento_id and rec.clave_pedimento_id.tipo_movimiento_id:
                 rec.tipo_movimiento = rec.clave_pedimento_id.tipo_movimiento_id.code
+            rec.rulepack_id = rec._resolve_rulepack()
             rec.estructura_regla_id = rec._resolve_estructura_regla()
 
     @api.onchange("es_rectificacion", "formas_pago_claves")
     def _onchange_estructura_regla_flags(self):
         for rec in self:
+            rec.rulepack_id = rec._resolve_rulepack()
             rec.estructura_regla_id = rec._resolve_estructura_regla()
 
     @api.depends("tipo_movimiento", "clave_pedimento_id", "es_rectificacion")
@@ -360,17 +386,30 @@ class MxPedOperacion(models.Model):
     @api.constrains("tipo_movimiento", "acuse_validacion", "clave_pedimento_id")
     def _check_acuse_validacion(self):
         for rec in self:
-            mov = rec._get_tipo_movimiento_effective()
-            if mov in ("2", "3", "8"):
+            stage_rules = rec._get_process_stage_rules("pre_validate")
+            for rule in stage_rules:
+                payload = rule.payload_json or {}
+                if rule.action_type != "require_field":
+                    continue
+                if payload.get("field") != "acuse_validacion":
+                    continue
                 acuse = (rec.acuse_validacion or "").strip()
                 if not acuse:
+                    raise ValidationError(_("Regla %s: el acuse de validacion es obligatorio.") % (rule.name,))
+                expected_len = int(payload.get("length") or 0)
+                if expected_len and len(acuse) != expected_len:
                     raise ValidationError(
-                        _("El acuse de validacion es obligatorio para eliminacion, desistimiento y confirmacion de pago.")
+                        _("Regla %s: el acuse de validacion debe tener %s caracteres.")
+                        % (rule.name, expected_len)
                     )
-                if len(acuse) != 8:
-                    raise ValidationError(_("El acuse de validacion debe tener exactamente 8 caracteres."))
-                if acuse == "0" * 8:
-                    raise ValidationError(_("El acuse de validacion no puede ser 00000000."))
+                forbidden = str(payload.get("forbidden_value") or "").strip()
+                if forbidden and acuse == forbidden:
+                    raise ValidationError(
+                        _("Regla %s: el acuse de validacion no puede ser %s.")
+                        % (rule.name, forbidden)
+                    )
+                if rule.stop:
+                    break
 
     def action_view_partidas(self):
         """Abre las partidas de esta operación (útil para smart button)."""
@@ -505,8 +544,117 @@ class MxPedOperacion(models.Model):
                 inferred.append(num)
         return sorted(set(inferred))
 
+    def _get_partida_meta_map(self):
+        self.ensure_one()
+        meta = {}
+        for partida in self.partida_ids:
+            if partida.numero_partida:
+                meta[partida.numero_partida] = {
+                    "fraccion_id": partida.fraccion_id.id if partida.fraccion_id else False,
+                }
+        return meta
+
+    def _resolve_rulepack(self):
+        self.ensure_one()
+        op_date = self.fecha_operacion or fields.Date.context_today(self)
+        packs = self.env["mx.ped.rulepack"].search(
+            [
+                ("active", "=", True),
+                ("state", "=", "active"),
+                ("fecha_inicio", "<=", op_date),
+                "|",
+                ("fecha_fin", "=", False),
+                ("fecha_fin", ">=", op_date),
+            ],
+            order="priority desc, fecha_inicio desc, id desc",
+            limit=1,
+        )
+        return packs[:1]
+
+    def _get_rulepack_effective(self):
+        self.ensure_one()
+        return self.rulepack_id or self._resolve_rulepack()
+
+    def _build_rule_context(self, escenario_code=None):
+        self.ensure_one()
+        clave = self.clave_pedimento_id
+        mov = self._get_tipo_movimiento_effective()
+        fraccion_ids = {p.fraccion_id.id for p in self.partida_ids if p.fraccion_id}
+        return {
+            "tipo_movimiento": mov,
+            "tipo_operacion": self.tipo_operacion or "",
+            "regimen": self.regimen or "",
+            "clave_id": clave.id if clave else False,
+            "is_virtual": bool(clave and clave.is_virtual),
+            "escenario": escenario_code or "",
+            "fraccion_ids": fraccion_ids,
+        }
+
+    def _rule_condition_match(self, rule, context):
+        mov_code = rule.tipo_movimiento_id.code if getattr(rule, "tipo_movimiento_id", False) else False
+        if mov_code and mov_code != context.get("tipo_movimiento"):
+            return False
+        if getattr(rule, "tipo_operacion", False) and rule.tipo_operacion not in ("", "ambas"):
+            if rule.tipo_operacion != context.get("tipo_operacion"):
+                return False
+        if getattr(rule, "regimen", False) and rule.regimen not in ("", "cualquiera"):
+            if rule.regimen != context.get("regimen"):
+                return False
+        if getattr(rule, "clave_pedimento_id", False) and rule.clave_pedimento_id.id != context.get("clave_id"):
+            return False
+        if getattr(rule, "is_virtual", False) and rule.is_virtual != "any":
+            expected_virtual = (rule.is_virtual == "yes")
+            if expected_virtual != bool(context.get("is_virtual")):
+                return False
+        if hasattr(rule, "escenario_code") and rule.escenario_code and rule.escenario_code != "any":
+            if rule.escenario_code != context.get("escenario"):
+                return False
+        if hasattr(rule, "fraccion_id") and rule.fraccion_id:
+            if rule.fraccion_id.id not in (context.get("fraccion_ids") or set()):
+                return False
+        return True
+
+    def _select_rulepack_scenario(self):
+        self.ensure_one()
+        rulepack = self._get_rulepack_effective()
+        if not rulepack:
+            return self.env["mx.ped.rulepack.scenario"], self.env["mx.ped.estructura.regla"]
+
+        context = self._build_rule_context()
+        selectors = rulepack.selector_ids.filtered(lambda r: r.active).sorted(
+            key=lambda r: (-r.priority, r.sequence, r.id)
+        )
+        selected = self.env["mx.ped.rulepack.scenario"]
+        for selector in selectors:
+            if not self._rule_condition_match(selector, context):
+                continue
+            selected = selector.scenario_id
+            if selector.stop:
+                break
+
+        if not selected:
+            selected = rulepack.scenario_ids.filtered(lambda s: s.active and s.is_default)[:1]
+        if not selected:
+            selected = rulepack.scenario_ids.filtered(lambda s: s.active)[:1]
+
+        return selected, selected.estructura_regla_id if selected else self.env["mx.ped.estructura.regla"]
+
+    def _get_process_stage_rules(self, stage):
+        self.ensure_one()
+        rulepack = self._get_rulepack_effective()
+        if not rulepack:
+            return self.env["mx.ped.rulepack.process.rule"]
+        context = self._build_rule_context()
+        rules = rulepack.process_rule_ids.filtered(lambda r: r.active and r.stage == stage).sorted(
+            key=lambda r: (-r.priority, r.sequence, r.id)
+        )
+        return rules.filtered(lambda r: self._rule_condition_match(r, context))
+
     def _resolve_estructura_regla(self):
         self.ensure_one()
+        selected_scenario, selected_rule = self._select_rulepack_scenario()
+        if selected_rule:
+            return selected_rule
         mov = self._get_tipo_movimiento_effective()
         if not mov:
             return self.env["mx.ped.estructura.regla"]
@@ -547,29 +695,13 @@ class MxPedOperacion(models.Model):
 
     def _detect_escenario_estructura(self):
         self.ensure_one()
+        selected_scenario, _selected_rule = self._select_rulepack_scenario()
+        if selected_scenario:
+            return selected_scenario.code
+
         clave_structure = (self.clave_pedimento_id.saai_structure_type or "auto") if self.clave_pedimento_id else "auto"
         if clave_structure and clave_structure != "auto":
             return clave_structure
-
-        mov = self._get_tipo_movimiento_effective()
-        if mov == "1":
-            if self._is_rectificacion():
-                return "rectificacion"
-            if self._is_transito():
-                return "transito"
-            return "normal"
-        if mov in ("2", "3"):
-            return "eliminacion_desistimiento"
-        if mov == "5":
-            return "industria_automotriz"
-        if mov == "6":
-            return "complementario"
-        if mov == "7":
-            return "despacho_anticipado"
-        if mov == "8":
-            return "confirmacion_pago"
-        if mov == "9":
-            return "global_complementario"
         return "generico"
 
     def _is_transito(self):
@@ -590,28 +722,53 @@ class MxPedOperacion(models.Model):
             return set()
         return {token for token in re.findall(r"\d+", raw)}
 
+    def _run_process_stage_checks(self, stage):
+        self.ensure_one()
+        stage_rules = self._get_process_stage_rules(stage)
+        for rule in stage_rules:
+            payload = rule.payload_json or {}
+            action = rule.action_type
+            if action == "require_formas_pago":
+                allowed = set(str(v) for v in (payload.get("allowed") or []))
+                current = self._parse_formas_pago_claves()
+                if not current:
+                    raise ValidationError(
+                        _("Regla %s: captura formas de pago.") % (rule.name,)
+                    )
+                if allowed:
+                    invalid = sorted(current - allowed, key=lambda x: int(x))
+                    if invalid:
+                        raise ValidationError(
+                            _("Regla %s: formas permitidas %s. No permitidas: %s")
+                            % (rule.name, ", ".join(sorted(allowed, key=lambda x: int(x))), ", ".join(invalid))
+                        )
+            elif action == "require_field":
+                field_name = payload.get("field")
+                if not field_name:
+                    continue
+                value = getattr(self, field_name, False)
+                if not value:
+                    raise ValidationError(_("Regla %s: el campo %s es obligatorio.") % (rule.name, field_name))
+            elif action == "forbid_field":
+                field_name = payload.get("field")
+                if not field_name:
+                    continue
+                value = getattr(self, field_name, False)
+                if value:
+                    raise ValidationError(_("Regla %s: el campo %s debe estar vacio.") % (rule.name, field_name))
+            if rule.stop:
+                break
+
     def _validate_confirmacion_pago_formas(self):
         self.ensure_one()
-        if self._get_tipo_movimiento_effective() != "8":
-            return
-        allowed = {"5", "6", "8", "9", "13", "14", "16", "18", "21"}
-        current = self._parse_formas_pago_claves()
-        if not current:
-            raise ValidationError(
-                _("Para tipo de movimiento 8, captura las formas de pago (claves).")
-            )
-        invalid = sorted(current - allowed, key=lambda x: int(x))
-        if invalid:
-            raise ValidationError(
-                _("Tipo de movimiento 8 solo permite formas de pago %s. No permitidas: %s")
-                % (", ".join(sorted(allowed, key=lambda x: int(x))), ", ".join(invalid))
-            )
+        self._run_process_stage_checks("pre_validate")
 
     def _build_record_plan(self):
         """Construye el plan de registros aplicable y una traza de decisiones."""
         self.ensure_one()
         rule = self.estructura_regla_id or self._resolve_estructura_regla()
         clave_policy = self._get_clave_policy_map()
+        dynamic_rules = self._get_dynamic_condition_rules()
 
         states = {}
         trace = []
@@ -704,6 +861,78 @@ class MxPedOperacion(models.Model):
             if policy.get("stop"):
                 blocked_codes.add(code)
 
+        dynamic_policy = []
+        for d_rule in dynamic_rules:
+            dynamic_policy.append({
+                "code": (d_rule.registro_codigo or "").strip(),
+                "policy": d_rule.policy,
+                "scope": d_rule.scope or "pedimento",
+                "priority": d_rule.priority,
+                "stop": bool(d_rule.stop),
+                "min": max(d_rule.min_occurs or 0, 0),
+                "max": max(d_rule.max_occurs or 0, 0),
+                "identifier": (d_rule.required_identifier_code or "").strip().upper(),
+                "line_id": d_rule.id,
+                "fraccion_id": d_rule.fraccion_id.id if d_rule.fraccion_id else False,
+                "source": "rulepack",
+            })
+
+        dynamic_policy.sort(key=lambda r: (-r["priority"], r["code"], r["line_id"]))
+        blocked_dynamic = set()
+        for policy in dynamic_policy:
+            code = policy.get("code")
+            if not code:
+                continue
+            if code in blocked_dynamic:
+                continue
+            if policy.get("scope") not in ("pedimento", None, ""):
+                continue
+
+            state = states.setdefault(code, {
+                "min": 0,
+                "max": 0,
+                "required": False,
+                "forbidden": False,
+                "identifier": "",
+                "contributors": [],
+            })
+            policy_type = policy.get("policy")
+            min_occ = max(policy.get("min") or 0, 0)
+            max_occ = max(policy.get("max") or 0, 0)
+            identifier = (policy.get("identifier") or "").strip().upper()
+
+            if policy_type == "forbidden":
+                state["forbidden"] = True
+                state["required"] = False
+                state["min"] = 0
+                state["max"] = 0
+            elif policy_type == "required" and not state["forbidden"]:
+                state["required"] = True
+                state["min"] = max(state["min"], max(min_occ, 1))
+            elif policy_type == "optional" and not state["forbidden"]:
+                state["min"] = max(state["min"], min_occ)
+
+            if max_occ and not state["forbidden"]:
+                state["max"] = max_occ if not state["max"] else min(state["max"], max_occ)
+            if identifier:
+                state["identifier"] = identifier
+
+            state["contributors"].append("rulepack")
+            trace.append({
+                "source": "rulepack",
+                "record_code": code,
+                "policy": policy_type,
+                "scope": policy.get("scope"),
+                "priority": policy.get("priority"),
+                "stop": policy.get("stop"),
+                "min": min_occ,
+                "max": max_occ,
+                "identifier": identifier,
+                "line_id": policy.get("line_id"),
+            })
+            if policy.get("stop"):
+                blocked_dynamic.add(code)
+
         # Precedencia explicita: forbidden siempre gana sobre required.
         for state in states.values():
             if state["forbidden"]:
@@ -716,6 +945,7 @@ class MxPedOperacion(models.Model):
             "states": states,
             "trace": trace,
             "clave_policy": clave_policy,
+            "dynamic_policy": dynamic_policy,
         }
 
     def _store_rule_trace(self, plan):
@@ -733,6 +963,34 @@ class MxPedOperacion(models.Model):
             "rule_trace_json": trace_payload,
             "rule_trace_at": fields.Datetime.now(),
         })
+
+    def _get_stage_allowed_codes(self, stage):
+        self.ensure_one()
+        rules = self._get_process_stage_rules(stage)
+        allowed = None
+        for rule in rules:
+            if rule.action_type != "allow_only_records":
+                continue
+            payload = rule.payload_json or {}
+            rule_codes = {str(code).zfill(3) for code in (payload.get("codes") or []) if str(code).strip()}
+            if allowed is None:
+                allowed = rule_codes
+            else:
+                allowed &= rule_codes
+            if rule.stop:
+                break
+        return allowed
+
+    def _get_dynamic_condition_rules(self):
+        self.ensure_one()
+        rulepack = self._get_rulepack_effective()
+        if not rulepack:
+            return self.env["mx.ped.rulepack.condition.rule"]
+        context = self._build_rule_context(self._detect_escenario_estructura())
+        rules = rulepack.condition_rule_ids.filtered(lambda r: r.active).sorted(
+            key=lambda r: (-r.priority, r.sequence, r.id)
+        )
+        return rules.filtered(lambda r: self._rule_condition_match(r, context))
 
     def _get_allowed_codes_from_regla(self):
         self.ensure_one()
@@ -786,69 +1044,75 @@ class MxPedOperacion(models.Model):
 
         # Reglas con alcance partida: se validan por cada numero_partida.
         partida_policies = [
-            p for p in (plan.get("clave_policy") or [])
+            p for p in ((plan.get("clave_policy") or []) + (plan.get("dynamic_policy") or []))
             if (p.get("scope") or "pedimento") == "partida"
         ]
         if partida_policies:
             partida_numbers = self._get_partida_numbers_for_validation()
+            partida_meta = self._get_partida_meta_map()
             if not partida_numbers:
                 errors.append(_(
                     "Existen reglas de alcance partida pero no hay numero_partida capturado en partidas o registros."
                 ))
             else:
-                partida_states = {}
-                blocked_codes = set()
-                for policy in partida_policies:
-                    code = policy.get("code")
-                    if not code or code in blocked_codes:
-                        continue
-                    state = partida_states.setdefault(code, {
-                        "required": False,
-                        "forbidden": False,
-                        "min": 0,
-                        "max": 0,
-                        "identifier": "",
-                    })
-                    policy_type = policy.get("policy")
-                    min_occ = max(policy.get("min") or 0, 0)
-                    max_occ = max(policy.get("max") or 0, 0)
-                    identifier = (policy.get("identifier") or "").strip().upper()
-
-                    if policy_type == "forbidden":
-                        state["forbidden"] = True
-                        state["required"] = False
-                        state["min"] = 0
-                        state["max"] = 0
-                    elif policy_type == "required" and not state["forbidden"]:
-                        state["required"] = True
-                        state["min"] = max(state["min"], max(min_occ, 1))
-                    elif policy_type == "optional" and not state["forbidden"]:
-                        state["min"] = max(state["min"], min_occ)
-
-                    if max_occ and not state["forbidden"]:
-                        state["max"] = max_occ if not state["max"] else min(state["max"], max_occ)
-                    if identifier:
-                        state["identifier"] = identifier
-
-                    if policy.get("stop"):
-                        blocked_codes.add(code)
-
                 per_partida_counts = {}
                 per_partida_has_identifier = {}
                 for reg in self.registro_ids:
                     code = (reg.codigo or "").strip()
-                    if code not in partida_states:
-                        continue
                     partida_num = self._extract_partida_number(reg.valores)
                     if not partida_num:
                         continue
                     per_partida_counts[(partida_num, code)] = per_partida_counts.get((partida_num, code), 0) + 1
-                    identifier = (partida_states[code].get("identifier") or "").strip().upper()
-                    if identifier and self._payload_has_token(reg.valores, identifier):
-                        per_partida_has_identifier[(partida_num, code)] = True
+                    for policy in partida_policies:
+                        if policy.get("code") != code:
+                            continue
+                        identifier = (policy.get("identifier") or "").strip().upper()
+                        if identifier and self._payload_has_token(reg.valores, identifier):
+                            per_partida_has_identifier[(partida_num, code)] = True
 
                 for partida_num in partida_numbers:
-                    for code, state in partida_states.items():
+                    partida_state = {}
+                    blocked_codes = set()
+                    meta = partida_meta.get(partida_num, {})
+                    fraccion_id = meta.get("fraccion_id")
+                    for policy in partida_policies:
+                        code = policy.get("code")
+                        if not code or code in blocked_codes:
+                            continue
+                        policy_fraccion = policy.get("fraccion_id")
+                        if policy_fraccion and policy_fraccion != fraccion_id:
+                            continue
+                        state = partida_state.setdefault(code, {
+                            "required": False,
+                            "forbidden": False,
+                            "min": 0,
+                            "max": 0,
+                            "identifier": "",
+                        })
+                        policy_type = policy.get("policy")
+                        min_occ = max(policy.get("min") or 0, 0)
+                        max_occ = max(policy.get("max") or 0, 0)
+                        identifier = (policy.get("identifier") or "").strip().upper()
+
+                        if policy_type == "forbidden":
+                            state["forbidden"] = True
+                            state["required"] = False
+                            state["min"] = 0
+                            state["max"] = 0
+                        elif policy_type == "required" and not state["forbidden"]:
+                            state["required"] = True
+                            state["min"] = max(state["min"], max(min_occ, 1))
+                        elif policy_type == "optional" and not state["forbidden"]:
+                            state["min"] = max(state["min"], min_occ)
+
+                        if max_occ and not state["forbidden"]:
+                            state["max"] = max_occ if not state["max"] else min(state["max"], max_occ)
+                        if identifier:
+                            state["identifier"] = identifier
+                        if policy.get("stop"):
+                            blocked_codes.add(code)
+
+                    for code, state in partida_state.items():
                         present = per_partida_counts.get((partida_num, code), 0)
                         min_occ = max(state.get("min") or 0, 0)
                         max_occ = max(state.get("max") or 0, 0)
@@ -1180,6 +1444,7 @@ class MxPedOperacion(models.Model):
     def action_export_txt(self):
         self.ensure_one()
         self._validate_confirmacion_pago_formas()
+        self._run_process_stage_checks("export")
         if not self.layout_id:
             raise UserError(_("Falta seleccionar un layout en la operación."))
         if not self.registro_ids:
@@ -1210,6 +1475,7 @@ class MxPedOperacion(models.Model):
     def action_export_xml(self):
         self.ensure_one()
         self._validate_confirmacion_pago_formas()
+        self._run_process_stage_checks("export")
         if not self.layout_id:
             raise UserError(_("Falta seleccionar un layout en la operación."))
         if not self.registro_ids:
@@ -1531,9 +1797,6 @@ class MxPedOperacion(models.Model):
             return ""
         if source_norm in ("tipomovimiento", "xtipomovimiento"):
             return self._get_tipo_movimiento_effective() or ""
-        if source_norm in ("acusevalidacion", "xacusevalidacion"):
-            if self._get_tipo_movimiento_effective() not in ("2", "3", "8"):
-                return "NULO"
 
         if source_model == "operacion":
             return self._record_value_for_field(self, source)
@@ -1557,14 +1820,12 @@ class MxPedOperacion(models.Model):
 
         def _allowed_codes():
             from_rule = self._get_allowed_codes_from_regla()
-            if from_rule is not None:
+            from_stage = self._get_stage_allowed_codes("load_from_lead")
+            if from_rule is None:
+                return from_stage
+            if from_stage is None:
                 return from_rule
-            mov = self._get_tipo_movimiento_effective()
-            if mov in ("2", "3"):
-                return {"500", "800", "801"}
-            if mov == "8":
-                return {"500", "801"}
-            return None
+            return from_rule & from_stage
 
         allowed = _allowed_codes()
         registros = []

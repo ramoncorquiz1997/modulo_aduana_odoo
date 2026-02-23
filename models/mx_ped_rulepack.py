@@ -1,0 +1,253 @@
+# -*- coding: utf-8 -*-
+from odoo import api, fields, models, _
+from odoo.exceptions import ValidationError
+
+
+class MxPedRulepack(models.Model):
+    _name = "mx.ped.rulepack"
+    _description = "Rulepack normativo de pedimentos"
+    _order = "fecha_inicio desc, priority desc, id desc"
+
+    name = fields.Char(required=True)
+    code = fields.Char(required=True, index=True)
+    active = fields.Boolean(default=True)
+    priority = fields.Integer(default=100)
+    state = fields.Selection(
+        [("draft", "Borrador"), ("active", "Activo"), ("retired", "Retirado")],
+        default="draft",
+        required=True,
+    )
+    fecha_inicio = fields.Date(required=True)
+    fecha_fin = fields.Date()
+    note = fields.Text()
+
+    scenario_ids = fields.One2many("mx.ped.rulepack.scenario", "rulepack_id", string="Escenarios")
+    selector_ids = fields.One2many("mx.ped.rulepack.selector", "rulepack_id", string="Selectores de escenario")
+    process_rule_ids = fields.One2many("mx.ped.rulepack.process.rule", "rulepack_id", string="Reglas de proceso")
+    condition_rule_ids = fields.One2many("mx.ped.rulepack.condition.rule", "rulepack_id", string="Reglas de registros")
+
+    _sql_constraints = [
+        ("mx_ped_rulepack_code_uniq", "unique(code)", "El codigo del rulepack debe ser unico."),
+    ]
+
+    @api.constrains("fecha_inicio", "fecha_fin")
+    def _check_dates(self):
+        for rec in self:
+            if rec.fecha_fin and rec.fecha_fin < rec.fecha_inicio:
+                raise ValidationError(_("La fecha fin no puede ser menor que fecha inicio."))
+
+
+class MxPedRulepackScenario(models.Model):
+    _name = "mx.ped.rulepack.scenario"
+    _description = "Escenario de estructura dentro de un rulepack"
+    _order = "sequence, id"
+
+    rulepack_id = fields.Many2one("mx.ped.rulepack", required=True, ondelete="cascade", index=True)
+    sequence = fields.Integer(default=10)
+    code = fields.Selection(
+        [
+            ("normal", "Pedimento normal"),
+            ("transito", "Transito"),
+            ("rectificacion", "Rectificacion"),
+            ("eliminacion_desistimiento", "Eliminacion / Desistimiento"),
+            ("industria_automotriz", "Industria automotriz"),
+            ("complementario", "Complementario"),
+            ("despacho_anticipado", "Despacho anticipado"),
+            ("confirmacion_pago", "Confirmacion de pago"),
+            ("global_complementario", "Global complementario"),
+            ("generico", "Generico"),
+        ],
+        required=True,
+    )
+    name = fields.Char(required=True)
+    is_default = fields.Boolean(string="Escenario default", default=False)
+    estructura_regla_id = fields.Many2one(
+        "mx.ped.estructura.regla",
+        string="Regla de estructura base",
+        ondelete="restrict",
+    )
+    active = fields.Boolean(default=True)
+
+
+class MxPedRulepackSelector(models.Model):
+    _name = "mx.ped.rulepack.selector"
+    _description = "Selector de escenario (condicion -> escenario)"
+    _order = "priority desc, sequence, id"
+
+    rulepack_id = fields.Many2one("mx.ped.rulepack", required=True, ondelete="cascade", index=True)
+    sequence = fields.Integer(default=10)
+    priority = fields.Integer(default=100)
+    stop = fields.Boolean(default=True)
+    active = fields.Boolean(default=True)
+
+    tipo_movimiento_id = fields.Many2one("mx.ped.tipo.movimiento", string="Tipo movimiento", ondelete="restrict")
+    tipo_operacion = fields.Selection(
+        [("importacion", "Importacion"), ("exportacion", "Exportacion"), ("ambas", "Ambas")],
+        default="ambas",
+    )
+    regimen = fields.Selection(
+        [
+            ("definitivo", "Definitivo"),
+            ("temporal", "Temporal"),
+            ("deposito_fiscal", "Deposito fiscal"),
+            ("transito", "Transito"),
+            ("cualquiera", "Cualquiera"),
+        ],
+        default="cualquiera",
+    )
+    clave_pedimento_id = fields.Many2one("mx.ped.clave", string="Clave pedimento", ondelete="restrict")
+    is_virtual = fields.Selection(
+        [("any", "Cualquiera"), ("yes", "Si"), ("no", "No")],
+        default="any",
+        required=True,
+    )
+    scenario_id = fields.Many2one("mx.ped.rulepack.scenario", required=True, ondelete="restrict")
+
+
+class MxPedRulepackProcessRule(models.Model):
+    _name = "mx.ped.rulepack.process.rule"
+    _description = "Regla de proceso por etapa"
+    _order = "priority desc, sequence, id"
+
+    rulepack_id = fields.Many2one("mx.ped.rulepack", required=True, ondelete="cascade", index=True)
+    sequence = fields.Integer(default=10)
+    priority = fields.Integer(default=100)
+    stop = fields.Boolean(default=False)
+    active = fields.Boolean(default=True)
+    name = fields.Char(required=True)
+
+    stage = fields.Selection(
+        [
+            ("load_from_lead", "Carga desde lead"),
+            ("pre_validate", "Prevalidacion"),
+            ("export", "Exportacion"),
+        ],
+        required=True,
+    )
+    action_type = fields.Selection(
+        [
+            ("allow_only_records", "Permitir solo registros"),
+            ("require_field", "Campo obligatorio"),
+            ("forbid_field", "Campo prohibido"),
+            ("require_formas_pago", "Validar formas de pago"),
+        ],
+        required=True,
+    )
+    payload_json = fields.Json(string="Payload")
+
+    tipo_movimiento_id = fields.Many2one("mx.ped.tipo.movimiento", string="Tipo movimiento", ondelete="restrict")
+    tipo_operacion = fields.Selection(
+        [("importacion", "Importacion"), ("exportacion", "Exportacion"), ("ambas", "Ambas")],
+        default="ambas",
+    )
+    regimen = fields.Selection(
+        [
+            ("definitivo", "Definitivo"),
+            ("temporal", "Temporal"),
+            ("deposito_fiscal", "Deposito fiscal"),
+            ("transito", "Transito"),
+            ("cualquiera", "Cualquiera"),
+        ],
+        default="cualquiera",
+    )
+    clave_pedimento_id = fields.Many2one("mx.ped.clave", string="Clave pedimento", ondelete="restrict")
+    is_virtual = fields.Selection(
+        [("any", "Cualquiera"), ("yes", "Si"), ("no", "No")],
+        default="any",
+        required=True,
+    )
+
+
+class MxPedRulepackConditionRule(models.Model):
+    _name = "mx.ped.rulepack.condition.rule"
+    _description = "Regla de condiciones para incluir/omitir registros"
+    _order = "priority desc, sequence, id"
+
+    rulepack_id = fields.Many2one("mx.ped.rulepack", required=True, ondelete="cascade", index=True)
+    sequence = fields.Integer(default=10)
+    priority = fields.Integer(default=100)
+    stop = fields.Boolean(default=False)
+    active = fields.Boolean(default=True)
+    name = fields.Char(required=True)
+
+    scope = fields.Selection(
+        [("pedimento", "Pedimento"), ("partida", "Partida")],
+        default="pedimento",
+        required=True,
+    )
+    policy = fields.Selection(
+        [("required", "Obligatorio"), ("optional", "Opcional"), ("forbidden", "Prohibido")],
+        default="required",
+        required=True,
+    )
+    registro_codigo = fields.Char(required=True, size=3)
+    min_occurs = fields.Integer(default=1)
+    max_occurs = fields.Integer(default=1, help="Usa 0 para ilimitado.")
+    required_identifier_code = fields.Char(size=3)
+
+    tipo_movimiento_id = fields.Many2one("mx.ped.tipo.movimiento", string="Tipo movimiento", ondelete="restrict")
+    tipo_operacion = fields.Selection(
+        [("importacion", "Importacion"), ("exportacion", "Exportacion"), ("ambas", "Ambas")],
+        default="ambas",
+    )
+    regimen = fields.Selection(
+        [
+            ("definitivo", "Definitivo"),
+            ("temporal", "Temporal"),
+            ("deposito_fiscal", "Deposito fiscal"),
+            ("transito", "Transito"),
+            ("cualquiera", "Cualquiera"),
+        ],
+        default="cualquiera",
+    )
+    clave_pedimento_id = fields.Many2one("mx.ped.clave", string="Clave pedimento", ondelete="restrict")
+    is_virtual = fields.Selection(
+        [("any", "Cualquiera"), ("yes", "Si"), ("no", "No")],
+        default="any",
+        required=True,
+    )
+    escenario_code = fields.Selection(
+        [
+            ("any", "Cualquiera"),
+            ("normal", "Pedimento normal"),
+            ("transito", "Transito"),
+            ("rectificacion", "Rectificacion"),
+            ("eliminacion_desistimiento", "Eliminacion / Desistimiento"),
+            ("industria_automotriz", "Industria automotriz"),
+            ("complementario", "Complementario"),
+            ("despacho_anticipado", "Despacho anticipado"),
+            ("confirmacion_pago", "Confirmacion de pago"),
+            ("global_complementario", "Global complementario"),
+            ("generico", "Generico"),
+        ],
+        default="any",
+        required=True,
+    )
+    fraccion_id = fields.Many2one("mx.ped.fraccion", string="Fraccion (opcional)", ondelete="restrict")
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("registro_codigo"):
+                vals["registro_codigo"] = (vals["registro_codigo"] or "").strip().zfill(3)
+            if vals.get("required_identifier_code"):
+                vals["required_identifier_code"] = (vals["required_identifier_code"] or "").strip().upper()
+        return super().create(vals_list)
+
+    def write(self, vals):
+        vals = dict(vals)
+        if vals.get("registro_codigo") is not None:
+            vals["registro_codigo"] = (vals["registro_codigo"] or "").strip().zfill(3)
+        if vals.get("required_identifier_code") is not None:
+            vals["required_identifier_code"] = (vals["required_identifier_code"] or "").strip().upper()
+        return super().write(vals)
+
+    @api.constrains("registro_codigo", "min_occurs", "max_occurs")
+    def _check_rule(self):
+        for rec in self:
+            if not (rec.registro_codigo or "").isdigit() or len(rec.registro_codigo or "") != 3:
+                raise ValidationError(_("El codigo de registro debe ser numerico de 3 digitos."))
+            if rec.min_occurs < 0 or rec.max_occurs < 0:
+                raise ValidationError(_("Min/Max ocurrencias no pueden ser negativas."))
+            if rec.max_occurs and rec.max_occurs < rec.min_occurs:
+                raise ValidationError(_("Max ocurrencias no puede ser menor que Min ocurrencias."))
