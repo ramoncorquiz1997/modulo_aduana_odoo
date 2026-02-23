@@ -155,6 +155,21 @@ class MxPedClaveReglaRegistro(models.Model):
         default="required",
         required=True,
     )
+    scope = fields.Selection(
+        [
+            ("pedimento", "Pedimento"),
+            ("partida", "Partida"),
+        ],
+        string="Alcance",
+        default="pedimento",
+        required=True,
+    )
+    priority = fields.Integer(string="Prioridad", default=100)
+    stop = fields.Boolean(
+        string="Detener evaluacion",
+        help="Si esta activo, no se evaluan mas reglas del mismo registro despues de esta.",
+        default=False,
+    )
     min_occurs = fields.Integer(string="Min ocurrencias", default=1)
     max_occurs = fields.Integer(
         string="Max ocurrencias",
@@ -187,7 +202,7 @@ class MxPedClaveReglaRegistro(models.Model):
             vals["required_identifier_code"] = (vals.get("required_identifier_code") or "").strip().upper()
         return super().write(vals)
 
-    @api.constrains("registro_codigo", "min_occurs", "max_occurs")
+    @api.constrains("registro_codigo", "min_occurs", "max_occurs", "priority")
     def _check_line(self):
         for rec in self:
             code = (rec.registro_codigo or "").strip()
@@ -199,3 +214,5 @@ class MxPedClaveReglaRegistro(models.Model):
                 raise ValidationError(_("Max ocurrencias no puede ser negativo."))
             if rec.max_occurs and rec.max_occurs < rec.min_occurs:
                 raise ValidationError(_("Max ocurrencias no puede ser menor que Min ocurrencias."))
+            if rec.priority < 0:
+                raise ValidationError(_("Prioridad no puede ser negativa."))

@@ -65,6 +65,9 @@
                             <field name="registro_policy_ids">
                                 <list editable="bottom">
                                     <field name="sequence"/>
+                                    <field name="priority"/>
+                                    <field name="stop"/>
+                                    <field name="scope"/>
                                     <field name="registro_codigo"/>
                                     <field name="policy"/>
                                     <field name="min_occurs"/>

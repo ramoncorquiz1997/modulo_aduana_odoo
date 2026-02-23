@@ -223,8 +223,10 @@ class MxPedOperacion(models.Model):
     estructura_regla_id = fields.Many2one(
         "mx.ped.estructura.regla",
         string="Regla de estructura",
-        help="Define qué registros debe contener la operación según tipo de movimiento.",
+        help="Define qu? registros debe contener la operaci?n seg?n tipo de movimiento.",
     )
+    rule_trace_json = fields.Json(string="Trazabilidad de reglas", readonly=True, copy=False)
+    rule_trace_at = fields.Datetime(string="Ultima evaluaci?n de reglas", readonly=True, copy=False)
 
     registro_ids = fields.One2many(
         comodel_name="mx.ped.registro",
@@ -391,37 +393,67 @@ class MxPedOperacion(models.Model):
 
     def _get_clave_policy_map(self):
         self.ensure_one()
-        policy_map = {}
+        policy_rules = []
         clave = self.clave_pedimento_id
         if not clave:
-            return policy_map
+            return policy_rules
 
-        for line in clave.registro_policy_ids:
+        for line in clave.registro_policy_ids.sorted(lambda l: (-l.priority, l.sequence, l.id)):
             code = (line.registro_codigo or "").strip()
             if not code:
                 continue
-            policy_map[code] = {
+            policy_rules.append({
+                "code": code,
                 "policy": line.policy,
+                "scope": line.scope or "pedimento",
+                "priority": line.priority,
+                "stop": bool(line.stop),
                 "min": max(line.min_occurs or 0, 0),
                 "max": max(line.max_occurs or 0, 0),
                 "identifier": (line.required_identifier_code or "").strip().upper(),
-            }
+                "line_id": line.id,
+            })
 
         # Compatibilidad con banderas antiguas para transicion.
         if clave.requires_reg_552:
-            rule = policy_map.get("552", {"policy": "required", "min": 1, "max": 0, "identifier": ""})
-            rule["policy"] = "required"
-            rule["min"] = max(rule.get("min", 0), 1)
-            policy_map["552"] = rule
+            policy_rules.append({
+                "code": "552",
+                "policy": "required",
+                "scope": "pedimento",
+                "priority": 10000,
+                "stop": False,
+                "min": 1,
+                "max": 0,
+                "identifier": "",
+                "line_id": 0,
+            })
         if clave.omits_reg_502:
-            policy_map["502"] = {"policy": "forbidden", "min": 0, "max": 0, "identifier": ""}
+            policy_rules.append({
+                "code": "502",
+                "policy": "forbidden",
+                "scope": "pedimento",
+                "priority": 10000,
+                "stop": True,
+                "min": 0,
+                "max": 0,
+                "identifier": "",
+                "line_id": 0,
+            })
         if clave.requires_identificador_re:
-            rule = policy_map.get("507", {"policy": "required", "min": 1, "max": 0, "identifier": ""})
-            if not rule.get("identifier"):
-                rule["identifier"] = "RE"
-            policy_map["507"] = rule
+            policy_rules.append({
+                "code": "507",
+                "policy": "required",
+                "scope": "pedimento",
+                "priority": 10000,
+                "stop": False,
+                "min": 1,
+                "max": 0,
+                "identifier": "RE",
+                "line_id": 0,
+            })
 
-        return policy_map
+        policy_rules.sort(key=lambda r: (-r["priority"], r["code"], r["line_id"]))
+        return policy_rules
 
     def _payload_has_token(self, payload, token):
         token = (token or "").strip().upper()
@@ -434,6 +466,44 @@ class MxPedOperacion(models.Model):
                 if token in tokens:
                     return True
         return False
+
+    def _extract_partida_number(self, payload):
+        payload = payload or {}
+        if not isinstance(payload, dict):
+            return None
+
+        candidates = {
+            "partida",
+            "numero_partida",
+            "num_partida",
+            "partida_numero",
+            "secuencia_partida",
+            "partida_seq",
+        }
+        for key, value in payload.items():
+            key_norm = str(key or "").strip().lower()
+            if key_norm not in candidates:
+                continue
+            if isinstance(value, int):
+                return value
+            if isinstance(value, str):
+                digits = "".join(ch for ch in value if ch.isdigit())
+                if digits:
+                    return int(digits)
+        return None
+
+    def _get_partida_numbers_for_validation(self):
+        self.ensure_one()
+        numbers = [p.numero_partida for p in self.partida_ids if p.numero_partida]
+        if numbers:
+            return sorted(set(numbers))
+
+        inferred = []
+        for reg in self.registro_ids:
+            num = self._extract_partida_number(reg.valores)
+            if num:
+                inferred.append(num)
+        return sorted(set(inferred))
 
     def _resolve_estructura_regla(self):
         self.ensure_one()
@@ -576,7 +646,16 @@ class MxPedOperacion(models.Model):
                     "max": max_occ,
                 })
 
-        for code, policy in clave_policy.items():
+        blocked_codes = set()
+        for policy in clave_policy:
+            code = policy.get("code")
+            if not code:
+                continue
+            if code in blocked_codes:
+                continue
+            if policy.get("scope") not in ("pedimento", None, ""):
+                continue
+
             state = states.setdefault(code, {
                 "min": 0,
                 "max": 0,
@@ -613,10 +692,17 @@ class MxPedOperacion(models.Model):
                 "clave_id": self.clave_pedimento_id.id,
                 "record_code": code,
                 "policy": policy_type,
+                "scope": policy.get("scope"),
+                "priority": policy.get("priority"),
+                "stop": policy.get("stop"),
                 "min": min_occ,
                 "max": max_occ,
                 "identifier": identifier,
+                "line_id": policy.get("line_id"),
             })
+
+            if policy.get("stop"):
+                blocked_codes.add(code)
 
         # Precedencia explicita: forbidden siempre gana sobre required.
         for state in states.values():
@@ -629,11 +715,29 @@ class MxPedOperacion(models.Model):
             "rule": rule,
             "states": states,
             "trace": trace,
+            "clave_policy": clave_policy,
         }
+
+    def _store_rule_trace(self, plan):
+        self.ensure_one()
+        if not self.id or self.env.context.get("skip_rule_trace_write"):
+            return
+        plan = plan or {}
+        trace_payload = {
+            "rule_id": plan.get("rule").id if plan.get("rule") else False,
+            "states": plan.get("states") or {},
+            "trace": plan.get("trace") or [],
+            "errors": plan.get("errors") or [],
+        }
+        self.with_context(skip_rule_trace_write=True).write({
+            "rule_trace_json": trace_payload,
+            "rule_trace_at": fields.Datetime.now(),
+        })
 
     def _get_allowed_codes_from_regla(self):
         self.ensure_one()
         plan = self._build_record_plan()
+        self._store_rule_trace(plan)
         states = plan["states"]
 
         # Sin regla base no restringimos layout para evitar omisiones no deseadas.
@@ -649,6 +753,7 @@ class MxPedOperacion(models.Model):
         errors = []
 
         plan = self._build_record_plan()
+        self._store_rule_trace(plan)
         states = plan["states"]
 
         for code, state in states.items():
@@ -679,29 +784,144 @@ class MxPedOperacion(models.Model):
                 if not has_identifier:
                     errors.append(_("Registro %s exige identificador %s.") % (code, identifier))
 
+        # Reglas con alcance partida: se validan por cada numero_partida.
+        partida_policies = [
+            p for p in (plan.get("clave_policy") or [])
+            if (p.get("scope") or "pedimento") == "partida"
+        ]
+        if partida_policies:
+            partida_numbers = self._get_partida_numbers_for_validation()
+            if not partida_numbers:
+                errors.append(_(
+                    "Existen reglas de alcance partida pero no hay numero_partida capturado en partidas o registros."
+                ))
+            else:
+                partida_states = {}
+                blocked_codes = set()
+                for policy in partida_policies:
+                    code = policy.get("code")
+                    if not code or code in blocked_codes:
+                        continue
+                    state = partida_states.setdefault(code, {
+                        "required": False,
+                        "forbidden": False,
+                        "min": 0,
+                        "max": 0,
+                        "identifier": "",
+                    })
+                    policy_type = policy.get("policy")
+                    min_occ = max(policy.get("min") or 0, 0)
+                    max_occ = max(policy.get("max") or 0, 0)
+                    identifier = (policy.get("identifier") or "").strip().upper()
+
+                    if policy_type == "forbidden":
+                        state["forbidden"] = True
+                        state["required"] = False
+                        state["min"] = 0
+                        state["max"] = 0
+                    elif policy_type == "required" and not state["forbidden"]:
+                        state["required"] = True
+                        state["min"] = max(state["min"], max(min_occ, 1))
+                    elif policy_type == "optional" and not state["forbidden"]:
+                        state["min"] = max(state["min"], min_occ)
+
+                    if max_occ and not state["forbidden"]:
+                        state["max"] = max_occ if not state["max"] else min(state["max"], max_occ)
+                    if identifier:
+                        state["identifier"] = identifier
+
+                    if policy.get("stop"):
+                        blocked_codes.add(code)
+
+                per_partida_counts = {}
+                per_partida_has_identifier = {}
+                for reg in self.registro_ids:
+                    code = (reg.codigo or "").strip()
+                    if code not in partida_states:
+                        continue
+                    partida_num = self._extract_partida_number(reg.valores)
+                    if not partida_num:
+                        continue
+                    per_partida_counts[(partida_num, code)] = per_partida_counts.get((partida_num, code), 0) + 1
+                    identifier = (partida_states[code].get("identifier") or "").strip().upper()
+                    if identifier and self._payload_has_token(reg.valores, identifier):
+                        per_partida_has_identifier[(partida_num, code)] = True
+
+                for partida_num in partida_numbers:
+                    for code, state in partida_states.items():
+                        present = per_partida_counts.get((partida_num, code), 0)
+                        min_occ = max(state.get("min") or 0, 0)
+                        max_occ = max(state.get("max") or 0, 0)
+
+                        if state.get("forbidden"):
+                            if present > 0:
+                                errors.append(_(
+                                    "Partida %s: registro %s esta prohibido y se encontraron %s."
+                                ) % (partida_num, code, present))
+                            continue
+
+                        if state.get("required") and present < max(min_occ, 1):
+                            errors.append(_(
+                                "Partida %s: falta registro %s (min %s, actual %s)."
+                            ) % (partida_num, code, max(min_occ, 1), present))
+                        elif min_occ and present < min_occ:
+                            errors.append(_(
+                                "Partida %s: falta registro %s (min %s, actual %s)."
+                            ) % (partida_num, code, min_occ, present))
+
+                        if max_occ and present > max_occ:
+                            errors.append(_(
+                                "Partida %s: registro %s excede maximo (%s > %s)."
+                            ) % (partida_num, code, present, max_occ))
+
+                        identifier = (state.get("identifier") or "").strip().upper()
+                        if identifier and present and not per_partida_has_identifier.get((partida_num, code), False):
+                            errors.append(_(
+                                "Partida %s: registro %s exige identificador %s."
+                            ) % (partida_num, code, identifier))
+
         if errors:
+            plan["errors"] = errors
+            self._store_rule_trace(plan)
             raise UserError("\n".join(errors))
 
     def action_preparar_estructura(self):
         for rec in self:
-            rule = rec.estructura_regla_id or rec._resolve_estructura_regla()
-            if not rule:
+            plan = rec._build_record_plan()
+            rule = plan.get("rule")
+            if not rule and not plan.get("states"):
                 raise UserError(_("No existe una regla de estructura para este contexto."))
-            rec.estructura_regla_id = rule
+            if rule:
+                rec.estructura_regla_id = rule
             counts = Counter((r.codigo or "") for r in rec.registro_ids)
             new_lines = []
-            for line in rule.line_ids.sorted(lambda l: (l.sequence, l.id)):
-                needed = max(line.min_occurs or 0, 0) - counts.get(line.registro_codigo, 0)
-                seq_base = counts.get(line.registro_codigo, 0)
+            states = plan.get("states") or {}
+            line_order = {}
+            if rule:
+                for idx, line in enumerate(rule.line_ids.sorted(lambda l: (l.sequence, l.id)), start=1):
+                    code = (line.registro_codigo or "").strip()
+                    if code and code not in line_order:
+                        line_order[code] = idx
+
+            for code in sorted(states.keys(), key=lambda c: (line_order.get(c, 9999), c)):
+                state = states[code]
+                if state.get("forbidden"):
+                    continue
+                min_occurs = max(state.get("min") or 0, 0)
+                if state.get("required"):
+                    min_occurs = max(min_occurs, 1)
+                needed = min_occurs - counts.get(code, 0)
+                seq_base = counts.get(code, 0)
                 for i in range(max(needed, 0)):
                     new_lines.append((0, 0, {
-                        "codigo": line.registro_codigo,
+                        "codigo": code,
                         "secuencia": seq_base + i + 1,
                         "valores": {},
                     }))
-                counts[line.registro_codigo] = counts.get(line.registro_codigo, 0) + max(needed, 0)
+                counts[code] = counts.get(code, 0) + max(needed, 0)
             if new_lines:
                 rec.write({"registro_ids": new_lines})
+            rec._store_rule_trace(plan)
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
@@ -710,6 +930,49 @@ class MxPedOperacion(models.Model):
                 "message": _("Registros base agregados según regla de estructura."),
                 "type": "success",
                 "sticky": False,
+            },
+        }
+
+    def action_simular_estructura(self):
+        self.ensure_one()
+        plan = self._build_record_plan()
+        states = plan.get("states") or {}
+        counts = Counter((r.codigo or "") for r in self.registro_ids)
+
+        missing = []
+        forbidden = []
+        for code, state in sorted(states.items()):
+            present = counts.get(code, 0)
+            min_occ = max(state.get("min") or 0, 0)
+            if state.get("required"):
+                min_occ = max(min_occ, 1)
+            if state.get("forbidden"):
+                if present:
+                    forbidden.append(f"{code}({present})")
+                continue
+            if min_occ and present < min_occ:
+                missing.append(f"{code}({present}/{min_occ})")
+
+        summary = [
+            _("Regla: %s") % (plan.get("rule").display_name if plan.get("rule") else _("sin regla")),
+            _("Faltantes: %s") % (", ".join(missing) if missing else _("ninguno")),
+            _("Prohibidos presentes: %s") % (", ".join(forbidden) if forbidden else _("ninguno")),
+        ]
+        plan["errors"] = []
+        if missing:
+            plan["errors"].append(_("Faltan registros obligatorios."))
+        if forbidden:
+            plan["errors"].append(_("Hay registros prohibidos capturados."))
+        self._store_rule_trace(plan)
+
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Simulacion de estructura"),
+                "message": "\n".join(summary),
+                "type": "warning" if (missing or forbidden) else "success",
+                "sticky": bool(missing or forbidden),
             },
         }
 
