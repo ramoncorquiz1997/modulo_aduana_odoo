@@ -239,6 +239,16 @@ class MxPedOperacion(models.Model):
     )
     rule_trace_json = fields.Json(string="Trazabilidad de reglas", readonly=True, copy=False)
     rule_trace_at = fields.Datetime(string="Ultima evaluaci?n de reglas", readonly=True, copy=False)
+    show_acuse_ui = fields.Boolean(
+        string="Mostrar acuse",
+        compute="_compute_process_ui_flags",
+        store=False,
+    )
+    show_formas_pago_ui = fields.Boolean(
+        string="Mostrar formas pago",
+        compute="_compute_process_ui_flags",
+        store=False,
+    )
 
     registro_ids = fields.One2many(
         comodel_name="mx.ped.registro",
@@ -297,6 +307,22 @@ class MxPedOperacion(models.Model):
     def _compute_invoice_count(self):
         for rec in self:
             rec.invoice_count = len(rec.invoice_ids.filtered(lambda m: m.move_type == "out_invoice"))
+
+    @api.depends("tipo_movimiento", "clave_pedimento_id", "tipo_operacion", "regimen", "fecha_operacion", "rulepack_id")
+    def _compute_process_ui_flags(self):
+        for rec in self:
+            show_acuse = False
+            show_formas = False
+            for rule in rec._get_process_stage_rules("pre_validate"):
+                payload = rule.payload_json or {}
+                if rule.action_type == "require_field" and payload.get("field") == "acuse_validacion":
+                    show_acuse = True
+                if rule.action_type == "require_formas_pago":
+                    show_formas = True
+                if rule.stop:
+                    break
+            rec.show_acuse_ui = show_acuse
+            rec.show_formas_pago_ui = show_formas
 
     @api.model_create_multi
     def create(self, vals_list):
