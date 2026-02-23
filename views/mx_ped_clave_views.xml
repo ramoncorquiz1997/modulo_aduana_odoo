@@ -68,6 +68,7 @@
                                     <field name="priority"/>
                                     <field name="stop"/>
                                     <field name="scope"/>
+                                    <field name="registro_tipo_id"/>
                                     <field name="registro_codigo"/>
                                     <field name="policy"/>
                                     <field name="min_occurs"/>

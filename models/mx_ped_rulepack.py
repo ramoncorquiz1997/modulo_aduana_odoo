@@ -180,6 +180,12 @@ class MxPedRulepackConditionRule(models.Model):
         default="required",
         required=True,
     )
+    registro_tipo_id = fields.Many2one(
+        "mx.ped.layout.registro",
+        string="Registro (catalogo)",
+        ondelete="restrict",
+        help="Selecciona el registro desde el catalogo de registros del layout.",
+    )
     registro_codigo = fields.Char(required=True, size=3)
     min_occurs = fields.Integer(default=1)
     max_occurs = fields.Integer(default=1, help="Usa 0 para ilimitado.")
@@ -228,6 +234,10 @@ class MxPedRulepackConditionRule(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            registro_tipo_id = vals.get("registro_tipo_id")
+            if registro_tipo_id and not vals.get("registro_codigo"):
+                reg = self.env["mx.ped.layout.registro"].browse(registro_tipo_id)
+                vals["registro_codigo"] = reg.codigo or ""
             if vals.get("registro_codigo"):
                 vals["registro_codigo"] = (vals["registro_codigo"] or "").strip().zfill(3)
             if vals.get("required_identifier_code"):
@@ -236,16 +246,26 @@ class MxPedRulepackConditionRule(models.Model):
 
     def write(self, vals):
         vals = dict(vals)
+        if vals.get("registro_tipo_id") and not vals.get("registro_codigo"):
+            reg = self.env["mx.ped.layout.registro"].browse(vals["registro_tipo_id"])
+            vals["registro_codigo"] = reg.codigo or ""
         if vals.get("registro_codigo") is not None:
             vals["registro_codigo"] = (vals["registro_codigo"] or "").strip().zfill(3)
         if vals.get("required_identifier_code") is not None:
             vals["required_identifier_code"] = (vals["required_identifier_code"] or "").strip().upper()
         return super().write(vals)
 
+    @api.onchange("registro_tipo_id")
+    def _onchange_registro_tipo_id(self):
+        for rec in self:
+            if rec.registro_tipo_id and rec.registro_tipo_id.codigo:
+                rec.registro_codigo = rec.registro_tipo_id.codigo
+
     @api.constrains("registro_codigo", "min_occurs", "max_occurs")
     def _check_rule(self):
         for rec in self:
-            if not (rec.registro_codigo or "").isdigit() or len(rec.registro_codigo or "") != 3:
+            code = (rec.registro_codigo or rec.registro_tipo_id.codigo or "").strip()
+            if not code.isdigit() or len(code) != 3:
                 raise ValidationError(_("El codigo de registro debe ser numerico de 3 digitos."))
             if rec.min_occurs < 0 or rec.max_occurs < 0:
                 raise ValidationError(_("Min/Max ocurrencias no pueden ser negativas."))

@@ -144,6 +144,12 @@ class MxPedClaveReglaRegistro(models.Model):
         index=True,
     )
     sequence = fields.Integer(default=10)
+    registro_tipo_id = fields.Many2one(
+        "mx.ped.layout.registro",
+        string="Registro (catalogo)",
+        ondelete="restrict",
+        help="Selecciona el registro desde el catalogo de registros del layout.",
+    )
     registro_codigo = fields.Char(string="Codigo de registro", required=True, size=3)
     policy = fields.Selection(
         [
@@ -186,6 +192,10 @@ class MxPedClaveReglaRegistro(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            registro_tipo_id = vals.get("registro_tipo_id")
+            if registro_tipo_id and not vals.get("registro_codigo"):
+                reg = self.env["mx.ped.layout.registro"].browse(registro_tipo_id)
+                vals["registro_codigo"] = reg.codigo or ""
             code = (vals.get("registro_codigo") or "").strip()
             if code:
                 vals["registro_codigo"] = code.zfill(3)
@@ -196,16 +206,25 @@ class MxPedClaveReglaRegistro(models.Model):
 
     def write(self, vals):
         vals = dict(vals)
+        if vals.get("registro_tipo_id") and not vals.get("registro_codigo"):
+            reg = self.env["mx.ped.layout.registro"].browse(vals["registro_tipo_id"])
+            vals["registro_codigo"] = reg.codigo or ""
         if vals.get("registro_codigo") is not None:
             vals["registro_codigo"] = (vals.get("registro_codigo") or "").strip().zfill(3)
         if vals.get("required_identifier_code") is not None:
             vals["required_identifier_code"] = (vals.get("required_identifier_code") or "").strip().upper()
         return super().write(vals)
 
+    @api.onchange("registro_tipo_id")
+    def _onchange_registro_tipo_id(self):
+        for rec in self:
+            if rec.registro_tipo_id and rec.registro_tipo_id.codigo:
+                rec.registro_codigo = rec.registro_tipo_id.codigo
+
     @api.constrains("registro_codigo", "min_occurs", "max_occurs", "priority")
     def _check_line(self):
         for rec in self:
-            code = (rec.registro_codigo or "").strip()
+            code = (rec.registro_codigo or rec.registro_tipo_id.codigo or "").strip()
             if not (code.isdigit() and len(code) == 3):
                 raise ValidationError(_("El codigo de registro debe ser numerico de 3 digitos."))
             if rec.min_occurs < 0:
