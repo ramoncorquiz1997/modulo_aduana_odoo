@@ -263,7 +263,8 @@
               <list editable="bottom">
                 <field name="sequence"/>
                 <field name="name"/>
-                <field name="fraccion_arancelaria"/>
+                <field name="fraccion_id"/>
+                <field name="fraccion_arancelaria" readonly="1"/>
                 <field name="nico"/>
                 <field name="permisos_ids" widget="many2many_tags"/>
                 <field name="rrna_ids" widget="many2many_tags"/>

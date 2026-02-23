@@ -1116,6 +1116,7 @@ class CrmLead(models.Model):
             self.env["mx.ped.partida"].create({
                 "operacion_id": op.id,
                 "numero_partida": idx,
+                "fraccion_id": line.fraccion_id.id or False,
                 "fraccion_arancelaria": line.fraccion_arancelaria,
                 "nico": line.nico,
                 "descripcion": line.name,
@@ -1185,6 +1186,11 @@ class CrmLeadOperacionLine(models.Model):
     lead_id = fields.Many2one("crm.lead", required=True, ondelete="cascade", index=True)
     sequence = fields.Integer(default=10)
     name = fields.Char(string="Descripcion", required=True)
+    fraccion_id = fields.Many2one(
+        "mx.ped.fraccion",
+        string="Fraccion arancelaria",
+        domain=[("active", "=", True)],
+    )
     fraccion_arancelaria = fields.Char(string="Fraccion arancelaria", size=10)
     nico = fields.Char(string="NICO", size=2)
     permisos_ids = fields.Many2many(
@@ -1221,3 +1227,14 @@ class CrmLeadOperacionLine(models.Model):
     iva_estimado = fields.Monetary(string="IVA estimado", currency_field="currency_id")
     dta_estimado = fields.Monetary(string="DTA estimado", currency_field="currency_id")
     prv_estimado = fields.Monetary(string="PRV estimado", currency_field="currency_id")
+
+    @api.onchange("fraccion_id")
+    def _onchange_fraccion_id(self):
+        for rec in self:
+            fraccion = rec.fraccion_id
+            if not fraccion:
+                continue
+            rec.fraccion_arancelaria = fraccion.code
+            rec.nico = fraccion.nico
+            if not rec.name:
+                rec.name = fraccion.name
