@@ -47,14 +47,11 @@
               <h1><field name="name"/></h1>
             </div>
 
-            <group>
-              <group string="Vinculaci\u00f3n">
-                <field name="lead_id"/>
-              </group>
-
-              <group string="Clasificaci\u00f3n">
+            <group col="2">
+              <group string="Operación">
                 <field name="show_acuse_ui" invisible="1"/>
                 <field name="show_formas_pago_ui" invisible="1"/>
+                <field name="lead_id"/>
                 <field name="tipo_operacion"/>
                 <field name="tipo_movimiento"/>
                 <field name="es_rectificacion" invisible="tipo_movimiento != '1'"/>
@@ -62,20 +59,24 @@
                 <field name="regimen"/>
                 <field name="incoterm"/>
                 <field name="fecha_operacion"/>
+                <field name="clave_pedimento_id"
+                       domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
+                <field name="layout_id" required="1"/>
+                <field name="currency_id"/>
+                <field name="show_advanced"/>
+              </group>
+              <group string="Aduana y Agente">
                 <field name="aduana_seccion_despacho_id"/>
                 <field name="aduana_clave"/>
                 <field name="aduana_seccion_entrada_salida_id"/>
                 <field name="agente_aduanal_id" domain="[('x_contact_role','=','agente_aduanal')]"/>
                 <field name="patente" readonly="1"/>
                 <field name="curp_agente"/>
-                <field name="clave_pedimento_id"
-                       domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
-                <field name="layout_id" required="1"/>
                 <field name="acuse_validacion" invisible="not show_acuse_ui"/>
-                <field name="currency_id"/>
-                <field name="show_advanced"/>
               </group>
+            </group>
 
+            <group col="2">
               <group string="Participantes">
                 <field name="cliente_id" readonly="1"/>
                 <field name="importador_id" readonly="1"/>
@@ -85,16 +86,11 @@
                 <field name="participante_rfc" readonly="1"/>
                 <field name="participante_curp" readonly="1"/>
               </group>
-            </group>
-
-            <group>
               <group string="Resultado">
                 <field name="pedimento_numero"/>
                 <field name="fecha_pago"/>
                 <field name="semaforo"/>
                 <field name="fecha_liberacion"/>
-              </group>
-              <group string="Observaciones">
                 <field name="observaciones"/>
               </group>
             </group>
