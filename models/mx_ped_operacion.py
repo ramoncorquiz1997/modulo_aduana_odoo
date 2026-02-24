@@ -2037,6 +2037,8 @@ class MxPedOperacion(models.Model):
 
         if source_model == "operacion":
             return self._record_value_for_field(self, source)
+        if source_model == "partida":
+            return None
         if source_model == "cliente":
             return self._record_value_for_field(lead.partner_id if lead else None, source)
         if source_model == "importador":
@@ -2049,6 +2051,18 @@ class MxPedOperacion(models.Model):
             return self._record_value_for_field(lead.x_transportista_id if lead else None, source)
 
         return self._record_value_for_field(lead, source)
+
+    def _field_value_for_layout(self, campo, partida=None):
+        self.ensure_one()
+        source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+        if campo.source_model == "partida":
+            source = source_name or campo.nombre
+            return self._record_value_for_field(partida, source)
+        return self._lead_value_for_field_name(
+            campo.nombre,
+            source_field=source_name,
+            source_model=campo.source_model,
+        )
 
     def action_cargar_desde_lead(self):
         self.ensure_one()
@@ -2071,24 +2085,28 @@ class MxPedOperacion(models.Model):
         for layout_reg in self.layout_id.registro_ids.sorted(lambda r: r.orden or 0):
             if allowed is not None and layout_reg.codigo not in allowed:
                 continue
-            valores = {}
-            for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or 0):
-                source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
-                val = self._lead_value_for_field_name(
-                    campo.nombre,
-                    source_field=source_name,
-                    source_model=campo.source_model,
-                )
-                if val is None or val == "" or val is False:
-                    if campo.default:
-                        val = campo.default
-                if val not in (None, "", False):
-                    valores[campo.nombre] = val
-            registros.append((0, 0, {
-                "codigo": layout_reg.codigo,
-                "secuencia": 1,
-                "valores": valores,
-            }))
+            campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+            has_partida_source = any(c.source_model == "partida" for c in campos)
+
+            target_partidas = self.partida_ids.sorted(lambda p: (p.numero_partida or 0, p.id)) if has_partida_source else [False]
+            if has_partida_source and not target_partidas:
+                continue
+
+            for secuencia, partida in enumerate(target_partidas, start=1):
+                valores = {}
+                for campo in campos:
+                    val = self._field_value_for_layout(campo, partida=partida)
+                    if val is None or val == "" or val is False:
+                        if campo.default:
+                            val = campo.default
+                    if val not in (None, "", False):
+                        valores[campo.nombre] = val
+
+                registros.append((0, 0, {
+                    "codigo": layout_reg.codigo,
+                    "secuencia": secuencia,
+                    "valores": valores,
+                }))
 
         self.registro_ids = [(5, 0, 0)] + registros
         return True

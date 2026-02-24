@@ -99,6 +99,7 @@ class MxPedLayoutCampo(models.Model):
         [
             ("lead", "Operación (Lead)"),
             ("operacion", "Pedimento (Operación)"),
+            ("partida", "Partida (lista de mercancías)"),
             ("cliente", "Contacto / Cliente"),
             ("importador", "Importador (Contacto)"),
             ("exportador", "Exportador (Contacto)"),
@@ -155,6 +156,8 @@ class MxPedLayoutCampo(models.Model):
                 rec.source_model_name = "res.partner"
             elif rec.source_model == "operacion":
                 rec.source_model_name = "mx.ped.operacion"
+            elif rec.source_model == "partida":
+                rec.source_model_name = "mx.ped.partida"
             else:
                 rec.source_model_name = "crm.lead"
 
