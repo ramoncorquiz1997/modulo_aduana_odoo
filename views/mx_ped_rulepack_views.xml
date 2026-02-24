@@ -88,8 +88,7 @@
               </field>
             </page>
             <page string="Reglas registros">
-              <field name="condition_rule_ids"
-                     domain="[('target_type', '=', 'record')]"
+              <field name="condition_record_rule_ids"
                      context="{'default_target_type': 'record'}">
                 <list editable="bottom">
                   <field name="sequence"/>
@@ -116,8 +115,7 @@
               </field>
             </page>
             <page string="Reglas campos">
-              <field name="condition_rule_ids"
-                     domain="[('target_type', '=', 'field')]"
+              <field name="condition_field_rule_ids"
                      context="{'default_target_type': 'field', 'default_policy': 'require_field'}">
                 <list editable="bottom">
                   <field name="sequence"/>

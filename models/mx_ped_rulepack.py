@@ -28,6 +28,18 @@ class MxPedRulepack(models.Model):
     selector_ids = fields.One2many("mx.ped.rulepack.selector", "rulepack_id", string="Selectores de escenario")
     process_rule_ids = fields.One2many("mx.ped.rulepack.process.rule", "rulepack_id", string="Reglas de proceso")
     condition_rule_ids = fields.One2many("mx.ped.rulepack.condition.rule", "rulepack_id", string="Reglas de registros")
+    condition_record_rule_ids = fields.One2many(
+        "mx.ped.rulepack.condition.rule",
+        "rulepack_id",
+        string="Reglas de registros",
+        domain=[("target_type", "=", "record")],
+    )
+    condition_field_rule_ids = fields.One2many(
+        "mx.ped.rulepack.condition.rule",
+        "rulepack_id",
+        string="Reglas de campos",
+        domain=[("target_type", "=", "field")],
+    )
 
     _sql_constraints = [
         ("mx_ped_rulepack_code_uniq", "unique(code)", "El codigo del rulepack debe ser unico."),
