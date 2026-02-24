@@ -944,6 +944,148 @@ class MxPedOperacion(models.Model):
                 })
         return True
 
+    def _build_sync_payload_from_layout(self, layout_reg, source, code):
+        """Construye payload usando campo.nombre y heuristicas por codigo."""
+        values = {}
+        fields_by_order = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+
+        def _read_attr(obj, name):
+            if not obj or not name:
+                return None
+            if hasattr(obj, name):
+                return getattr(obj, name)
+            return None
+
+        def _pick_by_name(norm_name, default=None):
+            # 510 / 557
+            if "forma" in norm_name and "pago" in norm_name:
+                return _read_attr(source, "forma_pago_code") or default
+            if "contrib" in norm_name or "impuesto" in norm_name:
+                return _read_attr(source, "tipo_contribucion") or default
+            if "tasa" in norm_name:
+                return _read_attr(source, "tasa") if _read_attr(source, "tasa") not in (None, False) else default
+            if "base" in norm_name:
+                return _read_attr(source, "base") if _read_attr(source, "base") not in (None, False) else default
+            if "importe" in norm_name or "monto" in norm_name:
+                return _read_attr(source, "importe") if _read_attr(source, "importe") not in (None, False) else default
+
+            # 557 / 514: numero de partida
+            if norm_name in {"partida", "numero_partida", "num_partida", "partida_numero", "secuencia_partida", "partida_seq"}:
+                partida = _read_attr(source, "partida_id")
+                if partida and partida.numero_partida:
+                    return partida.numero_partida
+                return default
+
+            # 514
+            if code == "514":
+                if "folio" in norm_name or "documento" in norm_name:
+                    return _read_attr(source, "folio") or default
+                if "fecha" in norm_name:
+                    return _read_attr(source, "fecha") or default
+                if norm_name in {"tipo", "tipo_doc", "tipo_documento"}:
+                    return _read_attr(source, "tipo") or default
+
+            return default
+
+        for campo in fields_by_order:
+            source_name = (
+                campo.source_field_id.name
+                if getattr(campo, "source_field_id", False)
+                else campo.source_field
+            ) or campo.nombre
+            value = _read_attr(source, source_name)
+            if value in (None, "", False):
+                norm = (campo.nombre or "").strip().lower()
+                value = _pick_by_name(norm, default=value)
+            if value not in (None, "", False):
+                values[campo.nombre] = value
+        return values
+
+    def _sync_registro_ids_from_tecnicos(self):
+        """Sincroniza registro_ids para codigos 510/557/514 desde modelos tecnicos."""
+        self.ensure_one()
+        if not self.layout_id:
+            return
+
+        layout_regs = {
+            reg.codigo: reg
+            for reg in self.layout_id.registro_ids.filtered(lambda r: r.codigo in {"510", "557", "514"})
+        }
+        if not layout_regs:
+            return
+
+        desired = []
+        if "510" in layout_regs:
+            for idx, line in enumerate(self.contribucion_global_ids.sorted(lambda l: (l.sequence or 0, l.id)), start=1):
+                key = f"510:{line.id}"
+                payload = self._build_sync_payload_from_layout(layout_regs["510"], line, "510")
+                payload["__sync_origin"] = "tecnico"
+                payload["__sync_key"] = key
+                desired.append({
+                    "codigo": "510",
+                    "secuencia": idx,
+                    "key": key,
+                    "valores": payload,
+                })
+
+        if "557" in layout_regs:
+            partida_contribs = self.partida_contribucion_ids.sorted(
+                lambda l: ((l.partida_id.numero_partida or 0) if l.partida_id else 0, l.sequence or 0, l.id)
+            )
+            for idx, line in enumerate(partida_contribs, start=1):
+                key = f"557:{line.id}"
+                payload = self._build_sync_payload_from_layout(layout_regs["557"], line, "557")
+                payload["__sync_origin"] = "tecnico"
+                payload["__sync_key"] = key
+                desired.append({
+                    "codigo": "557",
+                    "secuencia": idx,
+                    "key": key,
+                    "valores": payload,
+                })
+
+        if "514" in layout_regs:
+            docs = self.documento_ids.filtered(lambda d: (d.registro_codigo or "").strip() == "514").sorted(
+                lambda d: (d.fecha or fields.Datetime.now(), d.id)
+            )
+            for idx, doc in enumerate(docs, start=1):
+                key = f"514:{doc.id}"
+                payload = self._build_sync_payload_from_layout(layout_regs["514"], doc, "514")
+                payload["__sync_origin"] = "tecnico"
+                payload["__sync_key"] = key
+                desired.append({
+                    "codigo": "514",
+                    "secuencia": idx,
+                    "key": key,
+                    "valores": payload,
+                })
+
+        by_key = {}
+        stale = self.env["mx.ped.registro"]
+        for reg in self.registro_ids.filtered(lambda r: (r.codigo or "") in {"510", "557", "514"}):
+            vals = reg.valores or {}
+            if isinstance(vals, dict) and vals.get("__sync_origin") == "tecnico" and vals.get("__sync_key"):
+                by_key[vals.get("__sync_key")] = reg
+                stale |= reg
+
+        used = self.env["mx.ped.registro"]
+        reg_model = self.env["mx.ped.registro"]
+        for item in desired:
+            reg = by_key.get(item["key"])
+            if reg:
+                reg.write({"secuencia": item["secuencia"], "valores": item["valores"]})
+                used |= reg
+            else:
+                created = reg_model.create({
+                    "operacion_id": self.id,
+                    "codigo": item["codigo"],
+                    "secuencia": item["secuencia"],
+                    "valores": item["valores"],
+                })
+                used |= created
+
+        (stale - used).unlink()
+
     def _validate_cancel_desist_structure(self):
         """Movimientos 2/3: estructura minima 500/800/801 sin mezclar otros."""
         self.ensure_one()
@@ -1802,6 +1944,7 @@ class MxPedOperacion(models.Model):
 
     def action_export_txt(self):
         self.ensure_one()
+        self._sync_registro_ids_from_tecnicos()
         self._validate_confirmacion_pago_formas()
         self._run_process_stage_checks("export")
         if not self.layout_id:
@@ -1833,6 +1976,7 @@ class MxPedOperacion(models.Model):
 
     def action_export_xml(self):
         self.ensure_one()
+        self._sync_registro_ids_from_tecnicos()
         self._validate_confirmacion_pago_formas()
         self._run_process_stage_checks("export")
         if not self.layout_id:
