@@ -1169,6 +1169,7 @@ class CrmLead(models.Model):
                 "gross_weight_line": line.gross_weight_line,
                 "net_weight_line": line.net_weight_line,
                 "value_usd": line.value_usd,
+                "precio_unitario": line.precio_unitario,
                 "nico": line.nico,
                 "descripcion": line.name,
                 "nom_ids": [(6, 0, line.nom_ids.ids)],
@@ -1258,6 +1259,7 @@ class CrmLeadOperacionLine(models.Model):
     gross_weight_line = fields.Float(string="Peso bruto", digits=(16, 3))
     net_weight_line = fields.Float(string="Peso neto", digits=(16, 3))
     value_usd = fields.Float(string="Valor USD", digits=(16, 2))
+    precio_unitario = fields.Float(string="Precio unitario", digits=(16, 6))
     value_mxn = fields.Float(
         string="Valor MXN",
         digits=(16, 2),

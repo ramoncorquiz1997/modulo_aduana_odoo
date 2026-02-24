@@ -272,6 +272,7 @@
                 <field name="gross_weight_line"/>
                 <field name="net_weight_line"/>
                 <field name="value_usd"/>
+                <field name="precio_unitario"/>
                 <field name="value_mxn" readonly="1"/>
                 <field name="nom_ids" widget="many2many_tags"/>
                 <field name="permiso_ids" widget="many2many_tags"/>
@@ -305,6 +306,7 @@
                     <field name="gross_weight_line"/>
                     <field name="net_weight_line"/>
                     <field name="value_usd"/>
+                    <field name="precio_unitario"/>
                     <field name="value_mxn" readonly="1"/>
                   </group>
                 </group>

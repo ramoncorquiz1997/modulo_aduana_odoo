@@ -110,6 +110,7 @@
                     <field name="gross_weight_line"/>
                     <field name="net_weight_line"/>
                     <field name="value_usd"/>
+                    <field name="precio_unitario"/>
                     <field name="value_mxn" readonly="1"/>
                     <field name="descripcion"/>
                     <field name="unidad_tarifa"/>
@@ -142,6 +143,7 @@
                         <field name="gross_weight_line"/>
                         <field name="net_weight_line"/>
                         <field name="value_usd"/>
+                        <field name="precio_unitario"/>
                         <field name="value_mxn" readonly="1"/>
                       </group>
                     </group>
