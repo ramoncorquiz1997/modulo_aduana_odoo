@@ -233,21 +233,25 @@
               name="Catalogo NOM"
               parent="menu_mx_ped_catalogos"
               action="action_mx_nom"
+              groups="base.group_system"
               sequence="45"/>
     <menuitem id="menu_mx_permiso"
               name="Catalogo Permisos"
               parent="menu_mx_ped_catalogos"
               action="action_mx_permiso"
+              groups="base.group_system"
               sequence="46"/>
     <menuitem id="menu_mx_rrna"
               name="Catalogo RRNA"
               parent="menu_mx_ped_catalogos"
               action="action_mx_rrna"
+              groups="base.group_system"
               sequence="47"/>
     <menuitem id="menu_mx_nico"
               name="Catalogo NICO"
               parent="menu_mx_ped_catalogos"
               action="action_mx_nico"
+              groups="base.group_system"
               sequence="48"/>
 
   </data>

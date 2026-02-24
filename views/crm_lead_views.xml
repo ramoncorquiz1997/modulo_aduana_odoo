@@ -264,9 +264,7 @@
                 <field name="sequence"/>
                 <field name="name"/>
                 <field name="fraccion_id"/>
-                <field name="fraccion_arancelaria" readonly="1"/>
                 <field name="nico_id"/>
-                <field name="nico" readonly="1"/>
                 <field name="quantity"/>
                 <field name="uom_id"/>
                 <field name="packages_line"/>
@@ -296,9 +294,7 @@
                     <field name="sequence"/>
                     <field name="name"/>
                     <field name="fraccion_id"/>
-                    <field name="fraccion_arancelaria" readonly="1"/>
                     <field name="nico_id"/>
-                    <field name="nico" readonly="1"/>
                   </group>
                   <group string="Cantidades y valor">
                     <field name="quantity"/>

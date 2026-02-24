@@ -125,7 +125,7 @@ class MxPedOperacion(models.Model):
         string="Aduana-seccion entrada/salida",
     )
     aduana_seccion_entrada_salida = fields.Char(
-        string="Aduana-seccion entrada/salida",
+        string="Aduana-seccion entrada/salida (codigo)",
         related="aduana_seccion_entrada_salida_id.code",
         store=True,
         readonly=True,
@@ -209,7 +209,7 @@ class MxPedOperacion(models.Model):
         string="Facturas",
     )
     invoice_count = fields.Integer(
-        string="Facturas",
+        string="Conteo facturas",
         compute="_compute_invoice_count",
     )
 

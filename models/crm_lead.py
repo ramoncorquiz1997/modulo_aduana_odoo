@@ -1248,8 +1248,8 @@ class CrmLeadOperacionLine(models.Model):
         string="NICO",
         domain="[('fraccion_id', '=', fraccion_id)]",
     )
-    fraccion_arancelaria = fields.Char(string="Fraccion arancelaria", size=10)
-    nico = fields.Char(string="NICO", size=2)
+    fraccion_arancelaria = fields.Char(string="Fraccion (snapshot)", size=10)
+    nico = fields.Char(string="NICO (snapshot)", size=2)
     quantity = fields.Float(string="Cantidad", digits=(16, 6), default=1.0)
     uom_id = fields.Many2one("mx.ped.um", string="Unidad de medida")
     packages_line = fields.Integer(string="Bultos", default=0)

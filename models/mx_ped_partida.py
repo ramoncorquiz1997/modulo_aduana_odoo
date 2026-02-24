@@ -17,13 +17,13 @@ class MxPedPartida(models.Model):
 
     numero_partida = fields.Integer()
     fraccion_id = fields.Many2one("mx.ped.fraccion", string="Fraccion arancelaria")
-    fraccion_arancelaria = fields.Char(size=20, index=True)
+    fraccion_arancelaria = fields.Char(string="Fraccion (snapshot)", size=20, index=True)
     nico_id = fields.Many2one(
         "mx.nico",
         string="NICO",
         domain="[('fraccion_id', '=', fraccion_id)]",
     )
-    nico = fields.Char(size=2)
+    nico = fields.Char(string="NICO (snapshot)", size=2)
     descripcion = fields.Text()
     quantity = fields.Float(string="Cantidad", digits=(16, 6), default=1.0)
     uom_id = fields.Many2one("mx.ped.um", string="Unidad de medida")
