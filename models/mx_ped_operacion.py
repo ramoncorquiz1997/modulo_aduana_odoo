@@ -1939,7 +1939,8 @@ class MxPedOperacion(models.Model):
         for rec in self:
             yy, aa, pppp, d = rec._get_pedimento_number_parts()
             nnnnnn = rec._next_pedimento_consecutivo(yy, aa, pppp)
-            rec.pedimento_numero = f"{yy}{aa}{pppp}{d}{nnnnnn}"
+            # El numero visible del pedimento debe conservar solo el bloque final (7 digitos).
+            rec.pedimento_numero = f"{d}{nnnnnn}"
         return True
 
     # ==========================
