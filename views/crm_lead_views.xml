@@ -420,6 +420,7 @@
                       <field name="patente" readonly="1"/>
                       <field name="clave_pedimento_id"
                              domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
+                      <field name="layout_id" required="1"/>
                       <field name="currency_id"/>
                     </group>
 
