@@ -82,6 +82,7 @@ class MxPedLayoutCampo(models.Model):
     _name = "mx.ped.layout.campo"
     _description = "Layout - Campo"
     _order = "pos_ini asc, id asc"
+    _rec_name = "nombre"
 
     registro_id = fields.Many2one(
         "mx.ped.layout.registro",
@@ -178,3 +179,14 @@ class MxPedLayoutCampo(models.Model):
                 raise ValidationError("Las posiciones deben ser mayores o iguales a 1.")
             if rec.pos_fin < rec.pos_ini:
                 raise ValidationError("La posición final debe ser >= a la inicial.")
+
+
+    def name_get(self):
+        result = []
+        for rec in self:
+            reg_code = rec.registro_id.codigo if rec.registro_id else ""
+            if reg_code and rec.nombre:
+                result.append((rec.id, f"{reg_code}.{rec.nombre}"))
+            else:
+                result.append((rec.id, rec.nombre or str(rec.id)))
+        return result
