@@ -125,6 +125,7 @@
                   <field name="stop"/>
                   <field name="name"/>
                   <field name="scope"/>
+                  <field name="target_type"/>
                   <field name="registro_tipo_id"/>
                   <field name="registro_codigo"/>
                   <field name="field_id"/>

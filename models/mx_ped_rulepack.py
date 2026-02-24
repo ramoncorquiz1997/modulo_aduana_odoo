@@ -262,7 +262,10 @@ class MxPedRulepackConditionRule(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        field_policies = {"require_field", "forbid_field", "default_field", "warn_field"}
         for vals in vals_list:
+            if vals.get("policy") in field_policies:
+                vals["target_type"] = "field"
             target_type = vals.get("target_type") or "record"
             field_id = vals.get("field_id")
             if target_type == "field" and field_id:
@@ -282,6 +285,9 @@ class MxPedRulepackConditionRule(models.Model):
 
     def write(self, vals):
         vals = dict(vals)
+        field_policies = {"require_field", "forbid_field", "default_field", "warn_field"}
+        if vals.get("policy") in field_policies:
+            vals["target_type"] = "field"
         target_type = vals.get("target_type")
         field_id = vals.get("field_id")
         if (target_type == "field" or (field_id and target_type is None)) and field_id:
@@ -322,6 +328,13 @@ class MxPedRulepackConditionRule(models.Model):
             else:
                 if rec.policy not in {"require_field", "forbid_field", "default_field", "warn_field"}:
                     rec.policy = "require_field"
+
+    @api.onchange("policy")
+    def _onchange_policy(self):
+        field_policies = {"require_field", "forbid_field", "default_field", "warn_field"}
+        for rec in self:
+            if rec.policy in field_policies:
+                rec.target_type = "field"
 
     @api.constrains("registro_codigo", "min_occurs", "max_occurs", "target_type", "policy", "field_id", "registro_tipo_id")
     def _check_rule(self):
