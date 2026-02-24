@@ -1304,10 +1304,34 @@ class CrmLeadOperacionLine(models.Model):
         string="Moneda",
         readonly=True,
     )
-    igi_estimado = fields.Monetary(string="IGI estimado", currency_field="currency_id")
-    iva_estimado = fields.Monetary(string="IVA estimado", currency_field="currency_id")
-    dta_estimado = fields.Monetary(string="DTA estimado", currency_field="currency_id")
-    prv_estimado = fields.Monetary(string="PRV estimado", currency_field="currency_id")
+    igi_estimado = fields.Monetary(
+        string="IGI estimado",
+        currency_field="currency_id",
+        compute="_compute_impuestos_estimados",
+        store=True,
+        readonly=True,
+    )
+    iva_estimado = fields.Monetary(
+        string="IVA estimado",
+        currency_field="currency_id",
+        compute="_compute_impuestos_estimados",
+        store=True,
+        readonly=True,
+    )
+    dta_estimado = fields.Monetary(
+        string="DTA estimado",
+        currency_field="currency_id",
+        compute="_compute_impuestos_estimados",
+        store=True,
+        readonly=True,
+    )
+    prv_estimado = fields.Monetary(
+        string="PRV estimado",
+        currency_field="currency_id",
+        compute="_compute_impuestos_estimados",
+        store=True,
+        readonly=True,
+    )
 
     @api.depends("nom_ids", "nom_ids.requires_labeling", "fraccion_id.requires_labeling_default")
     def _compute_labeling_required(self):
@@ -1322,6 +1346,33 @@ class CrmLeadOperacionLine(models.Model):
         for rec in self:
             tc = rec.lead_id.x_tipo_cambio or 0.0
             rec.value_mxn = (rec.value_usd or 0.0) * tc
+
+    @api.depends(
+        "fraccion_id",
+        "fraccion_id.tasa_ids",
+        "lead_id.x_tipo_operacion",
+        "value_mxn",
+    )
+    def _compute_impuestos_estimados(self):
+        icp = self.env["ir.config_parameter"].sudo()
+        dta_rate = float(icp.get_param("mx_ped.dta_rate", "0.0") or 0.0)
+        prv_rate = float(icp.get_param("mx_ped.prv_rate", "0.0") or 0.0)
+        for rec in self:
+            base = rec.value_mxn or 0.0
+            tasa = False
+            if rec.fraccion_id:
+                tipo = "importacion" if rec.lead_id.x_tipo_operacion != "exportacion" else "exportacion"
+                tasa = rec.fraccion_id.tasa_ids.filtered(
+                    lambda t: t.tipo_operacion == tipo and t.territorio == "general"
+                )[:1]
+                if not tasa:
+                    tasa = rec.fraccion_id.tasa_ids.filtered(lambda t: t.tipo_operacion == tipo)[:1]
+            igi_rate = tasa.igi if tasa else 0.0
+            iva_rate = tasa.iva if tasa else 0.0
+            rec.igi_estimado = base * (igi_rate / 100.0)
+            rec.iva_estimado = (base + rec.igi_estimado) * (iva_rate / 100.0)
+            rec.dta_estimado = base * (dta_rate / 100.0)
+            rec.prv_estimado = base * (prv_rate / 100.0)
 
     @api.constrains("quantity", "value_usd")
     def _check_required_trade_fields(self):
