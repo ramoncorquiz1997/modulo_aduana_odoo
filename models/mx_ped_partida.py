@@ -93,6 +93,12 @@ class MxPedPartida(models.Model):
     )
     docs_reference = fields.Char(string="Referencia documentos")
     notes_regulatorias = fields.Text(string="Notas regulatorias")
+    forma_pago_sugerida_id = fields.Many2one(
+        "mx.forma.pago",
+        string="Forma de pago sugerida",
+        domain="[('active','=',True), '|', ('scope','=','all'), ('scope','=','557')]",
+        ondelete="restrict",
+    )
     contribucion_ids = fields.One2many(
         "mx.ped.partida.contribucion",
         "partida_id",

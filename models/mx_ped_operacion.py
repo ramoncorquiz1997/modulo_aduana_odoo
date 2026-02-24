@@ -264,6 +264,11 @@ class MxPedOperacion(models.Model):
         compute="_compute_process_ui_flags",
         store=False,
     )
+    show_advanced = fields.Boolean(
+        string="Modo avanzado",
+        default=False,
+        help="Muestra secciones tecnicas (510/557/514) para captura avanzada.",
+    )
 
     registro_ids = fields.One2many(
         comodel_name="mx.ped.registro",
@@ -877,6 +882,67 @@ class MxPedOperacion(models.Model):
         if not codes:
             codes = self._parse_formas_pago_claves()
         return codes
+
+    def action_generar_contribuciones_557(self):
+        """Genera/actualiza 557 desde partidas usando impuestos estimados."""
+        self.ensure_one()
+        contrib_model = self.env["mx.ped.partida.contribucion"]
+        icp = self.env["ir.config_parameter"].sudo()
+        dta_rate = float(icp.get_param("mx_ped.dta_rate", "0.0") or 0.0)
+        prv_rate = float(icp.get_param("mx_ped.prv_rate", "0.0") or 0.0)
+        for partida in self.partida_ids:
+            if not partida.forma_pago_sugerida_id:
+                continue
+            tipo = "importacion" if self.tipo_operacion != "exportacion" else "exportacion"
+            tasa = False
+            if partida.fraccion_id:
+                tasa = partida.fraccion_id.tasa_ids.filtered(
+                    lambda t: t.tipo_operacion == tipo and t.territorio == "general"
+                )[:1]
+                if not tasa:
+                    tasa = partida.fraccion_id.tasa_ids.filtered(lambda t: t.tipo_operacion == tipo)[:1]
+
+            candidates = [
+                ("IGI", partida.igi_estimado or 0.0, tasa.igi if tasa else 0.0),
+                ("IVA", partida.iva_estimado or 0.0, tasa.iva if tasa else 0.0),
+                ("DTA", partida.dta_estimado or 0.0, dta_rate),
+                ("PRV", partida.prv_estimado or 0.0, prv_rate),
+            ]
+            candidates = [c for c in candidates if c[1] > 0]
+            if not candidates:
+                continue
+
+            existing_lines = partida.contribucion_ids.filtered(lambda c: c.operacion_id == self)
+            existing_by_tipo = {
+                (line.tipo_contribucion or "").strip().upper(): line
+                for line in existing_lines
+                if (line.tipo_contribucion or "").strip()
+            }
+            for tax_code, amount, rate in candidates:
+                line = existing_by_tipo.get(tax_code)
+                if line:
+                    updates = {}
+                    if not line.forma_pago_id:
+                        updates["forma_pago_id"] = partida.forma_pago_sugerida_id.id
+                    if not line.importe:
+                        updates["importe"] = amount
+                    if not line.base:
+                        updates["base"] = partida.value_mxn or 0.0
+                    if not line.tasa and rate:
+                        updates["tasa"] = rate
+                    if updates:
+                        line.write(updates)
+                    continue
+                contrib_model.create({
+                    "operacion_id": self.id,
+                    "partida_id": partida.id,
+                    "tipo_contribucion": tax_code,
+                    "tasa": rate,
+                    "base": partida.value_mxn or 0.0,
+                    "importe": amount,
+                    "forma_pago_id": partida.forma_pago_sugerida_id.id,
+                })
+        return True
 
     def _validate_cancel_desist_structure(self):
         """Movimientos 2/3: estructura minima 500/800/801 sin mezclar otros."""
