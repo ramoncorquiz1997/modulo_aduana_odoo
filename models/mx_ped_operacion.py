@@ -2081,15 +2081,18 @@ class MxPedOperacion(models.Model):
             return from_rule & from_stage
 
         allowed = _allowed_codes()
+        repeat_codes_by_partida = {"551", "552", "553", "554", "555", "556", "557", "558"}
         registros = []
         for layout_reg in self.layout_id.registro_ids.sorted(lambda r: r.orden or 0):
             if allowed is not None and layout_reg.codigo not in allowed:
                 continue
+            code = (layout_reg.codigo or "").strip()
             campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
             has_partida_source = any(c.source_model == "partida" for c in campos)
+            repeat_by_partida = has_partida_source or code in repeat_codes_by_partida
 
-            target_partidas = self.partida_ids.sorted(lambda p: (p.numero_partida or 0, p.id)) if has_partida_source else [False]
-            if has_partida_source and not target_partidas:
+            target_partidas = self.partida_ids.sorted(lambda p: (p.numero_partida or 0, p.id)) if repeat_by_partida else [False]
+            if repeat_by_partida and not target_partidas:
                 continue
 
             for secuencia, partida in enumerate(target_partidas, start=1):

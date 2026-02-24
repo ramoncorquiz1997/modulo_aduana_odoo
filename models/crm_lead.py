@@ -4,7 +4,7 @@ import io
 import logging
 import re
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 try:
     from PyPDF2 import PdfReader
@@ -1153,13 +1153,14 @@ class CrmLead(models.Model):
         if not lineas:
             lineas = self.env["crm.lead.operacion.line"].create({
                 "lead_id": self.id,
+                "numero_partida": 1,
                 "name": self.name or _("Partida"),
             })
 
-        for idx, line in enumerate(lineas.sorted(lambda l: (l.sequence or 0, l.id)), start=1):
+        for idx, line in enumerate(lineas.sorted(lambda l: (l.numero_partida or 999999, l.sequence or 0, l.id)), start=1):
             self.env["mx.ped.partida"].create({
                 "operacion_id": op.id,
-                "numero_partida": idx,
+                "numero_partida": line.numero_partida or idx,
                 "fraccion_id": line.fraccion_id.id or False,
                 "fraccion_arancelaria": line.fraccion_arancelaria,
                 "uom_id": line.uom_id.id or False,
@@ -1233,10 +1234,11 @@ class CrmLead(models.Model):
 class CrmLeadOperacionLine(models.Model):
     _name = "crm.lead.operacion.line"
     _description = "Caso - Mercancia / Partida Importacion"
-    _order = "sequence asc, id asc"
+    _order = "numero_partida asc, sequence asc, id asc"
 
     lead_id = fields.Many2one("crm.lead", required=True, ondelete="cascade", index=True)
     sequence = fields.Integer(default=10)
+    numero_partida = fields.Integer(string="Numero de partida")
     name = fields.Char(string="Descripcion", required=True)
     fraccion_id = fields.Many2one(
         "mx.ped.fraccion",
@@ -1332,6 +1334,33 @@ class CrmLeadOperacionLine(models.Model):
         store=True,
         readonly=True,
     )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("numero_partida"):
+                continue
+            lead_id = vals.get("lead_id")
+            if not lead_id:
+                continue
+            last = self.search([("lead_id", "=", lead_id)], order="numero_partida desc, id desc", limit=1)
+            vals["numero_partida"] = max(last.numero_partida or 0, 0) + 1
+        return super().create(vals_list)
+
+    @api.constrains("lead_id", "numero_partida")
+    def _check_numero_partida(self):
+        for rec in self:
+            if not rec.numero_partida:
+                continue
+            if rec.numero_partida <= 0:
+                raise ValidationError(_("El numero de partida debe ser mayor a cero."))
+            dup = self.search_count([
+                ("id", "!=", rec.id),
+                ("lead_id", "=", rec.lead_id.id),
+                ("numero_partida", "=", rec.numero_partida),
+            ])
+            if dup:
+                raise ValidationError(_("El numero de partida debe ser unico por lead."))
 
     @api.depends("nom_ids", "nom_ids.requires_labeling", "fraccion_id.requires_labeling_default")
     def _compute_labeling_required(self):

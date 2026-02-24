@@ -261,7 +261,8 @@
                 invisible="x_tipo_operacion != 'importacion'">
             <field name="x_operacion_line_ids" context="{'default_lead_id': id}">
               <list editable="bottom">
-                <field name="sequence"/>
+                <field name="numero_partida"/>
+                <field name="sequence" optional="hide"/>
                 <field name="name"/>
                 <field name="fraccion_id"/>
                 <field name="nico_id"/>
@@ -291,7 +292,8 @@
               <form string="Partida">
                 <group>
                   <group string="Mercancia">
-                    <field name="sequence"/>
+                    <field name="numero_partida"/>
+                    <field name="sequence" invisible="1"/>
                     <field name="name"/>
                     <field name="fraccion_id"/>
                     <field name="nico_id"/>
