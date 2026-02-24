@@ -49,3 +49,7 @@ access_mx_permiso_user,mx.permiso.user,model_mx_permiso,modulo_aduana_odoo.group
 access_mx_permiso_reg,mx.permiso.reg,model_mx_permiso,base.group_system,1,1,1,1
 access_mx_nico_user,mx.nico.user,model_mx_nico,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_mx_nico_reg,mx.nico.reg,model_mx_nico,base.group_system,1,1,1,1
+access_mx_forma_pago_user,mx.forma.pago.user,model_mx_forma_pago,modulo_aduana_odoo.group_aduana_user,1,0,0,0
+access_mx_forma_pago_reg,mx.forma.pago.reg,model_mx_forma_pago,base.group_system,1,1,1,1
+access_mx_ped_contribucion_global,mx.ped.contribucion.global,model_mx_ped_contribucion_global,,1,1,1,1
+access_mx_ped_partida_contribucion,mx.ped.partida.contribucion,model_mx_ped_partida_contribucion,,1,1,1,1

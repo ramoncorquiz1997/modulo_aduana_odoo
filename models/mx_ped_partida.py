@@ -93,6 +93,12 @@ class MxPedPartida(models.Model):
     )
     docs_reference = fields.Char(string="Referencia documentos")
     notes_regulatorias = fields.Text(string="Notas regulatorias")
+    contribucion_ids = fields.One2many(
+        "mx.ped.partida.contribucion",
+        "partida_id",
+        string="Contribuciones partida (557)",
+        copy=True,
+    )
     iva_estimado = fields.Monetary(
         string="IVA estimado",
         currency_field="currency_id",

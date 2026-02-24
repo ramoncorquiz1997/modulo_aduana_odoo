@@ -229,6 +229,61 @@
       <field name="view_mode">list,form</field>
     </record>
 
+    <record id="view_mx_forma_pago_list" model="ir.ui.view">
+      <field name="name">mx.forma.pago.list</field>
+      <field name="model">mx.forma.pago</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="code"/>
+          <field name="name"/>
+          <field name="scope"/>
+          <field name="is_virtual_allowed"/>
+          <field name="active"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="view_mx_forma_pago_form" model="ir.ui.view">
+      <field name="name">mx.forma.pago.form</field>
+      <field name="model">mx.forma.pago</field>
+      <field name="arch" type="xml">
+        <form>
+          <sheet>
+            <group>
+              <field name="code"/>
+              <field name="name"/>
+              <field name="scope"/>
+              <field name="is_virtual_allowed"/>
+              <field name="active"/>
+            </group>
+            <group>
+              <field name="notes"/>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="view_mx_forma_pago_search" model="ir.ui.view">
+      <field name="name">mx.forma.pago.search</field>
+      <field name="model">mx.forma.pago</field>
+      <field name="arch" type="xml">
+        <search>
+          <field name="code"/>
+          <field name="name"/>
+          <field name="scope"/>
+          <filter name="active" string="Activos" domain="[('active','=',True)]"/>
+        </search>
+      </field>
+    </record>
+
+    <record id="action_mx_forma_pago" model="ir.actions.act_window">
+      <field name="name">Catalogo Formas de Pago</field>
+      <field name="res_model">mx.forma.pago</field>
+      <field name="view_mode">list,form</field>
+      <field name="search_view_id" ref="view_mx_forma_pago_search"/>
+    </record>
+
     <menuitem id="menu_mx_nom"
               name="Catalogo NOM"
               parent="menu_mx_ped_catalogos"
@@ -253,6 +308,12 @@
               action="action_mx_nico"
               groups="base.group_system"
               sequence="48"/>
+    <menuitem id="menu_mx_forma_pago"
+              name="Catalogo Formas de Pago"
+              parent="menu_mx_ped_catalogos"
+              action="action_mx_forma_pago"
+              groups="base.group_system"
+              sequence="49"/>
 
   </data>
 </odoo>

@@ -281,6 +281,24 @@ class MxPedOperacion(models.Model):
         string="Partidas / Mercancías",
         copy=True,
     )
+    contribucion_global_ids = fields.One2many(
+        "mx.ped.contribucion.global",
+        "operacion_id",
+        string="Contribuciones cabecera (510)",
+        copy=True,
+    )
+    partida_contribucion_ids = fields.One2many(
+        "mx.ped.partida.contribucion",
+        "operacion_id",
+        string="Contribuciones partidas (557)",
+        copy=True,
+    )
+    documento_ids = fields.One2many(
+        "mx.ped.documento",
+        "operacion_id",
+        string="Documentos",
+        copy=True,
+    )
 
     partida_count = fields.Integer(
         string="Partidas",
@@ -834,6 +852,53 @@ class MxPedOperacion(models.Model):
             return set()
         return {token for token in re.findall(r"\d+", raw)}
 
+    def _get_declared_formas_pago_codes(self):
+        """Arma el set de formas declaradas desde 510 + 557 + 514."""
+        self.ensure_one()
+        codes = {
+            str(code).strip()
+            for code in self.contribucion_global_ids.mapped("forma_pago_code")
+            if code
+        }
+        codes |= {
+            str(code).strip()
+            for code in self.partida_contribucion_ids.mapped("forma_pago_code")
+            if code
+        }
+        docs_514 = self.documento_ids.filtered(
+            lambda d: (d.registro_codigo or "").strip() == "514"
+        )
+        codes |= {
+            str(code).strip()
+            for code in docs_514.mapped("forma_pago_code")
+            if code
+        }
+        # Compatibilidad temporal con captura legacy.
+        if not codes:
+            codes = self._parse_formas_pago_claves()
+        return codes
+
+    def _validate_cancel_desist_structure(self):
+        """Movimientos 2/3: estructura minima 500/800/801 sin mezclar otros."""
+        self.ensure_one()
+        mov = self._get_tipo_movimiento_effective()
+        if mov not in {"2", "3"}:
+            return
+        codes = {(line.codigo or "").strip() for line in self.registro_ids if line.codigo}
+        required = {"500", "800", "801"}
+        missing = sorted(required - codes)
+        extras = sorted(code for code in (codes - required) if code)
+        if missing:
+            raise ValidationError(
+                _("Movimiento %s requiere estructura minima 500/800/801. Faltan: %s")
+                % (mov, ", ".join(missing))
+            )
+        if extras:
+            raise ValidationError(
+                _("Movimiento %s no permite mezclar otros registros. No permitidos: %s")
+                % (mov, ", ".join(extras))
+            )
+
     def _run_process_stage_checks(self, stage):
         self.ensure_one()
         stage_rules = self._get_process_stage_rules(stage)
@@ -842,10 +907,10 @@ class MxPedOperacion(models.Model):
             action = rule.action_type
             if action == "require_formas_pago":
                 allowed = set(str(v) for v in (payload.get("allowed") or []))
-                current = self._parse_formas_pago_claves()
+                current = self._get_declared_formas_pago_codes()
                 if not current:
                     raise ValidationError(
-                        _("Regla %s: captura formas de pago.") % (rule.name,)
+                        _("Regla %s: declara formas de pago en 510/557/514.") % (rule.name,)
                     )
                 if allowed:
                     invalid = sorted(current - allowed, key=lambda x: int(x))
@@ -873,6 +938,7 @@ class MxPedOperacion(models.Model):
 
     def _validate_confirmacion_pago_formas(self):
         self.ensure_one()
+        self._validate_cancel_desist_structure()
         self._run_process_stage_checks("pre_validate")
 
     def _normalize_structure_rules(self, estructura_rule, source_weight):

@@ -30,6 +30,30 @@ class MxPedDocumento(models.Model):
         required=True,
         index=True,
     )
+    registro_codigo = fields.Selection(
+        [
+            ("510", "510 - Contribuciones cabecera"),
+            ("514", "514 - Documentos virtuales"),
+            ("557", "557 - Contribuciones partida"),
+            ("otro", "Otro"),
+        ],
+        string="Registro SAAI",
+        default="otro",
+        required=True,
+        index=True,
+    )
+    forma_pago_id = fields.Many2one(
+        "mx.forma.pago",
+        string="Forma de pago",
+        domain="[('active','=',True), '|', ('scope','=','all'), ('scope','=','514')]",
+        ondelete="restrict",
+    )
+    forma_pago_code = fields.Char(
+        string="Forma de pago (clave)",
+        related="forma_pago_id.code",
+        store=True,
+        readonly=True,
+    )
 
     folio = fields.Char()
     fecha = fields.Datetime()

@@ -162,7 +162,58 @@
                       <field name="dta_estimado"/>
                       <field name="prv_estimado"/>
                     </group>
+                    <group string="Contribuciones partida (557)">
+                      <field name="contribucion_ids" context="{'default_operacion_id': parent.id, 'default_partida_id': id}">
+                        <list editable="bottom">
+                          <field name="tipo_contribucion"/>
+                          <field name="tasa"/>
+                          <field name="base"/>
+                          <field name="importe"/>
+                          <field name="forma_pago_id"/>
+                          <field name="forma_pago_code" readonly="1"/>
+                        </list>
+                      </field>
+                    </group>
                   </form>
+                </field>
+              </page>
+              <page string="Contribuciones 510">
+                <field name="contribucion_global_ids" context="{'default_operacion_id': id}">
+                  <list editable="bottom">
+                    <field name="tipo_contribucion"/>
+                    <field name="tasa"/>
+                    <field name="base"/>
+                    <field name="importe"/>
+                    <field name="forma_pago_id"/>
+                    <field name="forma_pago_code" readonly="1"/>
+                  </list>
+                </field>
+              </page>
+              <page string="Contribuciones 557">
+                <field name="partida_contribucion_ids" context="{'default_operacion_id': id}">
+                  <list editable="bottom">
+                    <field name="partida_id"/>
+                    <field name="tipo_contribucion"/>
+                    <field name="tasa"/>
+                    <field name="base"/>
+                    <field name="importe"/>
+                    <field name="forma_pago_id"/>
+                    <field name="forma_pago_code" readonly="1"/>
+                  </list>
+                </field>
+              </page>
+              <page string="Docs virtuales 514">
+                <field name="documento_ids" context="{'default_operacion_id': id, 'default_registro_codigo': '514'}">
+                  <list editable="bottom">
+                    <field name="registro_codigo"/>
+                    <field name="tipo"/>
+                    <field name="folio"/>
+                    <field name="partida_id"/>
+                    <field name="forma_pago_id"/>
+                    <field name="forma_pago_code" readonly="1"/>
+                    <field name="fecha"/>
+                    <field name="estatus"/>
+                  </list>
                 </field>
               </page>
               <page string="Registros">
