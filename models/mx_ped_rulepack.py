@@ -178,8 +178,22 @@ class MxPedRulepackConditionRule(models.Model):
         default="pedimento",
         required=True,
     )
+    target_type = fields.Selection(
+        [("record", "Registro"), ("field", "Campo")],
+        string="Target",
+        default="record",
+        required=True,
+    )
     policy = fields.Selection(
-        [("required", "Obligatorio"), ("optional", "Opcional"), ("forbidden", "Prohibido")],
+        [
+            ("required", "Obligatorio"),
+            ("optional", "Opcional"),
+            ("forbidden", "Prohibido"),
+            ("require_field", "Campo obligatorio"),
+            ("forbid_field", "Campo prohibido"),
+            ("default_field", "Default campo"),
+            ("warn_field", "Advertencia campo"),
+        ],
         default="required",
         required=True,
     )
@@ -190,6 +204,13 @@ class MxPedRulepackConditionRule(models.Model):
         help="Selecciona el registro desde el catalogo de registros del layout.",
     )
     registro_codigo = fields.Char(required=True, size=3)
+    field_id = fields.Many2one(
+        "mx.ped.layout.campo",
+        string="Campo objetivo",
+        domain="[('registro_id', '=', registro_tipo_id)]",
+        ondelete="restrict",
+    )
+    default_value = fields.Char(string="Valor default campo")
     min_occurs = fields.Integer(default=1)
     max_occurs = fields.Integer(default=1, help="Usa 0 para ilimitado.")
     required_identifier_code = fields.Char(size=3)
@@ -242,6 +263,13 @@ class MxPedRulepackConditionRule(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            target_type = vals.get("target_type") or "record"
+            field_id = vals.get("field_id")
+            if target_type == "field" and field_id:
+                field = self.env["mx.ped.layout.campo"].browse(field_id)
+                if field and field.registro_id:
+                    vals["registro_tipo_id"] = vals.get("registro_tipo_id") or field.registro_id.id
+                    vals["registro_codigo"] = field.registro_id.codigo or ""
             registro_tipo_id = vals.get("registro_tipo_id")
             if registro_tipo_id and not vals.get("registro_codigo"):
                 reg = self.env["mx.ped.layout.registro"].browse(registro_tipo_id)
@@ -254,6 +282,13 @@ class MxPedRulepackConditionRule(models.Model):
 
     def write(self, vals):
         vals = dict(vals)
+        target_type = vals.get("target_type")
+        field_id = vals.get("field_id")
+        if (target_type == "field" or (field_id and target_type is None)) and field_id:
+            field = self.env["mx.ped.layout.campo"].browse(field_id)
+            if field and field.registro_id:
+                vals["registro_tipo_id"] = vals.get("registro_tipo_id") or field.registro_id.id
+                vals["registro_codigo"] = field.registro_id.codigo or ""
         if vals.get("registro_tipo_id") and not vals.get("registro_codigo"):
             reg = self.env["mx.ped.layout.registro"].browse(vals["registro_tipo_id"])
             vals["registro_codigo"] = reg.codigo or ""
@@ -269,7 +304,26 @@ class MxPedRulepackConditionRule(models.Model):
             if rec.registro_tipo_id and rec.registro_tipo_id.codigo:
                 rec.registro_codigo = rec.registro_tipo_id.codigo
 
-    @api.constrains("registro_codigo", "min_occurs", "max_occurs")
+    @api.onchange("field_id")
+    def _onchange_field_id(self):
+        for rec in self:
+            if rec.field_id and rec.field_id.registro_id:
+                rec.registro_tipo_id = rec.field_id.registro_id
+                rec.registro_codigo = rec.field_id.registro_id.codigo or rec.registro_codigo
+
+    @api.onchange("target_type")
+    def _onchange_target_type(self):
+        for rec in self:
+            if rec.target_type == "record":
+                rec.field_id = False
+                rec.default_value = False
+                if rec.policy in {"require_field", "forbid_field", "default_field", "warn_field"}:
+                    rec.policy = "required"
+            else:
+                if rec.policy not in {"require_field", "forbid_field", "default_field", "warn_field"}:
+                    rec.policy = "require_field"
+
+    @api.constrains("registro_codigo", "min_occurs", "max_occurs", "target_type", "policy", "field_id", "registro_tipo_id")
     def _check_rule(self):
         for rec in self:
             code = (rec.registro_codigo or rec.registro_tipo_id.codigo or "").strip()
@@ -279,3 +333,14 @@ class MxPedRulepackConditionRule(models.Model):
                 raise ValidationError(_("Min/Max ocurrencias no pueden ser negativas."))
             if rec.max_occurs and rec.max_occurs < rec.min_occurs:
                 raise ValidationError(_("Max ocurrencias no puede ser menor que Min ocurrencias."))
+            if rec.target_type == "field":
+                if not rec.field_id:
+                    raise ValidationError(_("Para target Campo debes seleccionar Campo objetivo."))
+                if rec.field_id.registro_id and (rec.field_id.registro_id.codigo or "").strip() != code:
+                    raise ValidationError(_("El campo objetivo no pertenece al registro seleccionado en la regla."))
+                if rec.policy not in {"require_field", "forbid_field", "default_field", "warn_field"}:
+                    raise ValidationError(_("Policy invalida para target Campo."))
+                if rec.policy == "default_field" and not (rec.default_value or "").strip():
+                    raise ValidationError(_("Policy Default campo requiere Valor default campo."))
+            elif rec.policy in {"require_field", "forbid_field", "default_field", "warn_field"}:
+                raise ValidationError(_("Policies de campo solo aplican cuando Target = Campo."))

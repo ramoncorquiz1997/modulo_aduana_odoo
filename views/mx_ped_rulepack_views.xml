@@ -95,12 +95,15 @@
                   <field name="stop"/>
                   <field name="name"/>
                   <field name="scope"/>
+                  <field name="target_type"/>
                   <field name="registro_tipo_id"/>
                   <field name="registro_codigo"/>
                   <field name="policy"/>
-                  <field name="min_occurs"/>
-                  <field name="max_occurs"/>
-                  <field name="required_identifier_code"/>
+                  <field name="field_id" optional="show" invisible="target_type != 'field'"/>
+                  <field name="default_value" optional="show" invisible="target_type != 'field' or policy != 'default_field'"/>
+                  <field name="min_occurs" invisible="target_type == 'field'"/>
+                  <field name="max_occurs" invisible="target_type == 'field'"/>
+                  <field name="required_identifier_code" invisible="target_type == 'field'"/>
                   <field name="tipo_movimiento_id"/>
                   <field name="tipo_operacion"/>
                   <field name="regimen"/>

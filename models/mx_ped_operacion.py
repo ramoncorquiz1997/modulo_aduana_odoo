@@ -1210,6 +1210,10 @@ class MxPedOperacion(models.Model):
     def _normalize_condition_rules(self, condition_rules, source_weight):
         normalized = []
         for rule in condition_rules:
+            if (rule.target_type or "record") != "record":
+                continue
+            if rule.policy not in {"required", "optional", "forbidden"}:
+                continue
             normalized.append({
                 "rule_id": rule.id,
                 "source": "condition",
@@ -1231,6 +1235,91 @@ class MxPedOperacion(models.Model):
                 },
             })
         return normalized
+
+    def _is_empty_rule_value(self, value):
+        if value is None or value is False:
+            return True
+        if isinstance(value, str):
+            return value.strip() == ""
+        return False
+
+    def _get_field_rules_for_record(self, codigo_registro, partida_num=None):
+        """Reglas target=campo aplicables al registro (y partida, si aplica)."""
+        self.ensure_one()
+        record_code = str(codigo_registro or "").strip().zfill(3)
+        if not record_code:
+            return self.env["mx.ped.rulepack.condition.rule"]
+
+        rules = self._get_dynamic_condition_rules().filtered(
+            lambda r: (r.target_type or "record") == "field"
+            and (r.registro_codigo or "").strip().zfill(3) == record_code
+            and r.policy in {"require_field", "forbid_field", "default_field", "warn_field"}
+        )
+        if not rules:
+            return rules
+
+        partida_meta = self._get_partida_meta_map()
+
+        def _partida_scope_match(rule):
+            scope = rule.scope or "pedimento"
+            if scope != "partida":
+                return True
+            if not partida_num:
+                return False
+            meta = partida_meta.get(partida_num, {})
+            if rule.fraccion_id and rule.fraccion_id.id != meta.get("fraccion_id"):
+                return False
+            if (rule.fraccion_capitulo or "").strip():
+                if (rule.fraccion_capitulo or "").strip() != str(meta.get("fraccion_capitulo") or "").strip():
+                    return False
+            return True
+
+        return rules.filtered(_partida_scope_match).sorted(
+            key=lambda r: (-r.priority, -self._compute_specificity(r, "condition"), r.sequence, r.id)
+        )
+
+    def _apply_field_rules_to_vals(self, codigo_registro, vals_dict, partida_num=None, validate_only=False):
+        """Aplica reglas de campo sobre valores JSON (sin omitir columnas del layout)."""
+        self.ensure_one()
+        effective = dict(vals_dict or {})
+        rules = self._get_field_rules_for_record(codigo_registro, partida_num=partida_num)
+        for rule in rules:
+            field_name = (rule.field_id.nombre or "").strip() if rule.field_id else ""
+            if not field_name:
+                continue
+
+            current = effective.get(field_name)
+            policy = rule.policy
+
+            if policy == "forbid_field":
+                effective[field_name] = ""
+            elif policy == "default_field":
+                if self._is_empty_rule_value(current) and not self._is_empty_rule_value(rule.default_value):
+                    effective[field_name] = rule.default_value
+            elif policy == "require_field":
+                if self._is_empty_rule_value(current):
+                    raise ValidationError(
+                        _("Regla %s: registro %s campo %s es obligatorio.")
+                        % (rule.name or rule.id, str(codigo_registro or "").zfill(3), field_name)
+                    )
+            elif policy == "warn_field":
+                # Hook no bloqueante: se conserva para futura trazabilidad de advertencias.
+                pass
+
+            if rule.stop:
+                break
+
+        return effective
+
+    def _validate_field_rules_on_registros(self):
+        """Valida require_field sobre el set real que se exportara."""
+        self.ensure_one()
+        for reg in self.registro_ids:
+            code = (reg.codigo or "").strip()
+            if not code:
+                continue
+            partida_num = self._extract_partida_number(reg.valores)
+            self._apply_field_rules_to_vals(code, reg.valores or {}, partida_num=partida_num, validate_only=True)
 
     def _rule_sort_key(self, item):
         return (
@@ -1869,14 +1958,19 @@ class MxPedOperacion(models.Model):
         # Ultimo recurso: truncar para no romper exportacion.
         return token[:max_len]
 
-    def _build_txt_line(self, layout_registro, valores):
+    def _build_txt_line(self, layout_registro, valores, partida_num=None):
         layout = layout_registro.layout_id
         campos = layout_registro.campo_ids.sorted(lambda c: c.orden or c.pos_ini or 0)
+        effective_vals = self._apply_field_rules_to_vals(
+            layout_registro.codigo,
+            dict(valores or {}),
+            partida_num=partida_num,
+        )
 
         if layout.export_format == "pipe":
             parts = []
             for campo in campos:
-                val = (valores or {}).get(campo.nombre)
+                val = effective_vals.get(campo.nombre)
                 if val in (None, ""):
                     if campo.default:
                         val = campo.default
@@ -1908,7 +2002,7 @@ class MxPedOperacion(models.Model):
                 )
             length = campo.longitud or (campo.pos_fin - campo.pos_ini + 1)
 
-            val = (valores or {}).get(campo.nombre)
+            val = effective_vals.get(campo.nombre)
             if val in (None, ""):
                 if campo.default:
                     val = campo.default
@@ -1951,12 +2045,14 @@ class MxPedOperacion(models.Model):
             raise UserError(_("Falta seleccionar un layout en la operación."))
         if not self.registro_ids:
             raise UserError(_("No hay registros capturados para exportar."))
+        self._validate_field_rules_on_registros()
         self._validate_registros_vs_estructura()
 
         lines = []
         for reg in self.registro_ids.sorted(lambda r: (r.codigo, r.secuencia or 0)):
             layout_reg = self._get_layout_registro(reg.codigo)
-            lines.append(self._build_txt_line(layout_reg, reg.valores))
+            partida_num = self._extract_partida_number(reg.valores)
+            lines.append(self._build_txt_line(layout_reg, reg.valores, partida_num=partida_num))
 
         sep = self.layout_id.record_separator or "\n"
         txt_data = sep.join(lines)
@@ -1983,6 +2079,7 @@ class MxPedOperacion(models.Model):
             raise UserError(_("Falta seleccionar un layout en la operación."))
         if not self.registro_ids:
             raise UserError(_("No hay registros capturados para exportar."))
+        self._validate_field_rules_on_registros()
         self._validate_registros_vs_estructura()
 
         root = ET.Element("pedimento", layout=(self.layout_id.name or ""))
@@ -1994,8 +2091,14 @@ class MxPedOperacion(models.Model):
                 secuencia=str(reg.secuencia or 1),
             )
             layout_reg = self._get_layout_registro(reg.codigo)
+            partida_num = self._extract_partida_number(reg.valores)
+            effective_vals = self._apply_field_rules_to_vals(
+                layout_reg.codigo,
+                dict(reg.valores or {}),
+                partida_num=partida_num,
+            )
             for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or 0):
-                val = (reg.valores or {}).get(campo.nombre)
+                val = effective_vals.get(campo.nombre)
                 if val in (None, ""):
                     val = campo.default or ""
                 campo_el = ET.SubElement(reg_el, "campo", nombre=campo.nombre or "")
