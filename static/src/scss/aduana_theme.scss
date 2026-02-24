@@ -35,10 +35,12 @@
     color: #ffffff !important;
 }
 
-/* Remove remaining purple border accents on top menu */
+/* Remove separators on top menu tabs */
 .o_main_navbar .o_menu_sections .o_nav_entry,
 .o_main_navbar .o_menu_brand {
-    border-color: #1f5c95 !important;
+    border-color: transparent !important;
+    border-right: 0 !important;
+    border-left: 0 !important;
 }
 
 /* Buttons */
