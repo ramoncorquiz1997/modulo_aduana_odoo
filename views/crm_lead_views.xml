@@ -11,8 +11,14 @@
         <xpath expr="//field[@name='partner_id']" position="attributes">
           <attribute name="string">Cliente</attribute>
         </xpath>
+        <xpath expr="//label[@for='partner_id']" position="attributes">
+          <attribute name="string">Cliente</attribute>
+        </xpath>
         <xpath expr="//field[@name='user_id']" position="attributes">
           <attribute name="string">Encargado operativo</attribute>
+        </xpath>
+        <xpath expr="//div[.//field[@name='expected_revenue'] and .//field[@name='probability']]" position="attributes">
+          <attribute name="invisible">1</attribute>
         </xpath>
         <xpath expr="//field[@name='expected_revenue']" position="attributes">
           <attribute name="invisible">1</attribute>
