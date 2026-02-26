@@ -355,6 +355,15 @@ class ResPartner(models.Model):
             if vals.get(file_field) and not vals.get(filename_field):
                 vals[filename_field] = "%s.pdf" % file_field.replace("_file", "")
 
+    def _fill_missing_document_filenames_on_records(self):
+        for rec in self:
+            vals = {}
+            for file_field, filename_field in self._DOC_FILENAME_PAIRS:
+                if rec[file_field] and not rec[filename_field]:
+                    vals[filename_field] = "%s_%s.pdf" % (rec.id, file_field.replace("_file", ""))
+            if vals:
+                super(ResPartner, rec).write(vals)
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
