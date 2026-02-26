@@ -53,7 +53,7 @@
           </page>
 
           <page string="Documentos" name="mi_modulo_documentos_partner">
-            <group string="Documentacion">
+            <group>
               <field name="company_type" invisible="1"/>
 
               <group invisible="company_type != 'person'" col="2">

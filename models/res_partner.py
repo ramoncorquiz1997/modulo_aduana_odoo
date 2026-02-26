@@ -33,6 +33,39 @@ class DESAdapter(requests.adapters.HTTPAdapter):
 
 class ResPartner(models.Model):
     _inherit = "res.partner"
+    _DOC_FILENAME_PAIRS = [
+        ("x_csf_file", "x_csf_filename"),
+        ("x_pf_programa_fomento_file", "x_pf_programa_fomento_filename"),
+        ("x_pf_fotos_instalaciones_file", "x_pf_fotos_instalaciones_filename"),
+        ("x_pf_sellos_vucem_file", "x_pf_sellos_vucem_filename"),
+        ("x_pf_contrato_servicios_file", "x_pf_contrato_servicios_filename"),
+        ("x_pf_carta_69b_file", "x_pf_carta_69b_filename"),
+        ("x_pf_cuestionario_oea_ctpat_file", "x_pf_cuestionario_oea_ctpat_filename"),
+        ("x_pf_autorizacion_shipper_export_file", "x_pf_autorizacion_shipper_export_filename"),
+        ("x_pf_convenio_confidencialidad_file", "x_pf_convenio_confidencialidad_filename"),
+        ("x_pf_info_atencion_ce_file", "x_pf_info_atencion_ce_filename"),
+        ("x_pf_opinion_cumplimiento_mensual_file", "x_pf_opinion_cumplimiento_mensual_filename"),
+        ("x_pf_pantalla_domicilio_localizado_file", "x_pf_pantalla_domicilio_localizado_filename"),
+        ("x_pm_acta_constitutiva_file", "x_pm_acta_constitutiva_filename"),
+        ("x_pm_poder_representante_file", "x_pm_poder_representante_filename"),
+        ("x_pm_doc_propiedad_posesion_file", "x_pm_doc_propiedad_posesion_filename"),
+        ("x_pm_rep_identificacion_file", "x_pm_rep_identificacion_filename"),
+        ("x_pm_rep_rfc_csf_file", "x_pm_rep_rfc_csf_filename"),
+        ("x_pm_rep_opinion_cumplimiento_file", "x_pm_rep_opinion_cumplimiento_filename"),
+        ("x_pm_acta_verificacion_domicilio_file", "x_pm_acta_verificacion_domicilio_filename"),
+        ("x_pm_comprobante_domicilio_file", "x_pm_comprobante_domicilio_filename"),
+        ("x_pm_opinion_32d_file", "x_pm_opinion_32d_filename"),
+        ("x_pm_carta_encomienda_file", "x_pm_carta_encomienda_filename"),
+        ("x_pm_acuse_encargo_conferido_file", "x_pm_acuse_encargo_conferido_filename"),
+        ("x_pm_programa_fomento_file", "x_pm_programa_fomento_filename"),
+        ("x_pm_sellos_vucem_file", "x_pm_sellos_vucem_filename"),
+        ("x_pm_fotos_instalaciones_file", "x_pm_fotos_instalaciones_filename"),
+        ("x_pm_contrato_servicios_file", "x_pm_contrato_servicios_filename"),
+        ("x_pm_carta_69b_file", "x_pm_carta_69b_filename"),
+        ("x_pm_cuestionarios_oea_ctpat_file", "x_pm_cuestionarios_oea_ctpat_filename"),
+        ("x_pm_autorizacion_shipper_export_file", "x_pm_autorizacion_shipper_export_filename"),
+        ("x_pm_convenio_confidencialidad_file", "x_pm_convenio_confidencialidad_filename"),
+    ]
 
     x_contact_role = fields.Selection(
         [
@@ -316,15 +349,23 @@ class ResPartner(models.Model):
                 street = f"{street} INT {rec.x_street_number_int}"
             rec.street = street
 
+    @api.model
+    def _fill_missing_document_filenames(self, vals):
+        for file_field, filename_field in self._DOC_FILENAME_PAIRS:
+            if vals.get(file_field) and not vals.get(filename_field):
+                vals[filename_field] = "%s.pdf" % file_field.replace("_file", "")
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            self._fill_missing_document_filenames(vals)
             if vals.get("x_csf_file"):
                 vals.update(self._extract_csf_values(vals.get("x_csf_file")))
         return super().create(vals_list)
 
     def write(self, vals):
         update_vals = dict(vals)
+        self._fill_missing_document_filenames(update_vals)
         if vals.get("x_csf_file"):
             update_vals.update(self._extract_csf_values(vals.get("x_csf_file")))
         return super().write(update_vals)
