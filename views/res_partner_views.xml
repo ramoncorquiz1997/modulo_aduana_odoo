@@ -55,74 +55,82 @@
           <page string="Documentos" name="mi_modulo_documentos_partner">
             <group string="Documentacion">
               <field name="company_type" invisible="1"/>
-              <group invisible="company_type != 'person'" col="4">
-                <field name="x_csf_filename" invisible="1"/>
-                <field name="x_csf_file" widget="binary" filename="x_csf_filename" string="Constancia de Situacion Fiscal (PDF)"/>
-                <field name="x_pf_programa_fomento_filename" invisible="1"/>
-                <field name="x_pf_programa_fomento_file" widget="binary" filename="x_pf_programa_fomento_filename"/>
-                <field name="x_pf_fotos_instalaciones_filename" invisible="1"/>
-                <field name="x_pf_fotos_instalaciones_file" widget="binary" filename="x_pf_fotos_instalaciones_filename"/>
-                <field name="x_pf_sellos_vucem_filename" invisible="1"/>
-                <field name="x_pf_sellos_vucem_file" widget="binary" filename="x_pf_sellos_vucem_filename"/>
-                <field name="x_pf_contrato_servicios_filename" invisible="1"/>
-                <field name="x_pf_contrato_servicios_file" widget="binary" filename="x_pf_contrato_servicios_filename"/>
-                <field name="x_pf_carta_69b_filename" invisible="1"/>
-                <field name="x_pf_carta_69b_file" widget="binary" filename="x_pf_carta_69b_filename"/>
-                <field name="x_pf_cuestionario_oea_ctpat_filename" invisible="1"/>
-                <field name="x_pf_cuestionario_oea_ctpat_file" widget="binary" filename="x_pf_cuestionario_oea_ctpat_filename"/>
-                <field name="x_pf_autorizacion_shipper_export_filename" invisible="1"/>
-                <field name="x_pf_autorizacion_shipper_export_file" widget="binary" filename="x_pf_autorizacion_shipper_export_filename"/>
-                <field name="x_pf_convenio_confidencialidad_filename" invisible="1"/>
-                <field name="x_pf_convenio_confidencialidad_file" widget="binary" filename="x_pf_convenio_confidencialidad_filename"/>
-                <field name="x_pf_info_atencion_ce_filename" invisible="1"/>
-                <field name="x_pf_info_atencion_ce_file" widget="binary" filename="x_pf_info_atencion_ce_filename"/>
-                <field name="x_pf_opinion_cumplimiento_mensual_filename" invisible="1"/>
-                <field name="x_pf_opinion_cumplimiento_mensual_file" widget="binary" filename="x_pf_opinion_cumplimiento_mensual_filename"/>
-                <field name="x_pf_pantalla_domicilio_localizado_filename" invisible="1"/>
-                <field name="x_pf_pantalla_domicilio_localizado_file" widget="binary" filename="x_pf_pantalla_domicilio_localizado_filename"/>
+              <group invisible="company_type != 'person'" col="2">
+                <group>
+                  <field name="x_csf_filename" invisible="1"/>
+                  <field name="x_csf_file" widget="binary" filename="x_csf_filename" string="Constancia de Situacion Fiscal (PDF)"/>
+                  <field name="x_pf_programa_fomento_filename" invisible="1"/>
+                  <field name="x_pf_programa_fomento_file" widget="binary" filename="x_pf_programa_fomento_filename"/>
+                  <field name="x_pf_fotos_instalaciones_filename" invisible="1"/>
+                  <field name="x_pf_fotos_instalaciones_file" widget="binary" filename="x_pf_fotos_instalaciones_filename"/>
+                  <field name="x_pf_sellos_vucem_filename" invisible="1"/>
+                  <field name="x_pf_sellos_vucem_file" widget="binary" filename="x_pf_sellos_vucem_filename"/>
+                  <field name="x_pf_contrato_servicios_filename" invisible="1"/>
+                  <field name="x_pf_contrato_servicios_file" widget="binary" filename="x_pf_contrato_servicios_filename"/>
+                  <field name="x_pf_carta_69b_filename" invisible="1"/>
+                  <field name="x_pf_carta_69b_file" widget="binary" filename="x_pf_carta_69b_filename"/>
+                </group>
+                <group>
+                  <field name="x_pf_cuestionario_oea_ctpat_filename" invisible="1"/>
+                  <field name="x_pf_cuestionario_oea_ctpat_file" widget="binary" filename="x_pf_cuestionario_oea_ctpat_filename"/>
+                  <field name="x_pf_autorizacion_shipper_export_filename" invisible="1"/>
+                  <field name="x_pf_autorizacion_shipper_export_file" widget="binary" filename="x_pf_autorizacion_shipper_export_filename"/>
+                  <field name="x_pf_convenio_confidencialidad_filename" invisible="1"/>
+                  <field name="x_pf_convenio_confidencialidad_file" widget="binary" filename="x_pf_convenio_confidencialidad_filename"/>
+                  <field name="x_pf_info_atencion_ce_filename" invisible="1"/>
+                  <field name="x_pf_info_atencion_ce_file" widget="binary" filename="x_pf_info_atencion_ce_filename"/>
+                  <field name="x_pf_opinion_cumplimiento_mensual_filename" invisible="1"/>
+                  <field name="x_pf_opinion_cumplimiento_mensual_file" widget="binary" filename="x_pf_opinion_cumplimiento_mensual_filename"/>
+                  <field name="x_pf_pantalla_domicilio_localizado_filename" invisible="1"/>
+                  <field name="x_pf_pantalla_domicilio_localizado_file" widget="binary" filename="x_pf_pantalla_domicilio_localizado_filename"/>
+                </group>
               </group>
 
-              <group invisible="company_type != 'company'" col="4">
-                <field name="x_csf_filename" invisible="1"/>
-                <field name="x_csf_file" widget="binary" filename="x_csf_filename" string="Constancia de Situacion Fiscal (PDF)"/>
-                <field name="x_pm_acta_constitutiva_filename" invisible="1"/>
-                <field name="x_pm_acta_constitutiva_file" widget="binary" filename="x_pm_acta_constitutiva_filename"/>
-                <field name="x_pm_poder_representante_filename" invisible="1"/>
-                <field name="x_pm_poder_representante_file" widget="binary" filename="x_pm_poder_representante_filename"/>
-                <field name="x_pm_doc_propiedad_posesion_filename" invisible="1"/>
-                <field name="x_pm_doc_propiedad_posesion_file" widget="binary" filename="x_pm_doc_propiedad_posesion_filename"/>
-                <field name="x_pm_rep_identificacion_filename" invisible="1"/>
-                <field name="x_pm_rep_identificacion_file" widget="binary" filename="x_pm_rep_identificacion_filename"/>
-                <field name="x_pm_rep_rfc_csf_filename" invisible="1"/>
-                <field name="x_pm_rep_rfc_csf_file" widget="binary" filename="x_pm_rep_rfc_csf_filename"/>
-                <field name="x_pm_rep_opinion_cumplimiento_filename" invisible="1"/>
-                <field name="x_pm_rep_opinion_cumplimiento_file" widget="binary" filename="x_pm_rep_opinion_cumplimiento_filename"/>
-                <field name="x_pm_acta_verificacion_domicilio_filename" invisible="1"/>
-                <field name="x_pm_acta_verificacion_domicilio_file" widget="binary" filename="x_pm_acta_verificacion_domicilio_filename"/>
-                <field name="x_pm_comprobante_domicilio_filename" invisible="1"/>
-                <field name="x_pm_comprobante_domicilio_file" widget="binary" filename="x_pm_comprobante_domicilio_filename"/>
-                <field name="x_pm_opinion_32d_filename" invisible="1"/>
-                <field name="x_pm_opinion_32d_file" widget="binary" filename="x_pm_opinion_32d_filename"/>
-                <field name="x_pm_carta_encomienda_filename" invisible="1"/>
-                <field name="x_pm_carta_encomienda_file" widget="binary" filename="x_pm_carta_encomienda_filename"/>
-                <field name="x_pm_acuse_encargo_conferido_filename" invisible="1"/>
-                <field name="x_pm_acuse_encargo_conferido_file" widget="binary" filename="x_pm_acuse_encargo_conferido_filename"/>
-                <field name="x_pm_programa_fomento_filename" invisible="1"/>
-                <field name="x_pm_programa_fomento_file" widget="binary" filename="x_pm_programa_fomento_filename"/>
-                <field name="x_pm_sellos_vucem_filename" invisible="1"/>
-                <field name="x_pm_sellos_vucem_file" widget="binary" filename="x_pm_sellos_vucem_filename"/>
-                <field name="x_pm_fotos_instalaciones_filename" invisible="1"/>
-                <field name="x_pm_fotos_instalaciones_file" widget="binary" filename="x_pm_fotos_instalaciones_filename"/>
-                <field name="x_pm_contrato_servicios_filename" invisible="1"/>
-                <field name="x_pm_contrato_servicios_file" widget="binary" filename="x_pm_contrato_servicios_filename"/>
-                <field name="x_pm_carta_69b_filename" invisible="1"/>
-                <field name="x_pm_carta_69b_file" widget="binary" filename="x_pm_carta_69b_filename"/>
-                <field name="x_pm_cuestionarios_oea_ctpat_filename" invisible="1"/>
-                <field name="x_pm_cuestionarios_oea_ctpat_file" widget="binary" filename="x_pm_cuestionarios_oea_ctpat_filename"/>
-                <field name="x_pm_autorizacion_shipper_export_filename" invisible="1"/>
-                <field name="x_pm_autorizacion_shipper_export_file" widget="binary" filename="x_pm_autorizacion_shipper_export_filename"/>
-                <field name="x_pm_convenio_confidencialidad_filename" invisible="1"/>
-                <field name="x_pm_convenio_confidencialidad_file" widget="binary" filename="x_pm_convenio_confidencialidad_filename"/>
+              <group invisible="company_type != 'company'" col="2">
+                <group>
+                  <field name="x_csf_filename" invisible="1"/>
+                  <field name="x_csf_file" widget="binary" filename="x_csf_filename" string="Constancia de Situacion Fiscal (PDF)"/>
+                  <field name="x_pm_acta_constitutiva_filename" invisible="1"/>
+                  <field name="x_pm_acta_constitutiva_file" widget="binary" filename="x_pm_acta_constitutiva_filename"/>
+                  <field name="x_pm_poder_representante_filename" invisible="1"/>
+                  <field name="x_pm_poder_representante_file" widget="binary" filename="x_pm_poder_representante_filename"/>
+                  <field name="x_pm_doc_propiedad_posesion_filename" invisible="1"/>
+                  <field name="x_pm_doc_propiedad_posesion_file" widget="binary" filename="x_pm_doc_propiedad_posesion_filename"/>
+                  <field name="x_pm_rep_identificacion_filename" invisible="1"/>
+                  <field name="x_pm_rep_identificacion_file" widget="binary" filename="x_pm_rep_identificacion_filename"/>
+                  <field name="x_pm_rep_rfc_csf_filename" invisible="1"/>
+                  <field name="x_pm_rep_rfc_csf_file" widget="binary" filename="x_pm_rep_rfc_csf_filename"/>
+                  <field name="x_pm_rep_opinion_cumplimiento_filename" invisible="1"/>
+                  <field name="x_pm_rep_opinion_cumplimiento_file" widget="binary" filename="x_pm_rep_opinion_cumplimiento_filename"/>
+                  <field name="x_pm_acta_verificacion_domicilio_filename" invisible="1"/>
+                  <field name="x_pm_acta_verificacion_domicilio_file" widget="binary" filename="x_pm_acta_verificacion_domicilio_filename"/>
+                  <field name="x_pm_comprobante_domicilio_filename" invisible="1"/>
+                  <field name="x_pm_comprobante_domicilio_file" widget="binary" filename="x_pm_comprobante_domicilio_filename"/>
+                  <field name="x_pm_opinion_32d_filename" invisible="1"/>
+                  <field name="x_pm_opinion_32d_file" widget="binary" filename="x_pm_opinion_32d_filename"/>
+                </group>
+                <group>
+                  <field name="x_pm_carta_encomienda_filename" invisible="1"/>
+                  <field name="x_pm_carta_encomienda_file" widget="binary" filename="x_pm_carta_encomienda_filename"/>
+                  <field name="x_pm_acuse_encargo_conferido_filename" invisible="1"/>
+                  <field name="x_pm_acuse_encargo_conferido_file" widget="binary" filename="x_pm_acuse_encargo_conferido_filename"/>
+                  <field name="x_pm_programa_fomento_filename" invisible="1"/>
+                  <field name="x_pm_programa_fomento_file" widget="binary" filename="x_pm_programa_fomento_filename"/>
+                  <field name="x_pm_sellos_vucem_filename" invisible="1"/>
+                  <field name="x_pm_sellos_vucem_file" widget="binary" filename="x_pm_sellos_vucem_filename"/>
+                  <field name="x_pm_fotos_instalaciones_filename" invisible="1"/>
+                  <field name="x_pm_fotos_instalaciones_file" widget="binary" filename="x_pm_fotos_instalaciones_filename"/>
+                  <field name="x_pm_contrato_servicios_filename" invisible="1"/>
+                  <field name="x_pm_contrato_servicios_file" widget="binary" filename="x_pm_contrato_servicios_filename"/>
+                  <field name="x_pm_carta_69b_filename" invisible="1"/>
+                  <field name="x_pm_carta_69b_file" widget="binary" filename="x_pm_carta_69b_filename"/>
+                  <field name="x_pm_cuestionarios_oea_ctpat_filename" invisible="1"/>
+                  <field name="x_pm_cuestionarios_oea_ctpat_file" widget="binary" filename="x_pm_cuestionarios_oea_ctpat_filename"/>
+                  <field name="x_pm_autorizacion_shipper_export_filename" invisible="1"/>
+                  <field name="x_pm_autorizacion_shipper_export_file" widget="binary" filename="x_pm_autorizacion_shipper_export_filename"/>
+                  <field name="x_pm_convenio_confidencialidad_filename" invisible="1"/>
+                  <field name="x_pm_convenio_confidencialidad_file" widget="binary" filename="x_pm_convenio_confidencialidad_filename"/>
+                </group>
               </group>
               <button name="action_request_missing_documents"
                       type="object"
