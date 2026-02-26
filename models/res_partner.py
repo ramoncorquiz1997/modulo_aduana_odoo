@@ -57,11 +57,6 @@ class ResPartner(models.Model):
     x_localidad = fields.Char(string="Localidad")
     x_csf_filename = fields.Char(string="Nombre de archivo CSF")
     x_csf_file = fields.Binary(string="CSF (PDF)")
-    x_document_line_ids = fields.One2many(
-        "res.partner.document",
-        "partner_id",
-        string="Documentos de expediente",
-    )
     # Persona fisica - expediente documental
     x_pf_programa_fomento_filename = fields.Char(string="Programa fomento / certificacion")
     x_pf_programa_fomento_file = fields.Binary(string="Programa fomento / certificacion")
@@ -186,11 +181,8 @@ class ResPartner(models.Model):
             if not to:
                 raise UserError("El contacto no tiene telefono/mobile valido para WhatsApp.")
 
-            rec._ensure_document_checklist()
-            csf_line = rec.x_document_line_ids.filtered(lambda l: l.code == "csf")[:1]
-            has_csf = bool(rec.x_csf_file or (csf_line and csf_line.file_data))
             missing_rows = []
-            if not has_csf:
+            if not rec.x_csf_file:
                 missing_rows.append({"id": "send_csf", "title": "Enviar CSF"})
 
             if not missing_rows:
@@ -329,102 +321,10 @@ class ResPartner(models.Model):
         for vals in vals_list:
             if vals.get("x_csf_file"):
                 vals.update(self._extract_csf_values(vals.get("x_csf_file")))
-        records = super().create(vals_list)
-        records._ensure_document_checklist()
-        records._sync_csf_document_line()
-        return records
+        return super().create(vals_list)
 
     def write(self, vals):
         update_vals = dict(vals)
         if vals.get("x_csf_file"):
             update_vals.update(self._extract_csf_values(vals.get("x_csf_file")))
-        res = super().write(update_vals)
-        if "company_type" in vals:
-            self._ensure_document_checklist()
-        if "x_csf_file" in vals or "x_csf_filename" in vals:
-            self._sync_csf_document_line()
-        return res
-
-    def _required_document_codes_for_profile(self):
-        self.ensure_one()
-        common = {
-            "csf",
-            "programa_fomento",
-            "fotos_instalaciones",
-            "sellos_vucem",
-            "contrato_servicios",
-            "carta_69b",
-            "cuestionario_oea_ctpat",
-            "autorizacion_shipper_export",
-            "convenio_confidencialidad",
-        }
-        if self.company_type == "company":
-            return common | {
-                "acta_constitutiva",
-                "poder_representante",
-                "doc_propiedad_posesion",
-                "rep_identificacion",
-                "rep_rfc_csf",
-                "rep_opinion_cumplimiento",
-                "acta_verificacion_domicilio",
-                "comprobante_domicilio",
-                "opinion_32d",
-                "carta_encomienda",
-                "acuse_encargo_conferido",
-            }
-        return common | {
-            "info_atencion_ce",
-            "opinion_cumplimiento_mensual",
-            "pantalla_domicilio_localizado",
-        }
-
-    def _ensure_document_checklist(self):
-        doc_model = self.env["res.partner.document"].sudo()
-        for rec in self:
-            required_codes = rec._required_document_codes_for_profile()
-            existing = {d.code for d in rec.x_document_line_ids}
-            missing_codes = required_codes - existing
-            if not missing_codes:
-                continue
-            values = []
-            seq = 10
-            for code in sorted(missing_codes):
-                values.append({
-                    "partner_id": rec.id,
-                    "code": code,
-                    "sequence": seq,
-                })
-                seq += 10
-            doc_model.create(values)
-
-    def _sync_csf_document_line(self):
-        doc_model = self.env["res.partner.document"].sudo()
-        for rec in self:
-            line = rec.x_document_line_ids.filtered(lambda l: l.code == "csf")[:1]
-            if not line:
-                line = doc_model.create({
-                    "partner_id": rec.id,
-                    "code": "csf",
-                    "sequence": 5,
-                })
-            line.write({
-                "file_data": rec.x_csf_file or False,
-                "filename": rec.x_csf_filename or False,
-            })
-
-    def action_init_document_checklist(self):
-        self.ensure_one()
-        before = len(self.x_document_line_ids)
-        self._ensure_document_checklist()
-        self._sync_csf_document_line()
-        created = len(self.x_document_line_ids) - before
-        return {
-            "type": "ir.actions.client",
-            "tag": "display_notification",
-            "params": {
-                "title": "Documentos",
-                "message": f"Checklist actualizado. Nuevos registros: {max(created, 0)}",
-                "type": "success",
-                "sticky": False,
-            },
-        }
+        return super().write(update_vals)

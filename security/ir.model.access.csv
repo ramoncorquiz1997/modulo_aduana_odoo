@@ -53,4 +53,3 @@ access_mx_forma_pago_user,mx.forma.pago.user,model_mx_forma_pago,modulo_aduana_o
 access_mx_forma_pago_reg,mx.forma.pago.reg,model_mx_forma_pago,base.group_system,1,1,1,1
 access_mx_ped_contribucion_global,mx.ped.contribucion.global,model_mx_ped_contribucion_global,,1,1,1,1
 access_mx_ped_partida_contribucion,mx.ped.partida.contribucion,model_mx_ped_partida_contribucion,,1,1,1,1
-access_res_partner_document,res.partner.document,model_res_partner_document,,1,1,1,1

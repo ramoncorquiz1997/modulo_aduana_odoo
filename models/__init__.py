@@ -1,6 +1,5 @@
 from . import crm_lead
 from . import res_partner
-from . import res_partner_document
 from . import mx_ped_operacion
 from . import mx_ped_partida
 from . import mx_ped_documento
