@@ -37,6 +37,20 @@ class MxPedPartida(models.Model):
         compute="_compute_value_mxn",
         store=True,
     )
+    igi_rate = fields.Float(
+        string="IGI (%)",
+        digits=(16, 6),
+        compute="_compute_tasas_fraccion",
+        store=True,
+        readonly=True,
+    )
+    iva_rate = fields.Float(
+        string="IVA (%)",
+        digits=(16, 6),
+        compute="_compute_tasas_fraccion",
+        store=True,
+        readonly=True,
+    )
 
     unidad_tarifa = fields.Char(size=10)
     cantidad_tarifa = fields.Float(digits=(16, 5))
@@ -148,11 +162,29 @@ class MxPedPartida(models.Model):
             tc = rec.operacion_id.lead_id.x_tipo_cambio or 0.0
             rec.value_mxn = (rec.value_usd or 0.0) * tc
 
+    def _get_applicable_tasa(self):
+        self.ensure_one()
+        if not self.fraccion_id:
+            return self.env["mx.ped.fraccion.tasa"]
+        tipo = "importacion" if self.operacion_id.tipo_operacion != "exportacion" else "exportacion"
+        tasa = self.fraccion_id.tasa_ids.filtered(
+            lambda t: t.tipo_operacion == tipo and t.territorio == "general"
+        )[:1]
+        if not tasa:
+            tasa = self.fraccion_id.tasa_ids.filtered(lambda t: t.tipo_operacion == tipo)[:1]
+        return tasa
+
+    @api.depends("fraccion_id", "fraccion_id.tasa_ids", "operacion_id.tipo_operacion")
+    def _compute_tasas_fraccion(self):
+        for rec in self:
+            tasa = rec._get_applicable_tasa()
+            rec.igi_rate = tasa.igi if tasa else 0.0
+            rec.iva_rate = tasa.iva if tasa else 0.0
+
     @api.depends(
-        "fraccion_id",
-        "fraccion_id.tasa_ids",
-        "operacion_id.tipo_operacion",
         "value_mxn",
+        "igi_rate",
+        "iva_rate",
     )
     def _compute_impuestos_estimados(self):
         icp = self.env["ir.config_parameter"].sudo()
@@ -160,18 +192,8 @@ class MxPedPartida(models.Model):
         prv_rate = float(icp.get_param("mx_ped.prv_rate", "0.0") or 0.0)
         for rec in self:
             base = rec.value_mxn or 0.0
-            tasa = False
-            if rec.fraccion_id:
-                tipo = "importacion" if rec.operacion_id.tipo_operacion != "exportacion" else "exportacion"
-                tasa = rec.fraccion_id.tasa_ids.filtered(
-                    lambda t: t.tipo_operacion == tipo and t.territorio == "general"
-                )[:1]
-                if not tasa:
-                    tasa = rec.fraccion_id.tasa_ids.filtered(lambda t: t.tipo_operacion == tipo)[:1]
-            igi_rate = tasa.igi if tasa else 0.0
-            iva_rate = tasa.iva if tasa else 0.0
-            rec.igi_estimado = base * (igi_rate / 100.0)
-            rec.iva_estimado = (base + rec.igi_estimado) * (iva_rate / 100.0)
+            rec.igi_estimado = base * ((rec.igi_rate or 0.0) / 100.0)
+            rec.iva_estimado = (base + rec.igi_estimado) * ((rec.iva_rate or 0.0) / 100.0)
             rec.dta_estimado = base * (dta_rate / 100.0)
             rec.prv_estimado = base * (prv_rate / 100.0)
 

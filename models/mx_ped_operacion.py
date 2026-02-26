@@ -309,11 +309,107 @@ class MxPedOperacion(models.Model):
         string="Partidas",
         compute="_compute_partida_count",
     )
+    total_packages_line = fields.Integer(
+        string="Total bultos",
+        compute="_compute_totales_partidas",
+        store=True,
+        readonly=True,
+    )
+    total_gross_weight = fields.Float(
+        string="Total peso bruto",
+        digits=(16, 3),
+        compute="_compute_totales_partidas",
+        store=True,
+        readonly=True,
+    )
+    total_net_weight = fields.Float(
+        string="Total peso neto",
+        digits=(16, 3),
+        compute="_compute_totales_partidas",
+        store=True,
+        readonly=True,
+    )
+    total_value_usd = fields.Float(
+        string="Total valor USD",
+        digits=(16, 2),
+        compute="_compute_totales_partidas",
+        store=True,
+        readonly=True,
+    )
+    total_value_mxn = fields.Float(
+        string="Total valor MXN",
+        digits=(16, 2),
+        compute="_compute_totales_partidas",
+        store=True,
+        readonly=True,
+    )
+    total_igi_estimado = fields.Monetary(
+        string="Total IGI estimado",
+        currency_field="currency_id",
+        compute="_compute_totales_partidas",
+        store=True,
+        readonly=True,
+    )
+    total_iva_estimado = fields.Monetary(
+        string="Total IVA estimado",
+        currency_field="currency_id",
+        compute="_compute_totales_partidas",
+        store=True,
+        readonly=True,
+    )
+    total_dta_estimado = fields.Monetary(
+        string="Total DTA estimado",
+        currency_field="currency_id",
+        compute="_compute_totales_partidas",
+        store=True,
+        readonly=True,
+    )
+    total_prv_estimado = fields.Monetary(
+        string="Total PRV estimado",
+        currency_field="currency_id",
+        compute="_compute_totales_partidas",
+        store=True,
+        readonly=True,
+    )
+    total_impuestos_estimados = fields.Monetary(
+        string="Total impuestos estimados",
+        currency_field="currency_id",
+        compute="_compute_totales_partidas",
+        store=True,
+        readonly=True,
+    )
 
     @api.depends("partida_ids")
     def _compute_partida_count(self):
         for rec in self:
             rec.partida_count = len(rec.partida_ids)
+
+    @api.depends(
+        "partida_ids.packages_line",
+        "partida_ids.gross_weight_line",
+        "partida_ids.net_weight_line",
+        "partida_ids.value_usd",
+        "partida_ids.value_mxn",
+        "partida_ids.igi_estimado",
+        "partida_ids.iva_estimado",
+        "partida_ids.dta_estimado",
+        "partida_ids.prv_estimado",
+    )
+    def _compute_totales_partidas(self):
+        for rec in self:
+            partidas = rec.partida_ids
+            rec.total_packages_line = int(sum(partidas.mapped("packages_line")))
+            rec.total_gross_weight = sum(partidas.mapped("gross_weight_line"))
+            rec.total_net_weight = sum(partidas.mapped("net_weight_line"))
+            rec.total_value_usd = sum(partidas.mapped("value_usd"))
+            rec.total_value_mxn = sum(partidas.mapped("value_mxn"))
+            rec.total_igi_estimado = sum(partidas.mapped("igi_estimado"))
+            rec.total_iva_estimado = sum(partidas.mapped("iva_estimado"))
+            rec.total_dta_estimado = sum(partidas.mapped("dta_estimado"))
+            rec.total_prv_estimado = sum(partidas.mapped("prv_estimado"))
+            rec.total_impuestos_estimados = (
+                rec.total_igi_estimado + rec.total_iva_estimado + rec.total_dta_estimado + rec.total_prv_estimado
+            )
 
     @api.depends("tipo_operacion", "importador_id", "exportador_id")
     def _compute_participante(self):

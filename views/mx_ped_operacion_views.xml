@@ -94,6 +94,23 @@
                 <field name="observaciones"/>
               </group>
             </group>
+            <group col="2" string="Resumen fiscal automático">
+              <group>
+                <field name="partida_count" readonly="1"/>
+                <field name="total_packages_line" readonly="1"/>
+                <field name="total_gross_weight" readonly="1"/>
+                <field name="total_net_weight" readonly="1"/>
+                <field name="total_value_usd" readonly="1"/>
+                <field name="total_value_mxn" readonly="1"/>
+              </group>
+              <group>
+                <field name="total_igi_estimado" readonly="1"/>
+                <field name="total_iva_estimado" readonly="1"/>
+                <field name="total_dta_estimado" readonly="1"/>
+                <field name="total_prv_estimado" readonly="1"/>
+                <field name="total_impuestos_estimados" readonly="1"/>
+              </group>
+            </group>
 
             <notebook>
               <page string="Partidas">
@@ -114,6 +131,8 @@
                     <field name="unidad_tarifa"/>
                     <field name="cantidad_tarifa"/>
                     <field name="valor_aduana"/>
+                    <field name="igi_rate" readonly="1"/>
+                    <field name="iva_rate" readonly="1"/>
                     <field name="nom_ids" widget="many2many_tags"/>
                     <field name="permiso_ids" widget="many2many_tags"/>
                     <field name="rrna_ids" widget="many2many_tags"/>
@@ -157,6 +176,8 @@
                       <field name="forma_pago_sugerida_id"/>
                     </group>
                     <group string="Impuestos estimados">
+                      <field name="igi_rate" readonly="1"/>
+                      <field name="iva_rate" readonly="1"/>
                       <field name="igi_estimado"/>
                       <field name="iva_estimado"/>
                       <field name="dta_estimado"/>
