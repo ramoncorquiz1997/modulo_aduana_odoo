@@ -2493,6 +2493,8 @@ class MxPedOperacion(models.Model):
             "transportista_localidad": "x_transportista_localidad",
             "transportista_estado": "x_transportista_estado_id",
             "transportista_cp": "x_transportista_cp",
+            "comprador": "x_comprador_id",
+            "nombre_proveedor_comprador": "x_counterparty_name_505",
         }
 
         source = source_field or aliases.get(field_name, field_name)
@@ -2522,7 +2524,12 @@ class MxPedOperacion(models.Model):
         if source_model == "exportador":
             return self._record_value_for_field(lead.x_exportador_id if lead else None, source)
         if source_model == "proveedor":
+            if lead and lead.x_tipo_operacion == "exportacion":
+                partner = lead.x_comprador_id or lead.x_proveedor_id
+                return self._record_value_for_field(partner, source)
             return self._record_value_for_field(lead.x_proveedor_id if lead else None, source)
+        if source_model == "comprador":
+            return self._record_value_for_field(lead.x_comprador_id if lead else None, source)
         if source_model == "transportista":
             return self._record_value_for_field(lead.x_transportista_id if lead else None, source)
 

@@ -104,6 +104,12 @@
                        invisible="x_tipo_operacion == 'exportacion'"/>
                 <field name="x_proveedor_id" domain="[('x_contact_role','in',['proveedor','otro'])]"/>
                 <field name="x_proveedor_name"/>
+                <field name="x_comprador_id"
+                       domain="[('x_contact_role','in',['cliente','otro'])]"
+                       invisible="x_tipo_operacion == 'importacion'"
+                       required="x_tipo_operacion == 'exportacion'"/>
+                <field name="x_comprador_name"
+                       invisible="x_tipo_operacion == 'importacion'"/>
               </group>
               <group string="Destino">
                 <field name="x_consignatario_name"/>
@@ -200,6 +206,9 @@
                 <field name="x_doc_factura_pdf_ok" readonly="1"/>
                 <field name="x_doc_factura_xml_ok" readonly="1"/>
                 <field name="x_doc_cfdi_ok" readonly="1"/>
+                <field name="x_counterparty_role_505" readonly="1"/>
+                <field name="x_counterparty_partner_id" readonly="1"/>
+                <field name="x_counterparty_name_505" readonly="1"/>
               </group>
             </group>
 

@@ -346,6 +346,28 @@ class CrmLead(models.Model):
 
     x_proveedor_id = fields.Many2one("res.partner", string="Proveedor")
     x_proveedor_name = fields.Char(string="Proveedor (texto)")
+    x_comprador_id = fields.Many2one("res.partner", string="Comprador")
+    x_comprador_name = fields.Char(string="Comprador (texto)")
+    x_counterparty_partner_id = fields.Many2one(
+        "res.partner",
+        string="Contraparte 505",
+        compute="_compute_x_counterparty_505",
+        store=False,
+    )
+    x_counterparty_name_505 = fields.Char(
+        string="Nombre contraparte 505",
+        compute="_compute_x_counterparty_505",
+        store=False,
+    )
+    x_counterparty_role_505 = fields.Selection(
+        [
+            ("proveedor", "Proveedor"),
+            ("comprador", "Comprador"),
+        ],
+        string="Rol contraparte 505",
+        compute="_compute_x_counterparty_505",
+        store=False,
+    )
 
     x_consignatario_name = fields.Char(string="Consignatario")
     x_destinatario_final_name = fields.Char(string="Destinatario final")
@@ -446,6 +468,27 @@ class CrmLead(models.Model):
             if not agent:
                 continue
             rec.x_curp_agente = agent.x_curp or rec.x_curp_agente
+
+    @api.depends(
+        "x_tipo_operacion",
+        "x_proveedor_id",
+        "x_proveedor_name",
+        "x_comprador_id",
+        "x_comprador_name",
+    )
+    def _compute_x_counterparty_505(self):
+        for rec in self:
+            if rec.x_tipo_operacion == "exportacion":
+                partner = rec.x_comprador_id
+                text_name = rec.x_comprador_name
+                role = "comprador"
+            else:
+                partner = rec.x_proveedor_id
+                text_name = rec.x_proveedor_name
+                role = "proveedor"
+            rec.x_counterparty_partner_id = partner
+            rec.x_counterparty_name_505 = text_name or (partner.name if partner else False)
+            rec.x_counterparty_role_505 = role
 
     def write(self, vals):
         res = super().write(vals)

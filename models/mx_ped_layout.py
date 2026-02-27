@@ -105,6 +105,7 @@ class MxPedLayoutCampo(models.Model):
             ("importador", "Importador (Contacto)"),
             ("exportador", "Exportador (Contacto)"),
             ("proveedor", "Proveedor (Contacto)"),
+            ("comprador", "Comprador (Contacto)"),
             ("transportista", "Transportista (Lead)"),
         ],
         string="Fuente de datos",
@@ -153,7 +154,7 @@ class MxPedLayoutCampo(models.Model):
     @api.depends("source_model")
     def _compute_source_model_name(self):
         for rec in self:
-            if rec.source_model in ("cliente", "importador", "exportador", "proveedor", "transportista"):
+            if rec.source_model in ("cliente", "importador", "exportador", "proveedor", "comprador", "transportista"):
                 rec.source_model_name = "res.partner"
             elif rec.source_model == "operacion":
                 rec.source_model_name = "mx.ped.operacion"
