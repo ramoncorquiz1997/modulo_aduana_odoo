@@ -9,7 +9,7 @@ class MxPedAduanaSeccion(models.Model):
     _order = "aduana, seccion"
 
     aduana = fields.Char(string="Aduana", required=True, size=2, index=True)
-    seccion = fields.Char(string="Seccion", required=True, size=1, index=True)
+    seccion = fields.Char(string="Seccion", required=False, size=1, index=True, default="0")
     denominacion = fields.Char(string="Denominacion", required=True)
     active = fields.Boolean(default=True)
 
@@ -24,12 +24,27 @@ class MxPedAduanaSeccion(models.Model):
         ),
     ]
 
+    @staticmethod
+    def _normalize_seccion(value):
+        return (value or "0").strip() or "0"
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            vals["seccion"] = self._normalize_seccion(vals.get("seccion"))
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if "seccion" in vals:
+            vals["seccion"] = self._normalize_seccion(vals.get("seccion"))
+        return super().write(vals)
+
 
     @api.depends("aduana", "seccion")
     def _compute_code(self):
         for rec in self:
             rec.aduana = (rec.aduana or "").strip()
-            rec.seccion = (rec.seccion or "").strip()
+            rec.seccion = self._normalize_seccion(rec.seccion)
             rec.code = f"{rec.aduana}{rec.seccion}" if rec.aduana and rec.seccion else False
 
     @api.depends("aduana", "seccion", "denominacion")
