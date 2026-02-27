@@ -21,6 +21,9 @@
       <field name="model">res.partner</field>
       <field name="inherit_id" ref="base.view_partner_form"/>
       <field name="arch" type="xml">
+        <xpath expr="//field[@name='vat']" position="attributes">
+          <attribute name="string">RFC</attribute>
+        </xpath>
         <xpath expr="//notebook" position="inside">
           <page string="Aduana" name="mi_modulo_aduana_partner">
             <group>
@@ -31,7 +34,7 @@
                 <field name="x_num_autorizacion_aduanal" invisible="x_contact_role != 'agente_aduanal'"/>
               </group>
               <group string="Identificacion">
-                <field name="vat"/>
+                <field name="vat" string="RFC"/>
                 <field name="x_curp"/>
                 <field name="x_identificacion_fiscal"/>
               </group>
