@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import fields, models, _
 
-
 class AduanaAuditMixin(models.AbstractModel):
     _name = "aduana.audit.mixin"
     _description = "Auditoria transversal para modelos aduanales"
@@ -150,216 +149,200 @@ class AduanaAuditMixin(models.AbstractModel):
         return super().unlink()
 
 
-class CrmLeadAudit(models.Model):
-    _inherit = ["crm.lead", "aduana.audit.mixin"]
-
-    # Solución para el primer error (Tags)
-    tag_ids = fields.Many2many(
-        'crm.tag', 
-        'crm_lead_audit_tag_rel', # Nombre de tabla único
-        'audit_id', 
-        'tag_id', 
-        string='Tags'
-    )
-
-    # Solución para el nuevo error (Documentos Requeridos)
-    # Asumiendo que el modelo de destino es 'ir.attachment' o el que uses para docs
-    x_docs_requeridos_ids = fields.Many2many(
-        'ir.attachment',             # Reemplaza con el modelo correcto si no es este
-        'crm_lead_audit_docs_rel',    # Nombre de tabla único
-        'audit_id', 
-        'doc_id', 
-        string='Documentos Requeridos'
-    )
-
-
-class ResPartnerAudit(models.Model):
-    _inherit = ["res.partner", "aduana.audit.mixin"]
-
-
-class CrmLeadOperacionLineAudit(models.Model):
-    _inherit = ["crm.lead.operacion.line", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedOperacionAudit(models.Model):
-    _inherit = ["mx.ped.operacion", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedPartidaAudit(models.Model):
-    _inherit = ["mx.ped.partida", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedDocumentoAudit(models.Model):
-    _inherit = ["mx.ped.documento", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedRegistroAudit(models.Model):
-    _inherit = ["mx.ped.registro", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedAduanaSeccionAudit(models.Model):
-    _inherit = ["mx.ped.aduana.seccion", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedClaveAudit(models.Model):
-    _inherit = ["mx.ped.clave", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedClaveReglaRegistroAudit(models.Model):
-    _inherit = ["mx.ped.clave.regla.registro", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedEstructuraReglaAudit(models.Model):
-    _inherit = ["mx.ped.estructura.regla", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedEstructuraReglaLineAudit(models.Model):
-    _inherit = ["mx.ped.estructura.regla.line", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedRulepackAudit(models.Model):
-    _inherit = ["mx.ped.rulepack", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedRulepackScenarioAudit(models.Model):
-    _inherit = ["mx.ped.rulepack.scenario", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedRulepackSelectorAudit(models.Model):
-    _inherit = ["mx.ped.rulepack.selector", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedRulepackProcessRuleAudit(models.Model):
-    _inherit = ["mx.ped.rulepack.process.rule", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedRulepackConditionRuleAudit(models.Model):
-    _inherit = ["mx.ped.rulepack.condition.rule", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedLayoutAudit(models.Model):
-    _inherit = ["mx.ped.layout", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedLayoutRegistroAudit(models.Model):
-    _inherit = ["mx.ped.layout.registro", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedLayoutCampoAudit(models.Model):
-    _inherit = ["mx.ped.layout.campo", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedFraccionAudit(models.Model):
-    _inherit = ["mx.ped.fraccion", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedFraccionTasaAudit(models.Model):
-    _inherit = ["mx.ped.fraccion.tasa", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedUmaAudit(models.Model):
-    _inherit = ["mx.ped.um", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxNomAudit(models.Model):
-    _inherit = ["mx.nom", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxRrnaAudit(models.Model):
-    _inherit = ["mx.rrna", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPermisoAudit(models.Model):
-    _inherit = ["mx.permiso", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxNicoAudit(models.Model):
-    _inherit = ["mx.nico", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxFormaPagoAudit(models.Model):
-    _inherit = ["mx.forma.pago", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedContribucionGlobalAudit(models.Model):
-    _inherit = ["mx.ped.contribucion.global", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedPartidaContribucionAudit(models.Model):
-    _inherit = ["mx.ped.partida.contribucion", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedTipoMovimientoAudit(models.Model):
-    _inherit = ["mx.ped.tipo.movimiento", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedTipoContenedorAudit(models.Model):
-    _inherit = ["mx.ped.tipo.contenedor", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedNumeroControlAudit(models.Model):
-    _inherit = ["mx.ped.numero.control", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class MxPedNumeroControlLogAudit(models.Model):
-    _inherit = ["mx.ped.numero.control.log", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaCatalogoTipoOperacionAudit(models.Model):
-    _inherit = ["aduana.catalogo.tipo_operacion", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaCatalogoRegimenAudit(models.Model):
-    _inherit = ["aduana.catalogo.regimen", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaCatalogoAduanaAudit(models.Model):
-    _inherit = ["aduana.catalogo.aduana", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaCatalogoClavePedimentoAudit(models.Model):
-    _inherit = ["aduana.catalogo.clave_pedimento", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaLayoutRegistroTipoAudit(models.Model):
-    _inherit = ["aduana.layout_registro_tipo", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaLayoutRegistroCampoAudit(models.Model):
-    _inherit = ["aduana.layout_registro_campo", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaPedimentoAudit(models.Model):
-    _inherit = ["aduana.pedimento", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaPartidaAudit(models.Model):
-    _inherit = ["aduana.partida", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaPartidaIdentificadorAudit(models.Model):
-    _inherit = ["aduana.partida.identificador", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaPartidaContribucionAudit(models.Model):
-    _inherit = ["aduana.partida.contribucion", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaFacturaAudit(models.Model):
-    _inherit = ["aduana.factura", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaDocumentoAudit(models.Model):
-    _inherit = ["aduana.documento", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaContenedorAudit(models.Model):
-    _inherit = ["aduana.contenedor", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaContribucionGlobalAudit(models.Model):
-    _inherit = ["aduana.contribucion.global", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
-
-
-class AduanaPedimentoRegistroTecnicoAudit(models.Model):
-    _inherit = ["aduana.pedimento.registro_tecnico", "aduana.audit.mixin", "mail.thread", "mail.activity.mixin"]
+# ====== EXTENSIONES DE MODELOS (HERENCIA DE CLASE) ======
+
+class CrmLead(models.Model):
+    _name = 'crm.lead'
+    _inherit = ['crm.lead', 'aduana.audit.mixin']
+
+class ResPartner(models.Model):
+    _name = 'res.partner'
+    _inherit = ['res.partner', 'aduana.audit.mixin']
+
+class CrmLeadOperacionLine(models.Model):
+    _name = 'crm.lead.operacion.line'
+    _inherit = ['crm.lead.operacion.line', 'aduana.audit.mixin']
+
+class MxPedOperacion(models.Model):
+    _name = 'mx.ped.operacion'
+    _inherit = ['mx.ped.operacion', 'aduana.audit.mixin']
+
+class MxPedPartida(models.Model):
+    _name = 'mx.ped.partida'
+    _inherit = ['mx.ped.partida', 'aduana.audit.mixin']
+
+class MxPedDocumento(models.Model):
+    _name = 'mx.ped.documento'
+    _inherit = ['mx.ped.documento', 'aduana.audit.mixin']
+
+class MxPedRegistro(models.Model):
+    _name = 'mx.ped.registro'
+    _inherit = ['mx.ped.registro', 'aduana.audit.mixin']
+
+class MxPedAduanaSeccion(models.Model):
+    _name = 'mx.ped.aduana.seccion'
+    _inherit = ['mx.ped.aduana.seccion', 'aduana.audit.mixin']
+
+class MxPedClave(models.Model):
+    _name = 'mx.ped.clave'
+    _inherit = ['mx.ped.clave', 'aduana.audit.mixin']
+
+class MxPedClaveReglaRegistro(models.Model):
+    _name = 'mx.ped.clave.regla.registro'
+    _inherit = ['mx.ped.clave.regla.registro', 'aduana.audit.mixin']
+
+class MxPedEstructuraRegla(models.Model):
+    _name = 'mx.ped.estructura.regla'
+    _inherit = ['mx.ped.estructura.regla', 'aduana.audit.mixin']
+
+class MxPedEstructuraReglaLine(models.Model):
+    _name = 'mx.ped.estructura.regla.line'
+    _inherit = ['mx.ped.estructura.regla.line', 'aduana.audit.mixin']
+
+class MxPedRulepack(models.Model):
+    _name = 'mx.ped.rulepack'
+    _inherit = ['mx.ped.rulepack', 'aduana.audit.mixin']
+
+class MxPedRulepackScenario(models.Model):
+    _name = 'mx.ped.rulepack.scenario'
+    _inherit = ['mx.ped.rulepack.scenario', 'aduana.audit.mixin']
+
+class MxPedRulepackSelector(models.Model):
+    _name = 'mx.ped.rulepack.selector'
+    _inherit = ['mx.ped.rulepack.selector', 'aduana.audit.mixin']
+
+class MxPedRulepackProcessRule(models.Model):
+    _name = 'mx.ped.rulepack.process.rule'
+    _inherit = ['mx.ped.rulepack.process.rule', 'aduana.audit.mixin']
+
+class MxPedRulepackConditionRule(models.Model):
+    _name = 'mx.ped.rulepack.condition.rule'
+    _inherit = ['mx.ped.rulepack.condition.rule', 'aduana.audit.mixin']
+
+class MxPedLayout(models.Model):
+    _name = 'mx.ped.layout'
+    _inherit = ['mx.ped.layout', 'aduana.audit.mixin']
+
+class MxPedLayoutRegistro(models.Model):
+    _name = 'mx.ped.layout.registro'
+    _inherit = ['mx.ped.layout.registro', 'aduana.audit.mixin']
+
+class MxPedLayoutCampo(models.Model):
+    _name = 'mx.ped.layout.campo'
+    _inherit = ['mx.ped.layout.campo', 'aduana.audit.mixin']
+
+class MxPedFraccion(models.Model):
+    _name = 'mx.ped.fraccion'
+    _inherit = ['mx.ped.fraccion', 'aduana.audit.mixin']
+
+class MxPedFraccionTasa(models.Model):
+    _name = 'mx.ped.fraccion.tasa'
+    _inherit = ['mx.ped.fraccion.tasa', 'aduana.audit.mixin']
+
+class MxPedUm(models.Model):
+    _name = 'mx.ped.um'
+    _inherit = ['mx.ped.um', 'aduana.audit.mixin']
+
+class MxNom(models.Model):
+    _name = 'mx.nom'
+    _inherit = ['mx.nom', 'aduana.audit.mixin']
+
+class MxRrna(models.Model):
+    _name = 'mx.rrna'
+    _inherit = ['mx.rrna', 'aduana.audit.mixin']
+
+class MxPermiso(models.Model):
+    _name = 'mx.permiso'
+    _inherit = ['mx.permiso', 'aduana.audit.mixin']
+
+class MxNico(models.Model):
+    _name = 'mx.nico'
+    _inherit = ['mx.nico', 'aduana.audit.mixin']
+
+class MxFormaPago(models.Model):
+    _name = 'mx.forma.pago'
+    _inherit = ['mx.forma.pago', 'aduana.audit.mixin']
+
+class MxPedContribucionGlobal(models.Model):
+    _name = 'mx.ped.contribucion.global'
+    _inherit = ['mx.ped.contribucion.global', 'aduana.audit.mixin']
+
+class MxPedPartidaContribucion(models.Model):
+    _name = 'mx.ped.partida.contribucion'
+    _inherit = ['mx.ped.partida.contribucion', 'aduana.audit.mixin']
+
+class MxPedTipoMovimiento(models.Model):
+    _name = 'mx.ped.tipo.movimiento'
+    _inherit = ['mx.ped.tipo.movimiento', 'aduana.audit.mixin']
+
+class MxPedTipoContenedor(models.Model):
+    _name = 'mx.ped.tipo.contenedor'
+    _inherit = ['mx.ped.tipo.contenedor', 'aduana.audit.mixin']
+
+class MxPedNumeroControl(models.Model):
+    _name = 'mx.ped.numero.control'
+    _inherit = ['mx.ped.numero.control', 'aduana.audit.mixin']
+
+class MxPedNumeroControlLog(models.Model):
+    _name = 'mx.ped.numero.control.log'
+    _inherit = ['mx.ped.numero.control.log', 'aduana.audit.mixin']
+
+class AduanaCatalogoTipoOperacion(models.Model):
+    _name = 'aduana.catalogo.tipo_operacion'
+    _inherit = ['aduana.catalogo.tipo_operacion', 'aduana.audit.mixin']
+
+class AduanaCatalogoRegimen(models.Model):
+    _name = 'aduana.catalogo.regimen'
+    _inherit = ['aduana.catalogo.regimen', 'aduana.audit.mixin']
+
+class AduanaCatalogoAduana(models.Model):
+    _name = 'aduana.catalogo.aduana'
+    _inherit = ['aduana.catalogo.aduana', 'aduana.audit.mixin']
+
+class AduanaCatalogoClavePedimento(models.Model):
+    _name = 'aduana.catalogo.clave_pedimento'
+    _inherit = ['aduana.catalogo.clave_pedimento', 'aduana.audit.mixin']
+
+class AduanaLayoutRegistroTipo(models.Model):
+    _name = 'aduana.layout_registro_tipo'
+    _inherit = ['aduana.layout_registro_tipo', 'aduana.audit.mixin']
+
+class AduanaLayoutRegistroCampo(models.Model):
+    _name = 'aduana.layout_registro_campo'
+    _inherit = ['aduana.layout_registro_campo', 'aduana.audit.mixin']
+
+class AduanaPedimento(models.Model):
+    _name = 'aduana.pedimento'
+    _inherit = ['aduana.pedimento', 'aduana.audit.mixin']
+
+class AduanaPartida(models.Model):
+    _name = 'aduana.partida'
+    _inherit = ['aduana.partida', 'aduana.audit.mixin']
+
+class AduanaPartidaIdentificador(models.Model):
+    _name = 'aduana.partida.identificador'
+    _inherit = ['aduana.partida.identificador', 'aduana.audit.mixin']
+
+class AduanaPartidaContribucion(models.Model):
+    _name = 'aduana.partida.contribucion'
+    _inherit = ['aduana.partida.contribucion', 'aduana.audit.mixin']
+
+class AduanaFactura(models.Model):
+    _name = 'aduana.factura'
+    _inherit = ['aduana.factura', 'aduana.audit.mixin']
+
+class AduanaDocumento(models.Model):
+    _name = 'aduana.documento'
+    _inherit = ['aduana.documento', 'aduana.audit.mixin']
+
+class AduanaContenedor(models.Model):
+    _name = 'aduana.contenedor'
+    _inherit = ['aduana.contenedor', 'aduana.audit.mixin']
+
+class AduanaContribucionGlobal(models.Model):
+    _name = 'aduana.contribucion.global'
+    _inherit = ['aduana.contribucion.global', 'aduana.audit.mixin']
+
+class AduanaPedimentoRegistroTecnico(models.Model):
+    _name = 'aduana.pedimento.registro_tecnico'
+    _inherit = ['aduana.pedimento.registro_tecnico', 'aduana.audit.mixin']
