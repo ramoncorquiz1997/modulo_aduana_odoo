@@ -49,12 +49,8 @@ class AduanaAuditMixin(models.AbstractModel):
         if field.type == "many2one":
             return value.display_name if value else ""
         if field.type in ("many2many", "one2many"):
-            if not value:
-                return ""
-            names = value.mapped("display_name")
-            if len(names) > 5:
-                return "%s ... (+%s)" % (", ".join(names[:5]), len(names) - 5)
-            return ", ".join(names)
+            total = len(value or [])
+            return _("%s registro(s)") % total if total else ""
         if field.type == "boolean":
             return _("Si") if value else _("No")
         if field.type == "date":
@@ -72,7 +68,11 @@ class AduanaAuditMixin(models.AbstractModel):
                 field = rec._fields.get(name)
                 if not field:
                     continue
-                rec_data[name] = self._audit_value_text(field, rec[name])
+                value = rec[name]
+                cell = {"text": self._audit_value_text(field, value)}
+                if field.type in ("many2many", "one2many"):
+                    cell["ids"] = set(value.ids)
+                rec_data[name] = cell
             snap[rec.id] = rec_data
         return snap
 
@@ -101,6 +101,29 @@ class AduanaAuditMixin(models.AbstractModel):
             .replace('"', "&quot;")
             .replace("'", "&#39;")
         )
+
+    def _audit_many_delta_text(self, comodel_name, old_ids, new_ids):
+        added_ids = sorted(new_ids - old_ids)
+        removed_ids = sorted(old_ids - new_ids)
+        parts = [_("total: %s") % len(new_ids)]
+
+        if added_ids:
+            added_names = self.env[comodel_name].browse(added_ids).mapped("display_name")
+            if len(added_names) > 5:
+                added_text = "%s ... (+%s)" % (", ".join(added_names[:5]), len(added_names) - 5)
+            else:
+                added_text = ", ".join(added_names)
+            parts.append(_("agregados: %s") % (added_text or len(added_ids)))
+
+        if removed_ids:
+            removed_names = self.env[comodel_name].browse(removed_ids).mapped("display_name")
+            if len(removed_names) > 5:
+                removed_text = "%s ... (+%s)" % (", ".join(removed_names[:5]), len(removed_names) - 5)
+            else:
+                removed_text = ", ".join(removed_names)
+            parts.append(_("eliminados: %s") % (removed_text or len(removed_ids)))
+
+        return " | ".join(parts)
 
     def create(self, vals_list):
         records = super().create(vals_list)
@@ -141,17 +164,28 @@ class AduanaAuditMixin(models.AbstractModel):
                 field = rec._fields.get(name)
                 if not field:
                     continue
-                old_txt = rec_before.get(name, "")
+                old_cell = rec_before.get(name, {})
+                old_txt = old_cell.get("text", "")
                 new_txt = rec._audit_value_text(field, rec[name])
-                if old_txt == new_txt:
-                    continue
+                if field.type in ("many2many", "one2many"):
+                    old_ids = old_cell.get("ids", set())
+                    new_ids = set(rec[name].ids)
+                    if old_ids == new_ids:
+                        continue
+                    old_fmt = self._audit_format_for_log(old_txt)
+                    new_fmt = self._audit_many_delta_text(field.comodel_name, old_ids, new_ids)
+                else:
+                    if old_txt == new_txt:
+                        continue
+                    old_fmt = self._audit_format_for_log(old_txt)
+                    new_fmt = self._audit_format_for_log(new_txt)
                 label = field.string if field.string else name
                 changes.append(
                     "<li><b>%s</b>: %s -> %s</li>"
                     % (
                         self._audit_html_escape(label),
-                        self._audit_html_escape(self._audit_format_for_log(old_txt)),
-                        self._audit_html_escape(self._audit_format_for_log(new_txt)),
+                        self._audit_html_escape(old_fmt),
+                        self._audit_html_escape(new_fmt),
                     )
                 )
             if changes:
