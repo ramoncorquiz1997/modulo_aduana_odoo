@@ -153,6 +153,16 @@ class AduanaAuditMixin(models.AbstractModel):
 class CrmLeadAudit(models.Model):
     _inherit = ["crm.lead", "aduana.audit.mixin"]
 
+    # Redefinimos el campo Many2many para usar una tabla de relación única
+    # Esto evita el conflicto con el modelo original crm.lead
+    tag_ids = fields.Many2many(
+        'crm.tag',                    # Modelo destino
+        'crm_lead_audit_tag_rel',     # NOMBRE DE LA TABLA (Cámbialo para que sea único)
+        'audit_id',                   # Columna ID de CrmLeadAudit
+        'tag_id',                     # Columna ID de crm.tag
+        string='Tags'
+    )
+
 
 class ResPartnerAudit(models.Model):
     _inherit = ["res.partner", "aduana.audit.mixin"]
