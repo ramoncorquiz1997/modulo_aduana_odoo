@@ -393,6 +393,51 @@ class CrmLead(models.Model):
     )
 
     x_visible_portal = fields.Boolean(string="Visible en portal", default=True)
+    x_doc_bl_ok = fields.Boolean(
+        string="B/L cargado",
+        compute="_compute_x_documentacion_panel",
+        store=False,
+    )
+    x_doc_factura_pdf_ok = fields.Boolean(
+        string="Factura PDF cargada",
+        compute="_compute_x_documentacion_panel",
+        store=False,
+    )
+    x_doc_factura_xml_ok = fields.Boolean(
+        string="Factura XML cargada",
+        compute="_compute_x_documentacion_panel",
+        store=False,
+    )
+    x_doc_cfdi_ok = fields.Boolean(
+        string="CFDI validado",
+        compute="_compute_x_documentacion_panel",
+        store=False,
+    )
+    x_doc_alert_count = fields.Integer(
+        string="Alertas documentales",
+        compute="_compute_x_documentacion_panel",
+        store=False,
+    )
+    x_doc_panel_score = fields.Char(
+        string="Score documental",
+        compute="_compute_x_documentacion_panel",
+        store=False,
+    )
+    x_doc_panel_status = fields.Selection(
+        [
+            ("completo", "Completo"),
+            ("parcial", "Parcial"),
+            ("incompleto", "Incompleto"),
+        ],
+        string="Estado documental",
+        compute="_compute_x_documentacion_panel",
+        store=False,
+    )
+    x_doc_pendientes_auto = fields.Text(
+        string="Pendientes automaticos",
+        compute="_compute_x_documentacion_panel",
+        store=False,
+    )
 
     @api.onchange("x_agente_aduanal_id")
     def _onchange_x_agente_aduanal_id(self):
@@ -779,10 +824,54 @@ class CrmLead(models.Model):
         else:
             self.with_context(skip_cfdi_autovalidate=True).write(vals)
 
-    @api.depends("x_docs_faltantes_text")
+    @api.depends(
+        "x_modo_transporte",
+        "x_bl_file",
+        "x_factura_pdf_file",
+        "x_factura_xml_file",
+        "x_cfdi_validacion_estado",
+        "x_docs_faltantes_text",
+    )
+    def _compute_x_documentacion_panel(self):
+        for rec in self:
+            needs_bl = rec.x_modo_transporte == "maritimo"
+            bl_ok = bool(rec.x_bl_file) if needs_bl else True
+            pdf_ok = bool(rec.x_factura_pdf_file)
+            xml_ok = bool(rec.x_factura_xml_file)
+            cfdi_ok = rec.x_cfdi_validacion_estado in ("valido_local", "no_aplica")
+
+            checks = [
+                ("B/L (PDF)" if needs_bl else "B/L (no obligatorio por modo de transporte)", bl_ok),
+                ("Factura mercancia (PDF)", pdf_ok),
+                ("Factura mercancia (XML CFDI)", xml_ok),
+                ("Validacion CFDI", cfdi_ok),
+            ]
+            passed = len([1 for _, ok in checks if ok])
+            total = len(checks)
+
+            manual_missing = (rec.x_docs_faltantes_text or "").strip()
+            pendientes = [label for label, ok in checks if not ok]
+            if manual_missing:
+                pendientes.append("Pendientes manuales declarados en Documentos faltantes")
+
+            rec.x_doc_bl_ok = bl_ok
+            rec.x_doc_factura_pdf_ok = pdf_ok
+            rec.x_doc_factura_xml_ok = xml_ok
+            rec.x_doc_cfdi_ok = cfdi_ok
+            rec.x_doc_alert_count = len(pendientes)
+            rec.x_doc_panel_score = "%s/%s" % (passed, total)
+            rec.x_doc_pendientes_auto = "\n".join(pendientes) if pendientes else _("Sin pendientes")
+            if not pendientes:
+                rec.x_doc_panel_status = "completo"
+            elif passed >= 2:
+                rec.x_doc_panel_status = "parcial"
+            else:
+                rec.x_doc_panel_status = "incompleto"
+
+    @api.depends("x_doc_alert_count", "x_docs_faltantes_text")
     def _compute_x_docs_completos(self):
         for rec in self:
-            rec.x_docs_completos = not bool((rec.x_docs_faltantes_text or "").strip())
+            rec.x_docs_completos = rec.x_doc_alert_count == 0 and not bool((rec.x_docs_faltantes_text or "").strip())
 
     # --- Valores y cantidades ---
     x_valor_factura = fields.Monetary(
