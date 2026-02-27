@@ -153,14 +153,23 @@ class AduanaAuditMixin(models.AbstractModel):
 class CrmLeadAudit(models.Model):
     _inherit = ["crm.lead", "aduana.audit.mixin"]
 
-    # Redefinimos el campo Many2many para usar una tabla de relación única
-    # Esto evita el conflicto con el modelo original crm.lead
+    # Solución para el primer error (Tags)
     tag_ids = fields.Many2many(
-        'crm.tag',                    # Modelo destino
-        'crm_lead_audit_tag_rel',     # NOMBRE DE LA TABLA (Cámbialo para que sea único)
-        'audit_id',                   # Columna ID de CrmLeadAudit
-        'tag_id',                     # Columna ID de crm.tag
+        'crm.tag', 
+        'crm_lead_audit_tag_rel', # Nombre de tabla único
+        'audit_id', 
+        'tag_id', 
         string='Tags'
+    )
+
+    # Solución para el nuevo error (Documentos Requeridos)
+    # Asumiendo que el modelo de destino es 'ir.attachment' o el que uses para docs
+    x_docs_requeridos_ids = fields.Many2many(
+        'ir.attachment',             # Reemplaza con el modelo correcto si no es este
+        'crm_lead_audit_docs_rel',    # Nombre de tabla único
+        'audit_id', 
+        'doc_id', 
+        string='Documentos Requeridos'
     )
 
 
