@@ -460,6 +460,12 @@ class CrmLead(models.Model):
         compute="_compute_x_documentacion_panel",
         store=False,
     )
+    x_fecha_506_ids = fields.One2many(
+        "crm.lead.fecha.506",
+        "lead_id",
+        string="Fechas declarables (506)",
+        copy=True,
+    )
 
     @api.onchange("x_agente_aduanal_id")
     def _onchange_x_agente_aduanal_id(self):
@@ -1775,3 +1781,26 @@ class CrmLeadOperacionLine(models.Model):
             f"PERMISO: {permisos or 'N/A'} | "
             f"RRNA: {rrna or 'N/A'}"
         )
+
+
+class CrmLeadFecha506(models.Model):
+    _name = "crm.lead.fecha.506"
+    _description = "Lead - Fechas declarables registro 506"
+    _order = "sequence, id"
+
+    lead_id = fields.Many2one("crm.lead", required=True, ondelete="cascade", index=True)
+    sequence = fields.Integer(default=10)
+    tipo_fecha_code = fields.Selection(
+        [
+            ("01", "01 - Entrada"),
+            ("02", "02 - Pago"),
+            ("03", "03 - Extraccion"),
+            ("05", "05 - Presentacion"),
+            ("06", "06 - Imp. EUA/CAN"),
+            ("07", "07 - Original"),
+        ],
+        string="Tipo de fecha (506)",
+        required=True,
+    )
+    fecha = fields.Date(required=True)
+    notes = fields.Char(string="Notas")

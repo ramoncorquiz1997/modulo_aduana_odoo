@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models, _
+from odoo import api, fields, models, _
 from markupsafe import Markup
 
 class AduanaAuditMixin(models.AbstractModel):
@@ -126,7 +126,10 @@ class AduanaAuditMixin(models.AbstractModel):
 
         return " | ".join(parts)
 
+    @api.model_create_multi
     def create(self, vals_list):
+        if isinstance(vals_list, dict):
+            vals_list = [vals_list]
         records = super().create(vals_list)
         if self.env.context.get("skip_aduana_audit"):
             return records

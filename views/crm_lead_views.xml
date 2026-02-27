@@ -132,12 +132,6 @@
                 <field name="x_lugar_carga"/>
                 <field name="x_lugar_descarga"/>
               </group>
-              <group string="Fechas">
-                <field name="x_fecha_estimada_salida"/>
-                <field name="x_fecha_estimada_arribo"/>
-                <field name="x_fecha_recoleccion"/>
-                <field name="x_fecha_entrega"/>
-              </group>
             </group>
           </page>
 
@@ -174,6 +168,45 @@
                 <field name="x_transporte_pais_id"/>
                 <field name="x_transporte_identificador"/>
               </group>
+            </group>
+          </page>
+
+          <page string="Fechas" name="mi_modulo_fechas">
+            <group>
+              <group string="Fechas estimadas (planeacion)">
+                <field name="x_fecha_estimada_salida"/>
+                <field name="x_fecha_estimada_arribo"/>
+                <field name="x_fecha_recoleccion"/>
+                <field name="x_fecha_entrega"/>
+              </group>
+              <group string="Fechas reales de operacion">
+                <field name="x_fecha_cruce"/>
+                <field name="x_fecha_zarpe"/>
+                <field name="x_fecha_vuelo"/>
+              </group>
+              <group string="Fechas aduanales">
+                <field name="x_fecha_pago_pedimento"/>
+                <field name="x_fecha_liberacion"/>
+                <field name="x_num_pedimento"/>
+              </group>
+            </group>
+            <group string="Fechas declarables para registro 506">
+              <field name="x_fecha_506_ids" context="{'default_lead_id': id}">
+                <list editable="bottom">
+                  <field name="sequence" optional="hide"/>
+                  <field name="tipo_fecha_code"/>
+                  <field name="fecha"/>
+                  <field name="notes"/>
+                </list>
+                <form string="Fecha 506">
+                  <group>
+                    <field name="sequence"/>
+                    <field name="tipo_fecha_code"/>
+                    <field name="fecha"/>
+                    <field name="notes"/>
+                  </group>
+                </form>
+              </field>
             </group>
           </page>
 
@@ -431,9 +464,6 @@
               <group string="Salida">
                 <field name="x_punto_salida"/>
                 <field name="x_transportista_salida" domain="[('x_contact_role','=','transportista')]"/>
-                <field name="x_fecha_cruce"/>
-                <field name="x_fecha_zarpe"/>
-                <field name="x_fecha_vuelo"/>
                 <field name="x_prueba_entrega"/>
               </group>
             </group>
