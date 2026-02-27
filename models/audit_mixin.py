@@ -77,10 +77,15 @@ class AduanaAuditMixin(models.AbstractModel):
         return snap
 
     def _audit_post_message(self, body):
-        self.with_context(skip_aduana_audit=True).message_post(
-            body=body,
-            subtype_xmlid="mail.mt_note",
-        )
+        # Algunos modelos tecnicos no heredan mail.thread; en esos casos
+        # la auditoria no debe romper create/write/unlink.
+        for rec in self:
+            if "message_ids" not in rec._fields or not hasattr(rec, "message_post"):
+                continue
+            rec.with_context(skip_aduana_audit=True).message_post(
+                body=body,
+                subtype_xmlid="mail.mt_note",
+            )
 
     @staticmethod
     def _audit_html_escape(text):
