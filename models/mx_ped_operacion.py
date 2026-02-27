@@ -466,6 +466,11 @@ class MxPedOperacion(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            if not vals.get("layout_id"):
+                latest_layout = self._get_latest_layout()
+                if latest_layout:
+                    vals["layout_id"] = latest_layout.id
         records = super().create(vals_list)
         for rec in records:
             rec.rulepack_id = rec._resolve_rulepack()
@@ -506,9 +511,18 @@ class MxPedOperacion(models.Model):
 
     def _auto_refresh_generated_registros(self):
         for rec in self:
+            if not rec.layout_id:
+                rec.layout_id = rec._get_latest_layout().id or False
             if not rec.layout_id or not rec.lead_id:
                 continue
             rec.with_context(skip_auto_generated_refresh=True).action_cargar_desde_lead()
+
+    def _get_latest_layout(self):
+        return self.env["mx.ped.layout"].search(
+            [("active", "=", True)],
+            order="id desc",
+            limit=1,
+        )
 
     @api.onchange("lead_id")
     def _onchange_lead_id_fill_defaults(self):
@@ -2622,7 +2636,9 @@ class MxPedOperacion(models.Model):
     def action_cargar_desde_lead(self):
         self.ensure_one()
         if not self.layout_id:
-            raise UserError(_("Falta seleccionar un layout en la operación."))
+            self.layout_id = self._get_latest_layout().id or False
+        if not self.layout_id:
+            raise UserError(_("No hay layout activo configurado para la operación."))
         if not self.lead_id:
             raise UserError(_("La operación no tiene Lead asociado."))
 
