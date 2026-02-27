@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import fields, models, _
+from markupsafe import Markup
 
 class AduanaAuditMixin(models.AbstractModel):
     _name = "aduana.audit.mixin"
@@ -83,7 +84,7 @@ class AduanaAuditMixin(models.AbstractModel):
             if "message_ids" not in rec._fields or not hasattr(rec, "message_post"):
                 continue
             rec.with_context(skip_aduana_audit=True).message_post(
-                body=body,
+                body=Markup(body),
                 subtype_xmlid="mail.mt_note",
             )
 
