@@ -171,39 +171,6 @@
             </group>
           </page>
 
-          <page string="Valores" name="mi_modulo_valores">
-            <group>
-              <group string="Importes">
-                <field name="x_valor_factura"/>
-                <field name="x_valor_aduana_estimado"/>
-                <field name="x_cotizacion_total"/>
-                <field name="x_costo_estimado"/>
-                <field name="x_tipo_cambio"/>
-              </group>
-              <group string="Cantidades">
-                <field name="x_bultos"/>
-                <field name="x_numero_paquetes"/>
-                <field name="x_tipo_empaque"/>
-                <field name="x_peso_bruto"/>
-                <field name="x_peso_neto"/>
-                <field name="x_volumen_cbm"/>
-              </group>
-              <group string="Incrementables">
-                <field name="x_incrementable_fletes"/>
-                <field name="x_incrementable_seguros"/>
-                <field name="x_incrementable_embalajes"/>
-                <field name="x_incrementable_otros"/>
-              </group>
-              <group string="Decrementables">
-                <field name="x_decrementable_fletes"/>
-                <field name="x_decrementable_seguros"/>
-                <field name="x_decrementable_carga"/>
-                <field name="x_decrementable_descarga"/>
-                <field name="x_decrementable_otros"/>
-              </group>
-            </group>
-          </page>
-
           <page string="Documentos" name="mi_modulo_documentos">
             <group>
               <group string="Estado documental">
@@ -394,6 +361,42 @@
                 </group>
               </form>
             </field>
+          </page>
+
+          <page string="Valores" name="mi_modulo_valores">
+            <group>
+              <group string="Resumen operativo (auto)">
+                <field name="x_valor_mercancia" readonly="1"/>
+                <field name="x_bultos" readonly="1"/>
+                <field name="x_peso_bruto" readonly="1"/>
+                <field name="x_peso_neto" readonly="1"/>
+                <field name="x_volumen_cbm"/>
+              </group>
+              <group string="Base de valoracion aduanera">
+                <field name="x_valor_factura"/>
+                <field name="x_valor_aduana_estimado"/>
+                <field name="x_tipo_cambio"/>
+              </group>
+            </group>
+            <group>
+              <group string="Incrementables">
+                <field name="x_incrementable_fletes"/>
+                <field name="x_incrementable_seguros"/>
+                <field name="x_incrementable_embalajes"/>
+                <field name="x_incrementable_otros"/>
+              </group>
+              <group string="Decrementables">
+                <field name="x_decrementable_fletes"/>
+                <field name="x_decrementable_seguros"/>
+                <field name="x_decrementable_carga"/>
+                <field name="x_decrementable_descarga"/>
+                <field name="x_decrementable_otros"/>
+              </group>
+              <group string="Control financiero">
+                <field name="x_cotizacion_total"/>
+                <field name="x_costo_estimado"/>
+              </group>
+            </group>
           </page>
 
           <page string="Exportación" name="mi_modulo_exportacion"
