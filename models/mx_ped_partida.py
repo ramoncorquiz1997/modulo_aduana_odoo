@@ -241,3 +241,23 @@ class MxPedPartida(models.Model):
             f"PERMISO: {permisos or 'N/A'} | "
             f"RRNA: {rrna or 'N/A'}"
         )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            records.mapped("operacion_id")._auto_refresh_generated_registros()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            self.mapped("operacion_id")._auto_refresh_generated_registros()
+        return res
+
+    def unlink(self):
+        operaciones = self.mapped("operacion_id")
+        res = super().unlink()
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            operaciones._auto_refresh_generated_registros()
+        return res

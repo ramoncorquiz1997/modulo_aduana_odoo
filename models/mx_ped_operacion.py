@@ -470,16 +470,45 @@ class MxPedOperacion(models.Model):
         for rec in records:
             rec.rulepack_id = rec._resolve_rulepack()
             rec.estructura_regla_id = rec._resolve_estructura_regla()
+        records._auto_refresh_generated_registros()
         return records
 
     def write(self, vals):
         res = super().write(vals)
         trigger_fields = {"fecha_operacion", "tipo_operacion", "regimen", "clave_pedimento_id", "tipo_movimiento"}
+        refresh_fields = {
+            "layout_id",
+            "lead_id",
+            "incoterm",
+            "aduana_seccion_despacho_id",
+            "aduana_clave",
+            "aduana_seccion_entrada_salida_id",
+            "acuse_validacion",
+            "agente_aduanal_id",
+            "patente",
+            "curp_agente",
+            "pedimento_numero",
+            "fecha_pago",
+            "fecha_liberacion",
+            "semaforo",
+            "observaciones",
+        }
         if trigger_fields.intersection(vals.keys()):
             for rec in self:
                 rec.rulepack_id = rec._resolve_rulepack()
                 rec.estructura_regla_id = rec._resolve_estructura_regla()
+        if (
+            not self.env.context.get("skip_auto_generated_refresh")
+            and refresh_fields.intersection(vals.keys())
+        ):
+            self._auto_refresh_generated_registros()
         return res
+
+    def _auto_refresh_generated_registros(self):
+        for rec in self:
+            if not rec.layout_id or not rec.lead_id:
+                continue
+            rec.with_context(skip_auto_generated_refresh=True).action_cargar_desde_lead()
 
     @api.onchange("lead_id")
     def _onchange_lead_id_fill_defaults(self):
@@ -2553,6 +2582,43 @@ class MxPedOperacion(models.Model):
             source_model=campo.source_model,
         )
 
+    @staticmethod
+    def _format_506_date(value):
+        if not value:
+            return ""
+        dt = fields.Date.to_date(value)
+        return dt.strftime("%d%m%Y") if dt else ""
+
+    def _build_506_valores(self, layout_reg, fecha_line):
+        self.ensure_one()
+        valores = {}
+        tipo_code = (fecha_line.tipo_fecha_code or "").strip()
+        fecha_txt = self._format_506_date(fecha_line.fecha)
+
+        for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            campo_name = (campo.nombre or "").strip().lower()
+            source_norm = (source_name or "").strip().lower()
+            token = f"{campo_name} {source_norm}".strip()
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro"):
+                val = "506"
+            elif "pedimento" in token and ("numero" in token or "num" in token or token == "pedimento"):
+                val = self.pedimento_numero or ""
+            elif "tipo" in token and "fecha" in token:
+                val = tipo_code
+            elif "fecha" in token and "tipo" not in token and "registro" not in token:
+                val = fecha_txt
+            else:
+                val = self._field_value_for_layout(campo, partida=False)
+                if val in (None, "", False) and campo.default:
+                    val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = val
+        return valores
+
     def action_cargar_desde_lead(self):
         self.ensure_one()
         if not self.layout_id:
@@ -2577,6 +2643,19 @@ class MxPedOperacion(models.Model):
                 continue
             code = (layout_reg.codigo or "").strip()
             campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+
+            if code == "506":
+                fecha_lines = self.lead_id.x_fecha_506_ids.sorted(lambda l: (l.sequence or 0, l.id))
+                if not fecha_lines:
+                    continue
+                for secuencia, fecha_line in enumerate(fecha_lines, start=1):
+                    registros.append((0, 0, {
+                        "codigo": layout_reg.codigo,
+                        "secuencia": secuencia,
+                        "valores": self._build_506_valores(layout_reg, fecha_line),
+                    }))
+                continue
+
             has_partida_source = any(c.source_model == "partida" for c in campos)
             repeat_by_partida = has_partida_source or code in repeat_codes_by_partida
 
