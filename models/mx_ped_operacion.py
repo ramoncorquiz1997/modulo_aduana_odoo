@@ -2530,6 +2530,12 @@ class MxPedOperacion(models.Model):
             return self._record_value_for_field(lead.x_proveedor_id if lead else None, source)
         if source_model == "comprador":
             return self._record_value_for_field(lead.x_comprador_id if lead else None, source)
+        if source_model == "contraparte":
+            if lead and lead.x_tipo_operacion == "exportacion":
+                partner = lead.x_comprador_id or lead.x_proveedor_id
+            else:
+                partner = lead.x_proveedor_id or lead.x_comprador_id if lead else None
+            return self._record_value_for_field(partner, source)
         if source_model == "transportista":
             return self._record_value_for_field(lead.x_transportista_id if lead else None, source)
 
