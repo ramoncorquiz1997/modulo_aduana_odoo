@@ -660,16 +660,8 @@ class CrmLead(models.Model):
             vals["x_num_contenedor"] = parsed["container"]
         if parsed.get("seal"):
             vals["x_num_sello"] = parsed["seal"]
-        if parsed.get("bultos"):
-            try:
-                vals["x_bultos"] = int(float(parsed["bultos"]))
-            except Exception:
-                pass
-        if parsed.get("kgs"):
-            try:
-                vals["x_peso_bruto"] = float(parsed["kgs"])
-            except Exception:
-                pass
+        # x_bultos/x_peso_bruto se calculan desde partidas para mantener
+        # consistencia entre detalle y resumen.
         if parsed.get("cbm"):
             try:
                 vals["x_volumen_cbm"] = float(parsed["cbm"])
@@ -884,9 +876,9 @@ class CrmLead(models.Model):
         currency_field="x_currency_id",
     )
 
-    x_bultos = fields.Integer(string="Bultos", compute="_compute_x_totales_partidas", store=True)
-    x_peso_bruto = fields.Float(string="Peso bruto", compute="_compute_x_totales_partidas", store=True)
-    x_peso_neto = fields.Float(string="Peso neto", compute="_compute_x_totales_partidas", store=True)
+    x_bultos = fields.Integer(string="Bultos", compute="_compute_x_totales_partidas", store=False)
+    x_peso_bruto = fields.Float(string="Peso bruto", compute="_compute_x_totales_partidas", store=False)
+    x_peso_neto = fields.Float(string="Peso neto", compute="_compute_x_totales_partidas", store=False)
     x_volumen_cbm = fields.Float(string="Volumen (CBM)")
 
     x_tipo_empaque = fields.Selection(
