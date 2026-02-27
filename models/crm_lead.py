@@ -1502,6 +1502,9 @@ class CrmLead(models.Model):
                 "prv_estimado": line.prv_estimado,
             })
 
+        # Replica fechas declarables 506 del lead hacia registros del pedimento.
+        self._copy_506_dates_to_operacion(op)
+
         return {
             "type": "ir.actions.act_window",
             "name": _("Pedimento"),
@@ -1510,6 +1513,80 @@ class CrmLead(models.Model):
             "res_id": op.id,
             "target": "current",
         }
+
+    def _build_506_payload_for_operacion(self, operacion, fecha_line):
+        self.ensure_one()
+
+        def _norm(txt):
+            return (txt or "").strip().lower()
+
+        def _date_ddmmyyyy(value):
+            if not value:
+                return ""
+            dt = fields.Date.to_date(value)
+            return dt.strftime("%d%m%Y") if dt else ""
+
+        ped_num = (operacion.pedimento_numero or "").strip()
+        tipo_code = (fecha_line.tipo_fecha_code or "").strip()
+        fecha_txt = _date_ddmmyyyy(fecha_line.fecha)
+
+        layout_reg_506 = operacion.layout_id.registro_ids.filtered(
+            lambda r: (r.codigo or "").strip() == "506"
+        )[:1]
+
+        # Fallback si aun no hay layout: deja llaves comunes para captura tecnica.
+        if not layout_reg_506:
+            return {
+                "clave_tipo_registro": "506",
+                "tipo_registro": "506",
+                "numero_pedimento": ped_num,
+                "pedimento_numero": ped_num,
+                "tipo_fecha": tipo_code,
+                "tipo_fecha_506": tipo_code,
+                "fecha": fecha_txt,
+                "fecha_506": fecha_txt,
+            }
+
+        payload = {}
+        for campo in layout_reg_506.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            name_tokens = [_norm(campo.nombre), _norm(source_name)]
+            token = " ".join([t for t in name_tokens if t])
+            value = None
+
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro"):
+                value = "506"
+            elif "pedimento" in token and ("numero" in token or "num" in token or token == "pedimento"):
+                value = ped_num
+            elif "tipo" in token and "fecha" in token:
+                value = tipo_code
+            elif "fecha" in token and "tipo" not in token and "registro" not in token:
+                value = fecha_txt
+
+            if value not in (None, ""):
+                payload[campo.nombre] = value
+        return payload
+
+    def _copy_506_dates_to_operacion(self, operacion):
+        self.ensure_one()
+        if not self.x_fecha_506_ids:
+            return
+
+        existing_seq = operacion.registro_ids.filtered(lambda r: (r.codigo or "").strip() == "506").mapped("secuencia")
+        seq = (max(existing_seq) if existing_seq else 0) + 1
+
+        reg_vals = []
+        for line in self.x_fecha_506_ids.sorted(lambda l: (l.sequence or 0, l.id)):
+            reg_vals.append({
+                "operacion_id": operacion.id,
+                "codigo": "506",
+                "secuencia": seq,
+                "valores": self._build_506_payload_for_operacion(operacion, line),
+            })
+            seq += 1
+
+        if reg_vals:
+            self.env["mx.ped.registro"].create(reg_vals)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -1804,3 +1881,11 @@ class CrmLeadFecha506(models.Model):
     )
     fecha = fields.Date(required=True)
     notes = fields.Char(string="Notas")
+
+    _sql_constraints = [
+        (
+            "crm_lead_fecha_506_tipo_uniq",
+            "unique(lead_id, tipo_fecha_code)",
+            "Solo se permite una fecha por tipo (506) en la misma operacion.",
+        ),
+    ]
