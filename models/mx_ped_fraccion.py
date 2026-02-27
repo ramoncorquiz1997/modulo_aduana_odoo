@@ -57,9 +57,63 @@ class MxPedFraccion(models.Model):
         string="Permisos sugeridos",
     )
     requires_labeling_default = fields.Boolean(string="Etiquetado sugerido")
+    fraccion_anterior = fields.Char(string="Fraccion anterior", size=10, index=True)
+    descripcion_especifica = fields.Text(string="Descripcion especifica")
+    nota_especial = fields.Text(string="Nota especial")
+    decretos_text = fields.Text(string="Decretos")
+    historico_text = fields.Text(string="Historico")
+    tlc_notes = fields.Text(string="Notas TLC")
+    correlation_tigie = fields.Text(string="Correlacion TIGIE")
+    correlation_tlc = fields.Text(string="Correlacion TLC")
+    note_aladi = fields.Text(string="Notas ALADI")
+    measure_code = fields.Char(string="Medida base", size=10)
+    cuota_especial = fields.Float(string="Cuota especial", digits=(16, 6))
+    cuota_um = fields.Char(string="Unidad cuota", size=10)
+    sector_padron_code = fields.Char(string="Padron sectorial", size=32)
+    note_annexes = fields.Text(string="Notas de anexos")
+    precio_estimado_aplica = fields.Boolean(string="Precios estimados")
+    padron_sectorial_aplica = fields.Boolean(string="Padron sectorial")
+    avisos_automaticos_aplica = fields.Boolean(string="Avisos automaticos")
+    prohibida = fields.Boolean(string="Fraccion prohibida")
+    vulnerable = fields.Boolean(string="Mercancia vulnerable")
+    decreto_aplica = fields.Boolean(string="Decretos")
+    tlc_aplica = fields.Boolean(string="TLC")
+    aladi_aplica = fields.Boolean(string="ALADI")
+    aap_aplica = fields.Boolean(string="AAP")
+    anexo_21_aplica = fields.Boolean(string="Anexo 21")
+    anexo_23_aplica = fields.Boolean(string="Anexo 23")
+    anexo_24_aplica = fields.Boolean(string="Anexo 24")
+    anexo_29_aplica = fields.Boolean(string="Anexo 29")
+    anexo_30_aplica = fields.Boolean(string="Anexo 30")
     active = fields.Boolean(default=True)
 
     display_name = fields.Char(compute="_compute_display_name")
+    nom_aplica = fields.Boolean(compute="_compute_regulatory_flags", store=True)
+    permiso_aplica = fields.Boolean(compute="_compute_regulatory_flags", store=True)
+    rrna_aplica = fields.Boolean(compute="_compute_regulatory_flags", store=True)
+    igi_importacion_general = fields.Float(
+        string="Advalorem importacion",
+        digits=(16, 6),
+        compute="_compute_default_import_profile",
+        store=True,
+    )
+    iva_importacion_general = fields.Float(
+        string="IVA importacion",
+        digits=(16, 6),
+        compute="_compute_default_import_profile",
+        store=True,
+    )
+    ieps_importacion_general = fields.Float(
+        string="IEPS importacion",
+        digits=(16, 6),
+        compute="_compute_default_import_profile",
+        store=True,
+    )
+    import_note = fields.Char(
+        string="Nota importacion",
+        compute="_compute_default_import_profile",
+        store=True,
+    )
 
     _sql_constraints = [
         (
@@ -78,6 +132,26 @@ class MxPedFraccion(models.Model):
             if rec.name:
                 label = f"{label} {rec.name}"
             rec.display_name = label.strip()
+
+    @api.depends("nom_default_ids", "permiso_default_ids", "rrna_default_ids")
+    def _compute_regulatory_flags(self):
+        for rec in self:
+            rec.nom_aplica = bool(rec.nom_default_ids)
+            rec.permiso_aplica = bool(rec.permiso_default_ids)
+            rec.rrna_aplica = bool(rec.rrna_default_ids)
+
+    @api.depends("tasa_ids", "tasa_ids.tipo_operacion", "tasa_ids.territorio", "tasa_ids.igi", "tasa_ids.iva", "tasa_ids.ieps", "tasa_ids.note")
+    def _compute_default_import_profile(self):
+        for rec in self:
+            tasa = rec.tasa_ids.filtered(
+                lambda t: t.tipo_operacion == "importacion" and t.territorio == "general"
+            )[:1]
+            if not tasa:
+                tasa = rec.tasa_ids.filtered(lambda t: t.tipo_operacion == "importacion")[:1]
+            rec.igi_importacion_general = tasa.igi if tasa else 0.0
+            rec.iva_importacion_general = tasa.iva if tasa else 0.0
+            rec.ieps_importacion_general = tasa.ieps if tasa else 0.0
+            rec.import_note = tasa.note if tasa else False
 
     @api.constrains("code", "nico")
     def _check_numeric_lengths(self):
@@ -112,6 +186,7 @@ class MxPedFraccionTasa(models.Model):
     )
     igi = fields.Float(string="IGI (%)", digits=(16, 6))
     iva = fields.Float(string="IVA (%)", digits=(16, 6))
+    ieps = fields.Float(string="IEPS (%)", digits=(16, 6))
     note = fields.Char(string="Nota")
 
     _sql_constraints = [
