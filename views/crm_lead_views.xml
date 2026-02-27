@@ -8,6 +8,9 @@
       <field name="inherit_id" ref="crm.crm_lead_view_form"/>
       <field name="arch" type="xml">
         <!-- Ajustes UX para caso aduanal -->
+        <xpath expr="//field[@name='name']" position="attributes">
+          <attribute name="readonly">0</attribute>
+        </xpath>
         <xpath expr="//field[@name='partner_id']" position="attributes">
           <attribute name="string">Cliente</attribute>
         </xpath>
@@ -210,6 +213,20 @@
               </group>
               <group string="Portal">
                 <field name="x_visible_portal"/>
+              </group>
+              <group string="Factura de mercancia">
+                <field name="x_factura_pdf_file" filename="x_factura_pdf_filename"/>
+                <field name="x_factura_pdf_filename"/>
+                <field name="x_factura_xml_file" filename="x_factura_xml_filename"/>
+                <field name="x_factura_xml_filename"/>
+                <field name="x_cfdi_validacion_estado" readonly="1"/>
+                <field name="x_cfdi_validacion_mensaje" readonly="1"/>
+                <field name="x_cfdi_validado_el" readonly="1"/>
+                <field name="x_cfdi_uuid" readonly="1"/>
+                <field name="x_cfdi_rfc_emisor" readonly="1"/>
+                <field name="x_cfdi_rfc_receptor" readonly="1"/>
+                <field name="x_cfdi_total" readonly="1"/>
+                <field name="x_cfdi_fecha_emision" readonly="1"/>
               </group>
               <group string="CFDI / Documento equivalente">
                 <field name="x_cfdi_fecha"/>

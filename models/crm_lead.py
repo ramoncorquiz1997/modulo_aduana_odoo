@@ -3,6 +3,8 @@ import base64
 import io
 import logging
 import re
+from datetime import datetime
+import xml.etree.ElementTree as ET
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 
@@ -12,6 +14,9 @@ except Exception:  # pragma: no cover
     PdfReader = None
 
 _logger = logging.getLogger(__name__)
+_UUID_RE = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+)
 
 
 class CrmLead(models.Model):
@@ -358,6 +363,28 @@ class CrmLead(models.Model):
     x_bl_file = fields.Binary(string="Archivo B/L (PDF)")
     x_bl_filename = fields.Char(string="Nombre archivo B/L")
     x_bl_last_read = fields.Datetime(string="Ultima lectura B/L", readonly=True)
+    x_factura_pdf_file = fields.Binary(string="Factura mercancia (PDF)")
+    x_factura_pdf_filename = fields.Char(string="Nombre factura PDF")
+    x_factura_xml_file = fields.Binary(string="Factura mercancia (XML CFDI)")
+    x_factura_xml_filename = fields.Char(string="Nombre factura XML")
+    x_cfdi_validacion_estado = fields.Selection(
+        selection=[
+            ("pendiente", "Pendiente"),
+            ("valido_local", "Valido local"),
+            ("invalido_local", "Invalido local"),
+            ("no_aplica", "No aplica"),
+        ],
+        string="Validacion CFDI",
+        default="pendiente",
+        tracking=True,
+    )
+    x_cfdi_validacion_mensaje = fields.Text(string="Mensaje validacion CFDI", readonly=True)
+    x_cfdi_uuid = fields.Char(string="UUID CFDI", index=True, readonly=True)
+    x_cfdi_rfc_emisor = fields.Char(string="RFC emisor CFDI", readonly=True)
+    x_cfdi_rfc_receptor = fields.Char(string="RFC receptor CFDI", readonly=True)
+    x_cfdi_total = fields.Float(string="Total CFDI", digits=(16, 2), readonly=True)
+    x_cfdi_fecha_emision = fields.Datetime(string="Fecha emision CFDI", readonly=True)
+    x_cfdi_validado_el = fields.Datetime(string="CFDI validado el", readonly=True)
 
     x_docs_completos = fields.Boolean(
         string="Documentación completa",
@@ -380,6 +407,16 @@ class CrmLead(models.Model):
         if "x_bl_file" in vals and not self.env.context.get("skip_bl_autoparse"):
             for rec in self:
                 rec._autofill_from_bl(onchange_mode=False)
+        if "x_factura_xml_file" in vals and not self.env.context.get("skip_cfdi_autovalidate"):
+            for rec in self:
+                rec._autovalidate_cfdi_xml(onchange_mode=False)
+        if (
+            "x_factura_pdf_file" in vals
+            and "x_factura_xml_file" not in vals
+            and not self.env.context.get("skip_cfdi_autovalidate")
+        ):
+            for rec in self:
+                rec._set_cfdi_pending_for_pdf(onchange_mode=False)
         return res
     
     @api.onchange("x_modo_transporte")
@@ -525,6 +562,16 @@ class CrmLead(models.Model):
         for rec in self:
             rec._autofill_from_bl(onchange_mode=True)
 
+    @api.onchange("x_factura_xml_file")
+    def _onchange_x_factura_xml_file_autovalidate(self):
+        for rec in self:
+            rec._autovalidate_cfdi_xml(onchange_mode=True)
+
+    @api.onchange("x_factura_pdf_file")
+    def _onchange_x_factura_pdf_file_set_pending(self):
+        for rec in self:
+            rec._set_cfdi_pending_for_pdf(onchange_mode=True)
+
     def _autofill_from_bl(self, onchange_mode=False, raise_if_empty=False):
         self.ensure_one()
         if not self.x_bl_file:
@@ -591,6 +638,146 @@ class CrmLead(models.Model):
             note = f"B/L vessel/voy: {parsed['vessel']}"
             vals["description"] = f"{(self.description or '').strip()}\n{note}".strip()
         return vals
+
+    def _xml_attr(self, element, *attr_names):
+        if not element:
+            return ""
+        for name in attr_names:
+            if name in element.attrib:
+                return (element.attrib.get(name) or "").strip()
+        for key, val in element.attrib.items():
+            if key.rsplit("}", 1)[-1] in attr_names:
+                return (val or "").strip()
+        return ""
+
+    def _xml_first(self, root, local_name):
+        for node in root.iter():
+            if node.tag.rsplit("}", 1)[-1] == local_name:
+                return node
+        return None
+
+    def _parse_cfdi_datetime(self, raw_value):
+        txt = (raw_value or "").strip()
+        if not txt:
+            return False
+        txt = txt.replace("Z", "+00:00")
+        try:
+            return datetime.fromisoformat(txt)
+        except ValueError as err:
+            raise ValidationError(_("Fecha CFDI invalida: %s") % txt) from err
+
+    def _extract_cfdi_data(self, xml_bytes):
+        try:
+            root = ET.fromstring(xml_bytes)
+        except ET.ParseError as err:
+            raise ValidationError(_("El archivo XML no es valido.")) from err
+
+        if root.tag.rsplit("}", 1)[-1] != "Comprobante":
+            raise ValidationError(_("El XML no corresponde a un CFDI (Comprobante)."))
+
+        emisor = self._xml_first(root, "Emisor")
+        receptor = self._xml_first(root, "Receptor")
+        timbre = self._xml_first(root, "TimbreFiscalDigital")
+
+        uuid = self._xml_attr(timbre, "UUID").upper()
+        if not uuid:
+            raise ValidationError(_("No se encontro UUID en TimbreFiscalDigital."))
+        if not _UUID_RE.match(uuid):
+            raise ValidationError(_("El UUID no tiene un formato valido."))
+
+        duplicate = self.search([("id", "!=", self.id), ("x_cfdi_uuid", "=", uuid)], limit=1)
+        if duplicate:
+            raise ValidationError(_("El UUID %s ya existe en el lead %s.") % (uuid, duplicate.display_name))
+
+        total_raw = self._xml_attr(root, "Total")
+        try:
+            total = float(total_raw)
+        except Exception as err:
+            raise ValidationError(_("Total CFDI invalido: %s") % (total_raw or "")) from err
+        if total <= 0:
+            raise ValidationError(_("El total CFDI debe ser mayor a cero."))
+
+        moneda_code = (self._xml_attr(root, "Moneda") or "").upper()
+        moneda = self.env["res.currency"].search([("name", "=", moneda_code)], limit=1) if moneda_code else False
+        if moneda_code and not moneda:
+            raise ValidationError(_("La moneda %s no existe en Odoo.") % moneda_code)
+
+        fecha_dt = self._parse_cfdi_datetime(self._xml_attr(root, "Fecha"))
+        now_dt = fields.Datetime.to_datetime(fields.Datetime.now())
+        if fecha_dt and fecha_dt > now_dt:
+            raise ValidationError(_("La fecha de emision CFDI no puede estar en el futuro."))
+
+        rfc_emisor = self._xml_attr(emisor, "Rfc", "RFC").upper()
+        rfc_receptor = self._xml_attr(receptor, "Rfc", "RFC").upper()
+        if not rfc_emisor or not rfc_receptor:
+            raise ValidationError(_("No se encontraron RFC de emisor/receptor en el CFDI."))
+
+        return {
+            "uuid": uuid,
+            "rfc_emisor": rfc_emisor,
+            "rfc_receptor": rfc_receptor,
+            "total": total,
+            "fecha_dt": fecha_dt,
+            "moneda": moneda,
+        }
+
+    def _autovalidate_cfdi_xml(self, onchange_mode=False):
+        self.ensure_one()
+        if not self.x_factura_xml_file:
+            return
+
+        try:
+            xml_bytes = base64.b64decode(self.x_factura_xml_file)
+            cfdi = self._extract_cfdi_data(xml_bytes)
+            vals = {
+                "x_cfdi_validacion_estado": "valido_local",
+                "x_cfdi_validacion_mensaje": _("XML CFDI valido en revision local."),
+                "x_cfdi_uuid": cfdi["uuid"],
+                "x_cfdi_rfc_emisor": cfdi["rfc_emisor"],
+                "x_cfdi_rfc_receptor": cfdi["rfc_receptor"],
+                "x_cfdi_total": cfdi["total"],
+                "x_cfdi_fecha_emision": cfdi["fecha_dt"] or False,
+                "x_cfdi_validado_el": fields.Datetime.now(),
+                "x_cfdi_numero": cfdi["uuid"],
+                "x_cfdi_fecha": cfdi["fecha_dt"].date() if cfdi["fecha_dt"] else False,
+                "x_cfdi_valor_moneda": cfdi["total"],
+                "x_cfdi_moneda_id": cfdi["moneda"].id if cfdi["moneda"] else False,
+                "x_proveedor_invoice_number": self.x_proveedor_invoice_number or cfdi["uuid"],
+            }
+        except Exception as err:
+            vals = {
+                "x_cfdi_validacion_estado": "invalido_local",
+                "x_cfdi_validacion_mensaje": str(err),
+                "x_cfdi_validado_el": fields.Datetime.now(),
+                "x_cfdi_uuid": False,
+                "x_cfdi_rfc_emisor": False,
+                "x_cfdi_rfc_receptor": False,
+                "x_cfdi_total": 0.0,
+                "x_cfdi_fecha_emision": False,
+            }
+
+        if onchange_mode:
+            for key, value in vals.items():
+                self[key] = value
+        else:
+            self.with_context(skip_cfdi_autovalidate=True).write(vals)
+
+    def _set_cfdi_pending_for_pdf(self, onchange_mode=False):
+        self.ensure_one()
+        if not self.x_factura_pdf_file or self.x_factura_xml_file:
+            return
+        vals = {
+            "x_cfdi_validacion_estado": "pendiente",
+            "x_cfdi_validacion_mensaje": _(
+                "PDF adjuntado. Sube XML CFDI para validacion automatica (UUID, RFC, total y moneda)."
+            ),
+            "x_cfdi_validado_el": fields.Datetime.now(),
+        }
+        if onchange_mode:
+            for key, value in vals.items():
+                self[key] = value
+        else:
+            self.with_context(skip_cfdi_autovalidate=True).write(vals)
 
     @api.depends("x_docs_faltantes_text")
     def _compute_x_docs_completos(self):
@@ -1197,11 +1384,17 @@ class CrmLead(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         has_bl_file = [bool(vals.get("x_bl_file")) for vals in vals_list]
+        has_cfdi_xml = [bool(vals.get("x_factura_xml_file")) for vals in vals_list]
+        has_cfdi_pdf = [bool(vals.get("x_factura_pdf_file")) for vals in vals_list]
         create_flags = [bool(vals.pop("x_create_pedimento", False)) for vals in vals_list]
         leads = super().create(vals_list)
         for i, lead in enumerate(leads):
             if has_bl_file[i]:
                 lead._autofill_from_bl(onchange_mode=False)
+            if has_cfdi_xml[i]:
+                lead._autovalidate_cfdi_xml(onchange_mode=False)
+            elif has_cfdi_pdf[i]:
+                lead._set_cfdi_pending_for_pdf(onchange_mode=False)
         for i, lead in enumerate(leads):
             # Solo crea automaticamente si el flujo lo pide por contexto/flag.
             create_flag = self.env.context.get("create_pedimento") or create_flags[i]
