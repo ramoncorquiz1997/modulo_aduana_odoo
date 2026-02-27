@@ -133,6 +133,10 @@ class AduanaAuditMixin(models.AbstractModel):
         records = super().create(vals_list)
         if self.env.context.get("skip_aduana_audit"):
             return records
+        if len(records) != len(vals_list):
+            for rec in records:
+                rec._audit_post_message(_("Registro creado."))
+            return records
         for rec, vals in zip(records, vals_list):
             tracked = rec._audit_fields_from_vals(vals)
             if not tracked:

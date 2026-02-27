@@ -30,9 +30,59 @@ class MxPedAduanaSeccion(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        normalized_vals = []
         for vals in vals_list:
-            vals["seccion"] = self._normalize_seccion(vals.get("seccion"))
-        return super().create(vals_list)
+            row = dict(vals)
+            row["aduana"] = (row.get("aduana") or "").strip()
+            row["seccion"] = self._normalize_seccion(row.get("seccion"))
+            normalized_vals.append(row)
+
+        # Evita errores de importacion cuando el CSV trae varias filas con
+        # la misma combinacion aduana-seccion.
+        unique_rows = {}
+        order = []
+        for row in normalized_vals:
+            key = (row.get("aduana"), row.get("seccion"))
+            if key not in unique_rows:
+                unique_rows[key] = row
+                order.append(key)
+                continue
+            # Conserva datos utiles de filas repetidas sin crear duplicados.
+            if (not unique_rows[key].get("denominacion")) and row.get("denominacion"):
+                unique_rows[key]["denominacion"] = row.get("denominacion")
+            if "active" in row:
+                unique_rows[key]["active"] = row.get("active")
+
+        aduanas = sorted({k[0] for k in order if k[0]})
+        secciones = sorted({k[1] for k in order if k[1]})
+        existing_map = {}
+        if aduanas and secciones:
+            existing = self.search([
+                ("aduana", "in", aduanas),
+                ("seccion", "in", secciones),
+            ])
+            existing_map = {(rec.aduana, rec.seccion): rec for rec in existing}
+
+        to_create = []
+        result = self.browse()
+        for key in order:
+            row = unique_rows[key]
+            existing_rec = existing_map.get(key)
+            if existing_rec:
+                write_vals = {}
+                if row.get("denominacion") and row.get("denominacion") != existing_rec.denominacion:
+                    write_vals["denominacion"] = row.get("denominacion")
+                if "active" in row and row.get("active") != existing_rec.active:
+                    write_vals["active"] = row.get("active")
+                if write_vals:
+                    existing_rec.write(write_vals)
+                result |= existing_rec
+            else:
+                to_create.append(row)
+
+        if to_create:
+            result |= super().create(to_create)
+        return result
 
     def write(self, vals):
         if "seccion" in vals:
