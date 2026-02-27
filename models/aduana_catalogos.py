@@ -4,6 +4,7 @@ from odoo import fields, models
 
 class AduanaCatalogoTipoOperacion(models.Model):
     _name = "aduana.catalogo.tipo_operacion"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Aduana - Catalogo Tipo de Operacion"
     _order = "code"
 
@@ -18,6 +19,7 @@ class AduanaCatalogoTipoOperacion(models.Model):
 
 class AduanaCatalogoRegimen(models.Model):
     _name = "aduana.catalogo.regimen"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Aduana - Catalogo Regimen"
     _order = "code"
 
@@ -32,6 +34,7 @@ class AduanaCatalogoRegimen(models.Model):
 
 class AduanaCatalogoAduana(models.Model):
     _name = "aduana.catalogo.aduana"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Aduana - Catalogo Aduana/Seccion"
     _order = "code"
 
@@ -46,6 +49,7 @@ class AduanaCatalogoAduana(models.Model):
 
 class AduanaCatalogoClavePedimento(models.Model):
     _name = "aduana.catalogo.clave_pedimento"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Aduana - Catalogo Clave Pedimento"
     _order = "code"
 

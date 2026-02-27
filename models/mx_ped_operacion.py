@@ -17,6 +17,7 @@ except Exception:  # pragma: no cover
 
 class MxPedOperacion(models.Model):
     _name = "mx.ped.operacion"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Pedimento / Operación Aduanera"
     _order = "create_date desc, id desc"
 

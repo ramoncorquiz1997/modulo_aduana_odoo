@@ -5,6 +5,7 @@ from odoo.exceptions import ValidationError
 
 class MxPedRulepack(models.Model):
     _name = "mx.ped.rulepack"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Rulepack normativo de pedimentos"
     _order = "fecha_inicio desc, priority desc, id desc"
 

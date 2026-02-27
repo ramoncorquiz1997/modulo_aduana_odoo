@@ -5,6 +5,7 @@ from odoo.exceptions import ValidationError
 
 class AduanaPedimento(models.Model):
     _name = "aduana.pedimento"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Aduana - Pedimento"
     _order = "id desc"
 

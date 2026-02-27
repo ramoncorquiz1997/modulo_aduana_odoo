@@ -88,6 +88,10 @@ class AduanaAuditMixin(models.AbstractModel):
             )
 
     @staticmethod
+    def _audit_format_for_log(value_text):
+        return value_text if value_text else _("Vacío")
+
+    @staticmethod
     def _audit_html_escape(text):
         txt = str(text or "")
         return (
@@ -110,8 +114,15 @@ class AduanaAuditMixin(models.AbstractModel):
             lines = []
             for name in tracked:
                 field = rec._fields.get(name)
-                value_txt = rec._audit_value_text(field, rec[name]) if field else ""
-                lines.append("<li><b>%s</b>: %s</li>" % (self._audit_html_escape(name), self._audit_html_escape(value_txt)))
+                label = field.string if field and field.string else name
+                value_txt = self._audit_value_text(field, rec[name]) if field else ""
+                lines.append(
+                    "<li><b>%s</b>: %s</li>"
+                    % (
+                        self._audit_html_escape(label),
+                        self._audit_html_escape(self._audit_format_for_log(value_txt)),
+                    )
+                )
             rec._audit_post_message(_("Registro creado.<ul>%s</ul>") % "".join(lines))
         return records
 
@@ -134,12 +145,13 @@ class AduanaAuditMixin(models.AbstractModel):
                 new_txt = rec._audit_value_text(field, rec[name])
                 if old_txt == new_txt:
                     continue
+                label = field.string if field.string else name
                 changes.append(
                     "<li><b>%s</b>: %s -> %s</li>"
                     % (
-                        self._audit_html_escape(name),
-                        self._audit_html_escape(old_txt),
-                        self._audit_html_escape(new_txt),
+                        self._audit_html_escape(label),
+                        self._audit_html_escape(self._audit_format_for_log(old_txt)),
+                        self._audit_html_escape(self._audit_format_for_log(new_txt)),
                     )
                 )
             if changes:
