@@ -201,14 +201,14 @@
                 <field name="x_docs_requeridos_ids" widget="many2many_tags"/>
                 <field name="x_docs_faltantes_text" placeholder="Ej. Falta packing list firmado, carta de instrucciones, BL original..."/>
               </group>
-              <group string="Control tecnico (automatico)">
+              <group string="Estado de documentos (automatico)">
                 <field name="x_doc_bl_ok" readonly="1"/>
                 <field name="x_doc_factura_pdf_ok" readonly="1"/>
                 <field name="x_doc_factura_xml_ok" readonly="1"/>
                 <field name="x_doc_cfdi_ok" readonly="1"/>
-                <field name="x_counterparty_role_505" readonly="1"/>
-                <field name="x_counterparty_partner_id" readonly="1"/>
-                <field name="x_counterparty_name_505" readonly="1"/>
+                <field name="x_counterparty_role_505" string="Tipo de contraparte" readonly="1"/>
+                <field name="x_counterparty_partner_id" string="Contraparte comercial" readonly="1"/>
+                <field name="x_counterparty_name_505" string="Nombre de contraparte" readonly="1"/>
               </group>
             </group>
 
