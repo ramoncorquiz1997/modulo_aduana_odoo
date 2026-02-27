@@ -305,6 +305,12 @@ class MxPedOperacion(models.Model):
         string="Documentos",
         copy=True,
     )
+    identificador_pedimento_ids = fields.One2many(
+        "mx.ped.operacion.identificador",
+        "operacion_id",
+        string="Identificadores de operacion",
+        copy=True,
+    )
 
     partida_count = fields.Integer(
         string="Partidas",
@@ -2633,6 +2639,42 @@ class MxPedOperacion(models.Model):
                 valores[campo.nombre] = val
         return valores
 
+    def _build_507_valores(self, layout_reg, identificador_line):
+        self.ensure_one()
+        valores = {}
+        code = (identificador_line.code or "").strip()
+        comp1 = (identificador_line.complemento1 or "").strip()
+        comp2 = (identificador_line.complemento2 or "").strip()
+        comp3 = (identificador_line.complemento3 or "").strip()
+
+        for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            campo_name = (campo.nombre or "").strip().lower()
+            source_norm = (source_name or "").strip().lower()
+            token = f"{campo_name} {source_norm}".strip()
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro"):
+                val = "507"
+            elif "pedimento" in token and ("numero" in token or "num" in token or token == "pedimento"):
+                val = self.pedimento_numero or ""
+            elif ("identificador" in token and "clave" in token) or token in ("identificador", "idf"):
+                val = code
+            elif "complemento 1" in token or "complemento1" in token:
+                val = comp1
+            elif "complemento 2" in token or "complemento2" in token:
+                val = comp2
+            elif "complemento 3" in token or "complemento3" in token:
+                val = comp3
+            else:
+                val = self._field_value_for_layout(campo, partida=False)
+                if val in (None, "", False) and campo.default:
+                    val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = val
+        return valores
+
     def action_cargar_desde_lead(self):
         self.ensure_one()
         if not self.layout_id:
@@ -2669,6 +2711,18 @@ class MxPedOperacion(models.Model):
                         "codigo": layout_reg.codigo,
                         "secuencia": secuencia,
                         "valores": self._build_506_valores(layout_reg, fecha_line),
+                    }))
+                continue
+
+            if code == "507":
+                id_lines = self.identificador_pedimento_ids.sorted(lambda l: (l.sequence or 0, l.id))
+                if not id_lines:
+                    continue
+                for secuencia, ident_line in enumerate(id_lines, start=1):
+                    registros.append((0, 0, {
+                        "codigo": layout_reg.codigo,
+                        "secuencia": secuencia,
+                        "valores": self._build_507_valores(layout_reg, ident_line),
                     }))
                 continue
 
