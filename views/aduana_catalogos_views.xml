@@ -52,6 +52,76 @@
       </field>
     </record>
 
+    <record id="aduana_catalogo_tipo_operacion_view_form" model="ir.ui.view">
+      <field name="name">aduana.catalogo.tipo_operacion.form</field>
+      <field name="model">aduana.catalogo.tipo_operacion</field>
+      <field name="arch" type="xml">
+        <form string="Tipo operacion">
+          <sheet>
+            <group>
+              <field name="code"/>
+              <field name="name"/>
+              <field name="active"/>
+            </group>
+          </sheet>
+          <chatter/>
+        </form>
+      </field>
+    </record>
+
+    <record id="aduana_catalogo_regimen_view_form" model="ir.ui.view">
+      <field name="name">aduana.catalogo.regimen.form</field>
+      <field name="model">aduana.catalogo.regimen</field>
+      <field name="arch" type="xml">
+        <form string="Regimen">
+          <sheet>
+            <group>
+              <field name="code"/>
+              <field name="name"/>
+              <field name="active"/>
+            </group>
+          </sheet>
+          <chatter/>
+        </form>
+      </field>
+    </record>
+
+    <record id="aduana_catalogo_aduana_view_form" model="ir.ui.view">
+      <field name="name">aduana.catalogo.aduana.form</field>
+      <field name="model">aduana.catalogo.aduana</field>
+      <field name="arch" type="xml">
+        <form string="Aduana">
+          <sheet>
+            <group>
+              <field name="code"/>
+              <field name="name"/>
+              <field name="active"/>
+            </group>
+          </sheet>
+          <chatter/>
+        </form>
+      </field>
+    </record>
+
+    <record id="aduana_catalogo_clave_pedimento_view_form" model="ir.ui.view">
+      <field name="name">aduana.catalogo.clave_pedimento.form</field>
+      <field name="model">aduana.catalogo.clave_pedimento</field>
+      <field name="arch" type="xml">
+        <form string="Clave pedimento">
+          <sheet>
+            <group>
+              <field name="code"/>
+              <field name="name"/>
+              <field name="tipo_operacion_id"/>
+              <field name="regimen_id"/>
+              <field name="active"/>
+            </group>
+          </sheet>
+          <chatter/>
+        </form>
+      </field>
+    </record>
+
     <record id="aduana_catalogo_tipo_operacion_action" model="ir.actions.act_window">
       <field name="name">Tipo operacion</field>
       <field name="res_model">aduana.catalogo.tipo_operacion</field>

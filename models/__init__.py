@@ -21,3 +21,4 @@ from . import account_move
 from . import aduana_catalogos
 from . import aduana_pedimento
 from . import aduana_layout_tecnico
+from . import audit_mixin
