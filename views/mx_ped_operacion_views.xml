@@ -73,6 +73,9 @@
                 <field name="patente" readonly="1"/>
                 <field name="curp_agente"/>
                 <field name="acuse_validacion" invisible="not show_acuse_ui"/>
+                <field name="company_id" invisible="1"/>
+                <field name="ws_ambiente"/>
+                <field name="ws_credencial_id"/>
               </group>
             </group>
 

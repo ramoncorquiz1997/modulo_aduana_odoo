@@ -52,6 +52,49 @@
                 <field name="street"/>
                 <field name="street2"/>
               </group>
+              <group string="Credenciales WS"
+                     invisible="x_contact_role != 'agente_aduanal'">
+                <field name="ws_credencial_ids" context="{'default_partner_id': id}">
+                  <list editable="bottom">
+                    <field name="name"/>
+                    <field name="company_id"/>
+                    <field name="ambiente"/>
+                    <field name="is_default"/>
+                    <field name="ws_username"/>
+                    <field name="vigencia_desde"/>
+                    <field name="vigencia_hasta"/>
+                    <field name="active"/>
+                  </list>
+                  <form string="Credencial WS">
+                    <group>
+                      <group>
+                        <field name="name"/>
+                        <field name="company_id"/>
+                        <field name="ambiente"/>
+                        <field name="partner_id"/>
+                        <field name="is_default"/>
+                        <field name="active"/>
+                      </group>
+                      <group>
+                        <field name="ws_username"/>
+                        <field name="ws_password" password="True"/>
+                        <field name="vigencia_desde"/>
+                        <field name="vigencia_hasta"/>
+                      </group>
+                    </group>
+                    <group string="Certificados (opcional)">
+                      <field name="cert_file" filename="cert_filename"/>
+                      <field name="cert_filename"/>
+                      <field name="key_file" filename="key_filename"/>
+                      <field name="key_filename"/>
+                      <field name="key_password" password="True"/>
+                    </group>
+                    <group>
+                      <field name="notes"/>
+                    </group>
+                  </form>
+                </field>
+              </group>
             </group>
           </page>
 

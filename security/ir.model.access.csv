@@ -22,6 +22,7 @@ access_mx_ped_fraccion,mx.ped.fraccion,model_mx_ped_fraccion,,1,1,1,1
 access_mx_ped_fraccion_tasa,mx.ped.fraccion.tasa,model_mx_ped_fraccion_tasa,,1,1,1,1
 access_mx_ped_identificador,mx.ped.identificador,model_mx_ped_identificador,,1,1,1,1
 access_mx_ped_operacion_identificador,mx.ped.operacion.identificador,model_mx_ped_operacion_identificador,,1,1,1,1
+access_mx_ped_credencial_ws,mx.ped.credencial.ws,model_mx_ped_credencial_ws,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_tipo_movimiento_admin,mx.ped.tipo.movimiento.admin,model_mx_ped_tipo_movimiento,base.group_system,1,1,1,1
 access_mx_ped_tipo_contenedor,mx.ped.tipo.contenedor,model_mx_ped_tipo_contenedor,,1,1,1,1
 access_mx_ped_estructura_regla_admin,mx.ped.estructura.regla.admin,model_mx_ped_estructura_regla,base.group_system,1,1,1,1

@@ -30,6 +30,12 @@ class MxPedOperacion(models.Model):
     )
 
     name = fields.Char(string="Referencia", required=True)
+    company_id = fields.Many2one(
+        "res.company",
+        required=True,
+        default=lambda self: self.env.company,
+        index=True,
+    )
 
     # ==========================
     # Clasificación
@@ -133,6 +139,18 @@ class MxPedOperacion(models.Model):
     )
     acuse_validacion = fields.Char(string="Acuse electronico validacion")
     curp_agente = fields.Char(string="CURP agente/apoderado")
+    ws_ambiente = fields.Selection(
+        [("pruebas", "Pruebas"), ("produccion", "Produccion")],
+        string="Ambiente WS",
+        default="produccion",
+        required=True,
+    )
+    ws_credencial_id = fields.Many2one(
+        "mx.ped.credencial.ws",
+        string="Credencial WS",
+        domain="[('active','=',True),('company_id','=',company_id),('ambiente','=',ws_ambiente)]",
+        ondelete="restrict",
+    )
 
     cliente_id = fields.Many2one(
         "res.partner",
@@ -481,6 +499,8 @@ class MxPedOperacion(models.Model):
         for rec in records:
             rec.rulepack_id = rec._resolve_rulepack()
             rec.estructura_regla_id = rec._resolve_estructura_regla()
+            if not rec.ws_credencial_id:
+                rec.ws_credencial_id = rec._resolve_ws_credencial().id or False
         records._auto_refresh_generated_registros()
         return records
 
@@ -513,6 +533,9 @@ class MxPedOperacion(models.Model):
             and refresh_fields.intersection(vals.keys())
         ):
             self._auto_refresh_generated_registros()
+        if {"agente_aduanal_id", "ws_ambiente", "company_id"}.intersection(vals.keys()) and "ws_credencial_id" not in vals:
+            for rec in self:
+                rec.ws_credencial_id = rec._resolve_ws_credencial().id or False
         return res
 
     def _auto_refresh_generated_registros(self):
@@ -572,6 +595,29 @@ class MxPedOperacion(models.Model):
                 continue
             rec.patente = agent.x_patente_aduanal or rec.patente
             rec.curp_agente = agent.x_curp or rec.curp_agente
+            rec.ws_credencial_id = rec._resolve_ws_credencial().id or rec.ws_credencial_id
+
+    @api.onchange("ws_ambiente", "company_id")
+    def _onchange_ws_context(self):
+        for rec in self:
+            rec.ws_credencial_id = rec._resolve_ws_credencial().id or rec.ws_credencial_id
+
+    def _resolve_ws_credencial(self):
+        self.ensure_one()
+        model = self.env["mx.ped.credencial.ws"]
+        dom_base = [
+            ("active", "=", True),
+            ("company_id", "=", self.company_id.id or self.env.company.id),
+            ("ambiente", "=", self.ws_ambiente or "produccion"),
+        ]
+        if self.agente_aduanal_id:
+            by_agent = model.search(dom_base + [("partner_id", "=", self.agente_aduanal_id.id)], limit=1)
+            if by_agent:
+                return by_agent
+        by_default = model.search(dom_base + [("is_default", "=", True), ("partner_id", "=", False)], limit=1)
+        if by_default:
+            return by_default
+        return model.search(dom_base + [("partner_id", "=", False)], limit=1)
 
     @api.onchange("tipo_movimiento")
     def _onchange_tipo_movimiento_clear_acuse(self):
