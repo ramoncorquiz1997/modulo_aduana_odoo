@@ -2,8 +2,10 @@
 import base64
 import json
 import logging
+import re
 import requests
 import ssl
+import unicodedata
 import urllib3
 from odoo import api, fields, models
 from odoo.exceptions import UserError
@@ -390,3 +392,94 @@ class ResPartner(models.Model):
         if vals.get("x_csf_file"):
             update_vals.update(self._extract_csf_values(vals.get("x_csf_file")))
         return super().write(update_vals)
+
+    def action_open_gafete_qr_camera(self):
+        self.ensure_one()
+        if self.x_contact_role not in ("chofer", "transportista"):
+            raise UserError("Este boton solo aplica para contactos con rol Chofer o Transportista.")
+        return {
+            "type": "ir.actions.client",
+            "tag": "mx_qr_camera_scanner",
+            "params": {
+                "model": self._name,
+                "resId": self.id,
+                "title": "Escanear QR de Gafete (Chofer)",
+            },
+        }
+
+    @staticmethod
+    def _normalize_name_for_match(name):
+        txt = (name or "").strip().upper()
+        txt = unicodedata.normalize("NFKD", txt)
+        txt = "".join(ch for ch in txt if not unicodedata.combining(ch))
+        txt = re.sub(r"[^A-Z0-9 ]+", " ", txt)
+        return " ".join(txt.split())
+
+    def _extract_nombre_folio_from_qr_url(self, url):
+        resp = requests.get(url, timeout=25)
+        if resp.status_code >= 400:
+            raise UserError(f"No se pudo consultar el verificador del gafete ({resp.status_code}).")
+        html = resp.text or ""
+        nombre = False
+        folio = False
+        m = re.search(r"nombre\s*:\s*([^<\r\n]{5,})", html, flags=re.IGNORECASE)
+        if m:
+            nombre = " ".join((m.group(1) or "").strip().split())
+        m = re.search(r'id=["\']folio["\'][^>]*>\s*([^<]+?)\s*<', html, flags=re.IGNORECASE)
+        if m:
+            folio = (m.group(1) or "").strip()
+        return nombre, folio
+
+    def _find_or_create_chofer_for_transportista(self, nombre):
+        self.ensure_one()
+        target = self._normalize_name_for_match(nombre)
+        choferes = self.child_ids.filtered(lambda c: c.x_contact_role == "chofer" and c.active)
+        exact = choferes.filtered(lambda c: self._normalize_name_for_match(c.name) == target)
+        if len(exact) == 1:
+            return exact
+        if len(exact) > 1:
+            return exact[:1]
+        vals = {
+            "name": nombre,
+            "x_contact_role": "chofer",
+            "parent_id": self.id,
+            "type": "contact",
+            "function": "Chofer",
+            "company_type": "person",
+        }
+        return self.env["res.partner"].create(vals)
+
+    def action_set_qr_url_from_camera(self, qr_url, auto_validate=True):
+        self.ensure_one()
+        if self.x_contact_role not in ("chofer", "transportista"):
+            raise UserError("Solo se puede asignar QR de gafete a contacto chofer o transportista.")
+        value = (qr_url or "").strip()
+        if not value:
+            raise UserError("No se recibió un valor de QR.")
+
+        target_chofer = self
+        if self.x_contact_role == "transportista":
+            nombre, _folio = self._extract_nombre_folio_from_qr_url(value)
+            if not nombre:
+                raise UserError("No se pudo detectar el nombre del chofer en el verificador del gafete.")
+            target_chofer = self._find_or_create_chofer_for_transportista(nombre)
+
+        gafete_model = self.env["mx.anam.gafete"]
+        gafete = gafete_model.search([
+            ("chofer_id", "=", target_chofer.id),
+            ("active", "in", [True, False]),
+        ], order="write_date desc, id desc", limit=1)
+        if not gafete:
+            gafete = gafete_model.create({
+                "chofer_id": target_chofer.id,
+                "qr_url": value,
+                "active": False,
+            })
+        else:
+            gafete.write({"qr_url": value})
+
+        if auto_validate:
+            gafete.action_validar_qr_url()
+            if gafete.numero_gafete and not gafete.active:
+                gafete.active = True
+        return True

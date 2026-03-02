@@ -72,6 +72,11 @@
               <group string="Equipo de transporte"
                      invisible="x_contact_role != 'transportista' and x_contact_role != 'chofer'">
                 <field name="parent_id" invisible="x_contact_role != 'chofer'" domain="[('x_contact_role','=','transportista')]"/>
+                <button name="action_open_gafete_qr_camera"
+                        type="object"
+                        string="Escanear Gafete con camara"
+                        class="btn-secondary"
+                        invisible="x_contact_role != 'chofer' and x_contact_role != 'transportista'"/>
                 <field name="chofer_ids"
                        invisible="x_contact_role != 'transportista'"
                        context="{'default_parent_id': id, 'default_x_contact_role': 'chofer'}">
