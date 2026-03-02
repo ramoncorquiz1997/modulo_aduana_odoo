@@ -81,8 +81,10 @@
                 <field name="ws_credencial_id"/>
                 <field name="avc_modalidad_cruce_id"/>
                 <field name="avc_tipo_documento_id"/>
-                <field name="avc_transportista_id"/>
-                <field name="avc_chofer_id"/>
+                <field name="avc_transportista_id"
+                       context="{'default_x_contact_role': 'transportista', 'default_company_type': 'company'}"/>
+                <field name="avc_chofer_id"
+                       context="{'default_x_contact_role': 'chofer', 'default_parent_id': avc_transportista_id, 'default_function': 'Chofer', 'default_company_type': 'person'}"/>
                 <field name="avc_gafete_id"/>
                 <field name="avc_tag" invisible="avc_modalidad_cruce_id != '1'"/>
                 <field name="avc_numero_gafete" invisible="avc_modalidad_cruce_id != '2'"/>

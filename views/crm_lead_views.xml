@@ -153,7 +153,9 @@
                 <field name="x_num_sello"/>
               </group>
               <group string="Transportista">
-                <field name="x_transportista_id" domain="[('x_contact_role','=','transportista')]"/>
+                <field name="x_transportista_id"
+                       domain="[('x_contact_role','=','transportista')]"
+                       context="{'default_x_contact_role': 'transportista', 'default_company_type': 'company'}"/>
                 <field name="x_transportista_rfc" readonly="1"/>
                 <field name="x_transportista_curp" readonly="1"/>
                 <field name="x_transportista_domicilio" readonly="1"/>
@@ -329,7 +331,8 @@
                 <field name="x_recinto_fiscalizado"/>
                 <field name="x_almacenaje"/>
                 <field name="x_citas_almacen"/>
-                <field name="x_transportista_entrega"/>
+                <field name="x_transportista_entrega"
+                       context="{'default_x_contact_role': 'transportista', 'default_company_type': 'company'}"/>
                 <field name="x_direccion_entrega_final"/>
               </group>
             </group>
@@ -466,7 +469,9 @@
             <group>
               <group string="Salida">
                 <field name="x_punto_salida"/>
-                <field name="x_transportista_salida" domain="[('x_contact_role','=','transportista')]"/>
+                <field name="x_transportista_salida"
+                       domain="[('x_contact_role','=','transportista')]"
+                       context="{'default_x_contact_role': 'transportista', 'default_company_type': 'company'}"/>
                 <field name="x_prueba_entrega"/>
               </group>
             </group>

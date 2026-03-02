@@ -38,6 +38,9 @@
         <xpath expr="//field[@name='vat']" position="attributes">
           <attribute name="string">RFC</attribute>
         </xpath>
+        <xpath expr="//field[@name='child_ids']" position="attributes">
+          <attribute name="context">{'default_parent_id': id, 'default_type': 'contact', 'default_function': 'Chofer', 'default_x_contact_role': 'chofer', 'default_company_type': 'person'}</attribute>
+        </xpath>
         <xpath expr="//notebook" position="inside">
           <page string="Aduana" name="mi_modulo_aduana_partner">
             <group>
