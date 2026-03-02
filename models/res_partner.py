@@ -72,11 +72,23 @@ class ResPartner(models.Model):
             ("cliente", "Cliente"),
             ("agente_aduanal", "Agente Aduanal"),
             ("transportista", "Transportista"),
+            ("chofer", "Chofer"),
             ("proveedor", "Proveedor"),
             ("otro", "Otro"),
         ],
         string="Rol aduanal",
         default="cliente",
+    )
+    chofer_ids = fields.One2many(
+        "res.partner",
+        "parent_id",
+        string="Choferes",
+        domain=[("x_contact_role", "=", "chofer")],
+    )
+    gafete_anam_ids = fields.One2many(
+        "mx.anam.gafete",
+        "chofer_id",
+        string="Gafetes ANAM",
     )
     x_curp = fields.Char(string="CURP")
     x_identificacion_fiscal = fields.Char(string="Identificacion fiscal (extranjero)")

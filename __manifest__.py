@@ -24,6 +24,7 @@
         "views/mx_ped_regulatorio_views.xml",
         "views/mx_ped_identificador_views.xml",
         "views/mx_ped_credencial_ws_views.xml",
+        "views/mx_anam_gafete_views.xml",
         "views/mx_ped_tipo_movimiento_views.xml",
         "views/mx_ped_tipo_contenedor_views.xml",
         "views/mx_ped_estructura_regla_views.xml",

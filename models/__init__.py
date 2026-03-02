@@ -12,6 +12,7 @@ from . import mx_ped_fraccion
 from . import mx_ped_regulatorio
 from . import mx_ped_identificador
 from . import mx_ped_credencial_ws
+from . import mx_anam_gafete
 from . import mx_ped_forma_pago
 from . import mx_ped_tipo_movimiento
 from . import mx_ped_tipo_contenedor

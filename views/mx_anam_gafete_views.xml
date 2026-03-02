@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <record id="mx_anam_gafete_view_list" model="ir.ui.view">
+      <field name="name">mx.anam.gafete.list</field>
+      <field name="model">mx.anam.gafete</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="numero_gafete"/>
+          <field name="chofer_id"/>
+          <field name="transportista_id"/>
+          <field name="estado"/>
+          <field name="vencido_desde"/>
+          <field name="validado_el"/>
+          <field name="active"/>
+        </list>
+      </field>
+    </record>
+
+    <record id="mx_anam_gafete_view_form" model="ir.ui.view">
+      <field name="name">mx.anam.gafete.form</field>
+      <field name="model">mx.anam.gafete</field>
+      <field name="arch" type="xml">
+        <form string="Gafete ANAM">
+          <header>
+            <button name="action_validar_qr_url" type="object" string="Validar QR" class="btn-primary"/>
+          </header>
+          <sheet>
+            <group>
+              <group>
+                <field name="numero_gafete"/>
+                <field name="chofer_id"/>
+                <field name="transportista_id" readonly="1"/>
+                <field name="estado"/>
+                <field name="active"/>
+              </group>
+              <group>
+                <field name="qr_url"/>
+                <field name="vencido_desde" readonly="1"/>
+                <field name="validado_el" readonly="1"/>
+              </group>
+            </group>
+            <group>
+              <field name="mensaje_validacion" readonly="1"/>
+              <field name="html_snippet" readonly="1"/>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <record id="mx_anam_gafete_action" model="ir.actions.act_window">
+      <field name="name">Gafetes ANAM</field>
+      <field name="res_model">mx.anam.gafete</field>
+      <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="mx_anam_gafete_menu"
+              name="Gafetes ANAM"
+              parent="menu_mx_ped_catalogos"
+              action="mx_anam_gafete_action"
+              sequence="47"/>
+
+  </data>
+</odoo>

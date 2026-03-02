@@ -1454,6 +1454,7 @@ class CrmLead(models.Model):
             "acuse_validacion": (self.x_acuse_validacion or ""),
             "agente_aduanal_id": self.x_agente_aduanal_id.id or False,
             "patente": (self.x_agente_aduanal_id.x_patente_aduanal or self.x_patente_agente or ""),
+            "avc_transportista_id": self.x_transportista_id.id or False,
             "curp_agente": (self.x_curp_agente or ""),
             "clave_pedimento_id": self.x_clave_pedimento_id.id or False,
 

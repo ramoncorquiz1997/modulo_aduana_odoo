@@ -175,6 +175,21 @@ class MxPedOperacion(models.Model):
     )
     avc_tag = fields.Char(string="TAG AVC", size=24)
     avc_numero_gafete = fields.Char(string="Numero gafete AVC", size=24)
+    avc_transportista_id = fields.Many2one(
+        "res.partner",
+        string="Transportista AVC",
+        domain="[('x_contact_role','=','transportista')]",
+    )
+    avc_chofer_id = fields.Many2one(
+        "res.partner",
+        string="Chofer AVC",
+        domain="[('x_contact_role','=','chofer'), ('parent_id','=', avc_transportista_id)]",
+    )
+    avc_gafete_id = fields.Many2one(
+        "mx.anam.gafete",
+        string="Gafete ANAM",
+        domain="[('active','=',True), ('chofer_id','=',avc_chofer_id)]",
+    )
     avc_fast_id = fields.Char(string="FAST ID AVC", size=50)
     avc_datos_adicionales = fields.Char(string="Datos adicionales AVC", size=500)
 
@@ -602,6 +617,7 @@ class MxPedOperacion(models.Model):
             "fecha_liberacion": lead.x_fecha_liberacion or False,
             "semaforo": lead.x_semaforo or False,
             "observaciones": lead.x_incidente_text or False,
+            "avc_transportista_id": lead.x_transportista_id or False,
         }
         for field_name, value in defaults.items():
             if not self[field_name]:
@@ -627,6 +643,37 @@ class MxPedOperacion(models.Model):
     def _onchange_ws_context(self):
         for rec in self:
             rec.ws_credencial_id = rec._resolve_ws_credencial().id or rec.ws_credencial_id
+
+    @api.onchange("avc_transportista_id")
+    def _onchange_avc_transportista_id(self):
+        for rec in self:
+            if rec.avc_chofer_id and rec.avc_chofer_id.parent_id != rec.avc_transportista_id:
+                rec.avc_chofer_id = False
+            if rec.avc_gafete_id and rec.avc_gafete_id.transportista_id != rec.avc_transportista_id:
+                rec.avc_gafete_id = False
+
+    @api.onchange("avc_chofer_id")
+    def _onchange_avc_chofer_id(self):
+        for rec in self:
+            if rec.avc_chofer_id and rec.avc_chofer_id.parent_id:
+                rec.avc_transportista_id = rec.avc_chofer_id.parent_id
+            if rec.avc_gafete_id and rec.avc_gafete_id.chofer_id != rec.avc_chofer_id:
+                rec.avc_gafete_id = False
+            if rec.avc_chofer_id and not rec.avc_gafete_id:
+                gafete = self.env["mx.anam.gafete"].search([
+                    ("active", "=", True),
+                    ("chofer_id", "=", rec.avc_chofer_id.id),
+                ], order="validado_el desc, id desc", limit=1)
+                if gafete:
+                    rec.avc_gafete_id = gafete
+
+    @api.onchange("avc_gafete_id")
+    def _onchange_avc_gafete_id(self):
+        for rec in self:
+            if rec.avc_gafete_id:
+                rec.avc_chofer_id = rec.avc_gafete_id.chofer_id
+                rec.avc_transportista_id = rec.avc_gafete_id.transportista_id
+                rec.avc_numero_gafete = rec.avc_gafete_id.numero_gafete
 
     def _resolve_ws_credencial(self):
         self.ensure_one()
@@ -2394,8 +2441,9 @@ class MxPedOperacion(models.Model):
         }
         if (self.avc_tag or "").strip():
             payload["tag"] = (self.avc_tag or "").strip()
-        if (self.avc_numero_gafete or "").strip():
-            payload["numero_gafete"] = (self.avc_numero_gafete or "").strip()
+        numero_gafete = (self.avc_numero_gafete or "").strip() or (self.avc_gafete_id.numero_gafete or "").strip()
+        if numero_gafete:
+            payload["numero_gafete"] = numero_gafete
         if (self.avc_fast_id or "").strip():
             payload["fast_id"] = (self.avc_fast_id or "").strip()
         if (self.avc_datos_adicionales or "").strip():
@@ -2404,6 +2452,23 @@ class MxPedOperacion(models.Model):
         if autorizacion:
             payload["autorizacion"] = autorizacion.zfill(4)[:4]
         return payload
+
+    def _check_avc_gafete(self):
+        self.ensure_one()
+        if self.avc_modalidad_cruce_id != "2":
+            return
+        if not self.avc_gafete_id and not (self.avc_numero_gafete or "").strip():
+            raise UserError(_("Para modalidad peatonal debes seleccionar un gafete ANAM o capturar el numero de gafete."))
+        gafete = self.avc_gafete_id
+        if not gafete:
+            return
+        if gafete.estado == "vencido":
+            fecha = gafete.vencido_desde.strftime("%Y-%m-%d") if gafete.vencido_desde else "sin fecha"
+            raise UserError(_("El gafete seleccionado esta vencido desde %s.") % fecha)
+        if gafete.estado == "error":
+            raise UserError(_("El gafete seleccionado tiene error de validacion. Revalida el QR antes de generar AVC."))
+        if gafete.estado == "indeterminado":
+            raise UserError(_("El gafete seleccionado tiene estado indeterminado. Valida su QR antes de generar AVC."))
 
     def _write_avc_response(self, data):
         self.ensure_one()
@@ -2424,6 +2489,7 @@ class MxPedOperacion(models.Model):
 
     def action_avc_generar(self):
         self.ensure_one()
+        self._check_avc_gafete()
         headers = self._get_avc_headers()
         payload = self._build_avc_payload()
         url = self._get_avc_api_url("/aviso-de-cruce")

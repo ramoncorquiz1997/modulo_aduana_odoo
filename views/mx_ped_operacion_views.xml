@@ -81,6 +81,9 @@
                 <field name="ws_credencial_id"/>
                 <field name="avc_modalidad_cruce_id"/>
                 <field name="avc_tipo_documento_id"/>
+                <field name="avc_transportista_id"/>
+                <field name="avc_chofer_id"/>
+                <field name="avc_gafete_id"/>
                 <field name="avc_tag" invisible="avc_modalidad_cruce_id != '1'"/>
                 <field name="avc_numero_gafete" invisible="avc_modalidad_cruce_id != '2'"/>
                 <field name="avc_fast_id"/>
@@ -283,6 +286,9 @@
                     <field name="avc_fecha_vigencia" readonly="1"/>
                     <field name="avc_url_detail" readonly="1"/>
                     <field name="avc_last_sync" readonly="1"/>
+                    <field name="avc_transportista_id" readonly="1"/>
+                    <field name="avc_chofer_id" readonly="1"/>
+                    <field name="avc_gafete_id" readonly="1"/>
                   </group>
                   <group>
                     <field name="avc_sync_error" readonly="1"/>
