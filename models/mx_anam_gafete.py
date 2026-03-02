@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
+import unicodedata
 
 import requests
 
@@ -29,8 +30,8 @@ class MxAnamGafete(models.Model):
         store=True,
         readonly=True,
     )
-    numero_gafete = fields.Char(string="Numero de gafete", required=True, index=True)
-    qr_url = fields.Char(string="URL QR", required=True)
+    numero_gafete = fields.Char(string="Numero de gafete", index=True)
+    qr_url = fields.Char(string="URL QR")
     estado = fields.Selection(
         [
             ("vigente", "Vigente"),
@@ -70,6 +71,12 @@ class MxAnamGafete(models.Model):
                 raise ValidationError("El contacto seleccionado debe tener rol Chofer.")
             if rec.chofer_id and not rec.chofer_id.parent_id:
                 raise ValidationError("El chofer debe estar ligado a un transportista (contacto padre).")
+
+    @api.constrains("numero_gafete")
+    def _check_numero_gafete_when_active(self):
+        for rec in self:
+            if rec.active and not (rec.numero_gafete or "").strip():
+                raise ValidationError("El numero de gafete es obligatorio en registros activos.")
 
     @api.constrains("qr_url")
     def _check_qr_url(self):
@@ -119,6 +126,61 @@ class MxAnamGafete(models.Model):
             "snippet": compact[:1500],
         }
 
+    def _extract_folio_and_nombre(self, html_text):
+        txt = html_text or ""
+        folio = False
+        nombre = False
+
+        m = re.search(r'id=["\']folio["\'][^>]*>\s*([^<]+?)\s*<', txt, flags=re.IGNORECASE)
+        if m:
+            folio = (m.group(1) or "").strip()
+        if not folio:
+            m = re.search(r"folio[^0-9]*([0-9]{3,})", txt, flags=re.IGNORECASE)
+            if m:
+                folio = (m.group(1) or "").strip()
+
+        m = re.search(r"nombre\s*:\s*([A-ZÁÉÍÓÚÑ0-9 .,'-]{5,})", txt, flags=re.IGNORECASE)
+        if m:
+            nombre = " ".join((m.group(1) or "").strip().split())
+
+        return folio or False, nombre or False
+
+    @staticmethod
+    def _normalize_person_name(name):
+        txt = (name or "").strip().upper()
+        if not txt:
+            return ""
+        txt = unicodedata.normalize("NFKD", txt)
+        txt = "".join(ch for ch in txt if not unicodedata.combining(ch))
+        txt = re.sub(r"[^A-Z0-9 ]+", " ", txt)
+        txt = " ".join(txt.split())
+        return txt
+
+    def _match_chofer_from_nombre(self, nombre):
+        """Intenta resolver chofer por nombre sin arriesgar asignaciones ambiguas."""
+        target = self._normalize_person_name(nombre)
+        if not target:
+            return False, "Nombre vacio"
+
+        chofer_model = self.env["res.partner"]
+        candidates = chofer_model.search([("x_contact_role", "=", "chofer"), ("active", "=", True)])
+        if not candidates:
+            return False, "No hay choferes activos en catalogo."
+
+        exact = candidates.filtered(lambda c: self._normalize_person_name(c.name) == target)
+        if len(exact) == 1:
+            return exact, "Match exacto por nombre."
+        if len(exact) > 1:
+            return False, "Nombre ambiguo: existe mas de un chofer con el mismo nombre."
+
+        partial = candidates.filtered(lambda c: target in self._normalize_person_name(c.name))
+        if len(partial) == 1:
+            return partial, "Match aproximado unico por nombre."
+        if len(partial) > 1:
+            return False, "Nombre ambiguo: hay multiples coincidencias aproximadas."
+
+        return False, "No se encontro chofer por nombre."
+
     def action_validar_qr_url(self):
         for rec in self:
             url = (rec.qr_url or "").strip()
@@ -134,14 +196,26 @@ class MxAnamGafete(models.Model):
                         "html_snippet": False,
                     })
                     continue
-                parsed = rec._parse_estado_desde_html(resp.text or "")
-                rec.write({
+                html_text = resp.text or ""
+                parsed = rec._parse_estado_desde_html(html_text)
+                folio, nombre = rec._extract_folio_and_nombre(html_text)
+                vals = {
                     "estado": parsed["estado"],
                     "vencido_desde": parsed["vencido_desde"],
                     "validado_el": fields.Datetime.now(),
                     "mensaje_validacion": parsed["mensaje"],
                     "html_snippet": parsed["snippet"],
-                })
+                }
+                if folio:
+                    vals["numero_gafete"] = folio
+                if nombre and not rec.chofer_id:
+                    chofer, reason = rec._match_chofer_from_nombre(nombre)
+                    if chofer:
+                        vals["chofer_id"] = chofer.id
+                        vals["mensaje_validacion"] = f"{vals['mensaje_validacion']} | Chofer asignado: {chofer.name} ({reason})"
+                    else:
+                        vals["mensaje_validacion"] = f"{vals['mensaje_validacion']} | Nombre detectado: {nombre}. {reason} Selecciona chofer manualmente."
+                rec.write(vals)
             except Exception as err:
                 rec.write({
                     "estado": "error",
@@ -168,9 +242,11 @@ class MxAnamGafete(models.Model):
             value = (qr_url or "").strip()
             if not value:
                 raise ValidationError("No se recibió un valor de QR.")
-            rec.write({"qr_url": value})
+            rec.write({"qr_url": value, "active": False if not rec.numero_gafete else rec.active})
             if auto_validate:
                 rec.action_validar_qr_url()
+            if rec.numero_gafete and not rec.active:
+                rec.active = True
         return True
 
     @api.model
