@@ -6,6 +6,8 @@ import re
 from collections import Counter
 import xml.etree.ElementTree as ET
 
+import requests
+
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 
@@ -151,6 +153,30 @@ class MxPedOperacion(models.Model):
         domain="[('active','=',True),('company_id','=',company_id),('ambiente','=',ws_ambiente)]",
         ondelete="restrict",
     )
+    avc_numero = fields.Char(string="Numero AVC", readonly=True, copy=False)
+    avc_estatus = fields.Char(string="Estatus AVC", readonly=True, copy=False)
+    avc_fecha_emision = fields.Char(string="Fecha emision AVC", readonly=True, copy=False)
+    avc_fecha_vigencia = fields.Char(string="Fecha vigencia AVC", readonly=True, copy=False)
+    avc_url_detail = fields.Char(string="URL detalle AVC", readonly=True, copy=False)
+    avc_last_sync = fields.Datetime(string="Ultima consulta AVC", readonly=True, copy=False)
+    avc_sync_error = fields.Text(string="Error AVC", readonly=True, copy=False)
+    avc_folio_validacion = fields.Text(string="Folio validacion AVC", readonly=True, copy=False)
+    avc_validacion_agencia = fields.Text(string="Firma validacion agencia", readonly=True, copy=False)
+    avc_peticion_json = fields.Text(string="Peticion JSON firmada", readonly=True, copy=False)
+    avc_modalidad_cruce_id = fields.Selection(
+        [("1", "Vehicular"), ("2", "Peatonal"), ("4", "Virtual")],
+        string="Modalidad cruce AVC",
+        default="1",
+    )
+    avc_tipo_documento_id = fields.Selection(
+        [("1", "Pedimentos"), ("2", "Arribo transito"), ("3", "AGA 15"), ("4", "Otros documentos"), ("5", "Cuaderno ATA")],
+        string="Tipo documento AVC",
+        default="1",
+    )
+    avc_tag = fields.Char(string="TAG AVC", size=24)
+    avc_numero_gafete = fields.Char(string="Numero gafete AVC", size=24)
+    avc_fast_id = fields.Char(string="FAST ID AVC", size=50)
+    avc_datos_adicionales = fields.Char(string="Datos adicionales AVC", size=500)
 
     cliente_id = fields.Many2one(
         "res.partner",
@@ -2308,6 +2334,197 @@ class MxPedOperacion(models.Model):
             "url": f"/web/content/{attachment.id}?download=true",
             "target": "self",
         }
+
+    def _get_avc_tipo_operacion_id(self):
+        self.ensure_one()
+        return 2 if self.tipo_operacion == "exportacion" else 1
+
+    def _get_avc_headers(self):
+        self.ensure_one()
+        cred = self.ws_credencial_id
+        if not cred:
+            raise UserError(_("No hay credencial WS configurada para esta operacion."))
+        token = cred.get_avc_token()
+        return {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
+    def _get_avc_api_url(self, suffix):
+        self.ensure_one()
+        cred = self.ws_credencial_id
+        if not cred:
+            raise UserError(_("No hay credencial WS configurada para esta operacion."))
+        base = (cred.avc_api_base_url or "").strip().rstrip("/")
+        if not base:
+            raise UserError(_("La credencial WS no tiene AVC API Base URL configurada."))
+        return f"{base}/{suffix.lstrip('/')}"
+
+    def _build_avc_payload(self):
+        self.ensure_one()
+        aduana = "".join(ch for ch in str(self.aduana_clave or "") if ch.isdigit())[:2]
+        if len(aduana) != 2:
+            raise UserError(_("La aduana debe contener 2 digitos para AVC."))
+        pedimento = (self.pedimento_numero or "").strip()
+        if not pedimento:
+            raise UserError(_("Falta numero de pedimento para generar AVC."))
+        rfc = (self.participante_rfc or "").strip()
+        if not rfc:
+            raise UserError(_("Falta RFC del importador/exportador para generar AVC."))
+
+        modalidad = int(self.avc_modalidad_cruce_id or "1")
+        if modalidad == 1 and not (self.avc_tag or "").strip():
+            raise UserError(_("Para modalidad vehicular AVC se requiere TAG."))
+        if modalidad == 2 and not (self.avc_numero_gafete or "").strip():
+            raise UserError(_("Para modalidad peatonal AVC se requiere numero de gafete."))
+
+        payload = {
+            "aduana": aduana,
+            "tipo_operacion_id": self._get_avc_tipo_operacion_id(),
+            "modalidad_cruce_id": modalidad,
+            "tipo_documento_id": int(self.avc_tipo_documento_id or "1"),
+            "documentos_aduanales": {
+                "pedimentos": {
+                    "normal": [{
+                        "numero_pedimento": pedimento,
+                        "rfc": rfc,
+                    }]
+                }
+            },
+        }
+        if (self.avc_tag or "").strip():
+            payload["tag"] = (self.avc_tag or "").strip()
+        if (self.avc_numero_gafete or "").strip():
+            payload["numero_gafete"] = (self.avc_numero_gafete or "").strip()
+        if (self.avc_fast_id or "").strip():
+            payload["fast_id"] = (self.avc_fast_id or "").strip()
+        if (self.avc_datos_adicionales or "").strip():
+            payload["datos_adicionales"] = (self.avc_datos_adicionales or "").strip()
+        autorizacion = "".join(ch for ch in str(self.patente or "") if ch.isdigit())
+        if autorizacion:
+            payload["autorizacion"] = autorizacion.zfill(4)[:4]
+        return payload
+
+    def _write_avc_response(self, data):
+        self.ensure_one()
+        folio = data.get("folio_validacion") or {}
+        vals = {
+            "avc_numero": (data.get("numero_avc") or self.avc_numero or "").strip() or False,
+            "avc_estatus": (data.get("estatus") or self.avc_estatus or "").strip() or False,
+            "avc_fecha_emision": data.get("fecha_emision") or self.avc_fecha_emision or False,
+            "avc_fecha_vigencia": data.get("fecha_vigencia") or self.avc_fecha_vigencia or False,
+            "avc_url_detail": data.get("url_detail") or self.avc_url_detail or False,
+            "avc_folio_validacion": json.dumps(folio, ensure_ascii=False) if isinstance(folio, (dict, list)) else (folio or False),
+            "avc_validacion_agencia": (folio.get("validacion_agencia") if isinstance(folio, dict) else False) or data.get("validacion_agencia") or False,
+            "avc_peticion_json": (folio.get("peticion_json") if isinstance(folio, dict) else False) or data.get("peticion_json") or False,
+            "avc_last_sync": fields.Datetime.now(),
+            "avc_sync_error": False,
+        }
+        self.write(vals)
+
+    def action_avc_generar(self):
+        self.ensure_one()
+        headers = self._get_avc_headers()
+        payload = self._build_avc_payload()
+        url = self._get_avc_api_url("/aviso-de-cruce")
+        try:
+            resp = requests.post(url, headers=headers, json=payload, timeout=40)
+            if resp.status_code >= 400:
+                raise UserError(_("Error AVC (%s): %s") % (resp.status_code, resp.text))
+            data = resp.json() if resp.text else {}
+            self._write_avc_response(data)
+        except Exception as err:
+            self.write({
+                "avc_last_sync": fields.Datetime.now(),
+                "avc_sync_error": str(err),
+            })
+            raise
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("AVC"),
+                "message": _("Aviso de cruce generado correctamente."),
+                "type": "success",
+                "sticky": False,
+            },
+        }
+
+    def _avc_consultar_status(self):
+        self.ensure_one()
+        if not self.avc_numero:
+            raise UserError(_("No hay numero AVC para consultar."))
+        headers = self._get_avc_headers()
+        url = self._get_avc_api_url(f"/aviso-de-cruce/{self.avc_numero}")
+        resp = requests.get(url, headers=headers, timeout=40)
+        if resp.status_code >= 400:
+            raise UserError(_("Error AVC consulta (%s): %s") % (resp.status_code, resp.text))
+        data = resp.json() if resp.text else {}
+        self._write_avc_response(data)
+
+    def action_avc_consultar(self):
+        self.ensure_one()
+        try:
+            self._avc_consultar_status()
+        except Exception as err:
+            self.write({
+                "avc_last_sync": fields.Datetime.now(),
+                "avc_sync_error": str(err),
+            })
+            raise
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("AVC"),
+                "message": _("Consulta AVC actualizada."),
+                "type": "success",
+                "sticky": False,
+            },
+        }
+
+    def action_avc_eliminar(self):
+        self.ensure_one()
+        if not self.avc_numero:
+            raise UserError(_("No hay numero AVC para eliminar."))
+        headers = self._get_avc_headers()
+        url = self._get_avc_api_url("/aviso-de-cruce")
+        payload = {"numero_avc": self.avc_numero}
+        try:
+            resp = requests.delete(url, headers=headers, json=payload, timeout=40)
+            if resp.status_code >= 400:
+                raise UserError(_("Error AVC eliminar (%s): %s") % (resp.status_code, resp.text))
+            data = resp.json() if resp.text else {}
+            self._write_avc_response(data)
+        except Exception as err:
+            self.write({
+                "avc_last_sync": fields.Datetime.now(),
+                "avc_sync_error": str(err),
+            })
+            raise
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("AVC"),
+                "message": _("Aviso de cruce eliminado."),
+                "type": "success",
+                "sticky": False,
+            },
+        }
+
+    @api.model
+    def cron_avc_sync_status(self, limit=200):
+        recs = self.search([("avc_numero", "!=", False), ("ws_credencial_id", "!=", False)], limit=limit)
+        for rec in recs:
+            try:
+                rec._avc_consultar_status()
+            except Exception as err:
+                rec.write({
+                    "avc_last_sync": fields.Datetime.now(),
+                    "avc_sync_error": str(err),
+                })
+        return True
 
     def _extract_bl_pdf_text(self, pdf_bytes):
         if not PdfReader:

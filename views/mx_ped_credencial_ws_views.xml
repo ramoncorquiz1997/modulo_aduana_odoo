@@ -13,6 +13,7 @@
           <field name="partner_id"/>
           <field name="is_default"/>
           <field name="ws_username"/>
+          <field name="avc_api_base_url"/>
           <field name="vigencia_desde"/>
           <field name="vigencia_hasta"/>
           <field name="active"/>
@@ -38,6 +39,10 @@
               <group>
                 <field name="ws_username"/>
                 <field name="ws_password" password="True"/>
+                <field name="avc_api_base_url"/>
+                <field name="avc_csv_base_url"/>
+                <field name="avc_token" readonly="1"/>
+                <field name="avc_token_expires_at" readonly="1"/>
                 <field name="vigencia_desde"/>
                 <field name="vigencia_hasta"/>
               </group>

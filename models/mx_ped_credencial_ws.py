@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+from datetime import timedelta
+
+import requests
+
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
@@ -30,6 +34,19 @@ class MxPedCredencialWs(models.Model):
     )
     ws_username = fields.Char(string="WS Usuario", required=True)
     ws_password = fields.Char(string="WS Password", required=True, groups="base.group_system")
+    avc_api_base_url = fields.Char(
+        string="AVC API Base URL",
+        required=True,
+        default="https://avcservicios.anam.gob.mx",
+        help="URL base del servicio AVC. Ejemplo: https://avcservicios.anam.gob.mx",
+    )
+    avc_csv_base_url = fields.Char(
+        string="AVC CSV Base URL",
+        default="https://avcservicios.anam.gob.mx",
+        help="URL base para generación de reportes AVC.",
+    )
+    avc_token = fields.Char(string="Token AVC", readonly=True, groups="base.group_system")
+    avc_token_expires_at = fields.Datetime(string="Token AVC expira", readonly=True, groups="base.group_system")
 
     cert_file = fields.Binary(string="Certificado (.cer)")
     cert_filename = fields.Char(string="Nombre certificado")
@@ -72,6 +89,41 @@ class MxPedCredencialWs(models.Model):
             ])
             if dup:
                 raise ValidationError("Ya existe otra credencial activa para este agente, empresa y ambiente.")
+
+    def _avc_endpoint(self, path):
+        self.ensure_one()
+        base = (self.avc_api_base_url or "").strip().rstrip("/")
+        if not base:
+            raise ValidationError("Configura AVC API Base URL en la credencial.")
+        return f"{base}/{path.lstrip('/')}"
+
+    def get_avc_token(self, force=False):
+        self.ensure_one()
+        now = fields.Datetime.now()
+        if not force and self.avc_token and self.avc_token_expires_at and now < self.avc_token_expires_at:
+            return self.avc_token
+
+        payload = {
+            "username": (self.ws_username or "").strip(),
+            "password": self.ws_password or "",
+        }
+        resp = requests.post(
+            self._avc_endpoint("/aviso-de-cruce"),
+            json=payload,
+            timeout=30,
+        )
+        if resp.status_code >= 400:
+            raise ValidationError(f"No fue posible obtener token AVC ({resp.status_code}): {resp.text}")
+        data = resp.json() if resp.text else {}
+        token = (data.get("Authorization") or "").strip()
+        if not token:
+            raise ValidationError("La respuesta de AVC no incluyó token Authorization.")
+        expiry = fields.Datetime.now() + timedelta(days=59)
+        self.sudo().write({
+            "avc_token": token,
+            "avc_token_expires_at": expiry,
+        })
+        return token
 
 
 class ResPartner(models.Model):
