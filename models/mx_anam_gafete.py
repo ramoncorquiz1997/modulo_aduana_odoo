@@ -18,7 +18,6 @@ class MxAnamGafete(models.Model):
     chofer_id = fields.Many2one(
         "res.partner",
         string="Chofer",
-        required=True,
         domain="[('x_contact_role','=','chofer')]",
         ondelete="cascade",
         index=True,
@@ -77,6 +76,12 @@ class MxAnamGafete(models.Model):
         for rec in self:
             if rec.active and not (rec.numero_gafete or "").strip():
                 raise ValidationError("El numero de gafete es obligatorio en registros activos.")
+
+    @api.constrains("active", "chofer_id")
+    def _check_active_requires_chofer(self):
+        for rec in self:
+            if rec.active and not rec.chofer_id:
+                raise ValidationError("Selecciona un chofer para activar el gafete.")
 
     @api.constrains("qr_url")
     def _check_qr_url(self):
@@ -139,7 +144,7 @@ class MxAnamGafete(models.Model):
             if m:
                 folio = (m.group(1) or "").strip()
 
-        m = re.search(r"nombre\s*:\s*([A-ZÁÉÍÓÚÑ0-9 .,'-]{5,})", txt, flags=re.IGNORECASE)
+        m = re.search(r"nombre\s*:\s*([^<\r\n]{5,})", txt, flags=re.IGNORECASE)
         if m:
             nombre = " ".join((m.group(1) or "").strip().split())
 
@@ -242,10 +247,11 @@ class MxAnamGafete(models.Model):
             value = (qr_url or "").strip()
             if not value:
                 raise ValidationError("No se recibió un valor de QR.")
+            # Permite escanear primero sin bloquear por campos que aún no se conocen.
             rec.write({"qr_url": value, "active": False if not rec.numero_gafete else rec.active})
             if auto_validate:
                 rec.action_validar_qr_url()
-            if rec.numero_gafete and not rec.active:
+            if rec.numero_gafete and rec.chofer_id and not rec.active:
                 rec.active = True
         return True
 
