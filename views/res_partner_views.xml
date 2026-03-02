@@ -95,6 +95,7 @@
                   </list>
                   <form string="Gafete ANAM">
                     <header>
+                      <button name="action_open_qr_camera" type="object" string="Escanear con camara" class="btn-secondary"/>
                       <button name="action_validar_qr_url" type="object" string="Validar QR" class="btn-secondary"/>
                     </header>
                     <group>

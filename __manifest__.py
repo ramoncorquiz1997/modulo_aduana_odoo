@@ -39,6 +39,8 @@
     "assets": {
         "web.assets_backend": [
             "modulo_aduana_odoo/static/src/scss/aduana_theme.scss",
+            "modulo_aduana_odoo/static/src/js/qr_camera_scanner.esm.js",
+            "modulo_aduana_odoo/static/src/xml/qr_camera_scanner.xml",
         ],
     },
 }

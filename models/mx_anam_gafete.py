@@ -151,6 +151,28 @@ class MxAnamGafete(models.Model):
                 })
         return True
 
+    def action_open_qr_camera(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.client",
+            "tag": "mx_qr_camera_scanner",
+            "params": {
+                "model": self._name,
+                "resId": self.id,
+                "title": "Escanear QR de Gafete ANAM",
+            },
+        }
+
+    def action_set_qr_url_from_camera(self, qr_url, auto_validate=True):
+        for rec in self:
+            value = (qr_url or "").strip()
+            if not value:
+                raise ValidationError("No se recibió un valor de QR.")
+            rec.write({"qr_url": value})
+            if auto_validate:
+                rec.action_validar_qr_url()
+        return True
+
     @api.model
     def cron_validar_gafetes_anam(self, limit=300):
         gafetes = self.search(
