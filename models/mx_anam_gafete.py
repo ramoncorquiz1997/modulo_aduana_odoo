@@ -527,11 +527,15 @@ class MxAnamGafete(models.Model):
                 env["MOZ_DISABLE_GMP_SANDBOX"] = "1"
                 env["MOZ_DISABLE_RDD_SANDBOX"] = "1"
             env.setdefault("NO_AT_BRIDGE", "1")
+            xvfb_stderr = None
             if use_xvfb:
                 xvfb_bin = shutil.which("Xvfb")
                 if not xvfb_bin:
                     return False, "ANAM_USE_XVFB=1 pero no existe Xvfb instalado en servidor."
-                display = os.environ.get("ANAM_XVFB_DISPLAY", ":99")
+                # Use a dynamic display per request to avoid collisions.
+                display = os.environ.get("ANAM_XVFB_DISPLAY", "")
+                if not display:
+                    display = f":{100 + (os.getpid() % 800)}"
                 xvfb_cmd = [
                     xvfb_bin,
                     display,
@@ -541,13 +545,23 @@ class MxAnamGafete(models.Model):
                     "-nolisten",
                     "tcp",
                 ]
+                xvfb_stderr = tempfile.NamedTemporaryFile(prefix="xvfb-", suffix=".log", delete=False)
                 xvfb_proc = subprocess.Popen(
                     xvfb_cmd,
                     stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    stderr=xvfb_stderr,
                 )
                 # Small warm-up so Firefox can attach to virtual display.
                 time.sleep(0.4)
+                if xvfb_proc.poll() is not None:
+                    xvfb_log = ""
+                    try:
+                        xvfb_stderr.close()
+                        with open(xvfb_stderr.name, "r", encoding="utf-8", errors="ignore") as fh:
+                            xvfb_log = fh.read()[:1000]
+                    except Exception:
+                        pass
+                    return False, f"Xvfb no pudo iniciar en display {display}. {xvfb_log}"
                 env["DISPLAY"] = display
 
             options = FirefoxOptions()
@@ -599,6 +613,11 @@ class MxAnamGafete(models.Model):
                         xvfb_proc.kill()
                     except Exception:
                         pass
+            if xvfb_stderr and os.path.exists(xvfb_stderr.name):
+                try:
+                    os.unlink(xvfb_stderr.name)
+                except Exception:
+                    pass
             if gecko_log_file and os.path.exists(gecko_log_file.name):
                 try:
                     os.unlink(gecko_log_file.name)
