@@ -85,9 +85,9 @@ class MxAnamGafete(models.Model):
 
     @api.constrains("numero_gafete")
     def _check_numero_gafete_when_active(self):
-        for rec in self:
-            if rec.active and not (rec.numero_gafete or "").strip():
-                raise ValidationError("El numero de gafete es obligatorio en registros activos.")
+        # Se permite activo sin numero cuando apenas se escanea QR.
+        # El numero puede llenarse posteriormente al validar.
+        return
 
     @api.constrains("active", "chofer_id")
     def _check_active_requires_chofer(self):
@@ -250,7 +250,7 @@ class MxAnamGafete(models.Model):
                 raise ValidationError("Guarda primero el chofer para poder escanear el gafete.")
             rec = self.create({
                 "chofer_id": rec.chofer_id.id,
-                "active": False,
+                "active": True,
             })
         return {
             "type": "ir.actions.client",
@@ -269,7 +269,7 @@ class MxAnamGafete(models.Model):
             if not value:
                 raise ValidationError("No se recibió un valor de QR.")
             # Permite escanear primero sin bloquear por campos que aún no se conocen.
-            rec.write({"qr_url": value, "active": False if not rec.numero_gafete else rec.active})
+            rec.write({"qr_url": value, "active": True})
             if auto_validate:
                 try:
                     with self.env.cr.savepoint():
@@ -281,7 +281,7 @@ class MxAnamGafete(models.Model):
                         "validado_el": fields.Datetime.now(),
                         "mensaje_validacion": f"Error en validacion automatica: {err}",
                     })
-            if rec.numero_gafete and rec.chofer_id and not rec.active:
+            if rec.chofer_id and not rec.active:
                 rec.active = True
         return True
 
@@ -330,3 +330,4 @@ class MxAnamGafete(models.Model):
         )
         gafetes.action_validar_qr_url()
         return True
+

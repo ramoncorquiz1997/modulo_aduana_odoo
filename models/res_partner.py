@@ -480,11 +480,11 @@ class ResPartner(models.Model):
             gafete = gafete_model.create({
                 "chofer_id": target_chofer.id,
                 "qr_url": value,
-                "active": False,
+                "active": True,
             })
             _logger.info("QR created new gafete id=%s chofer=%s", gafete.id, target_chofer.id)
         else:
-            gafete.write({"qr_url": value})
+            gafete.write({"qr_url": value, "active": True})
             _logger.info("QR updated existing gafete id=%s chofer=%s", gafete.id, target_chofer.id)
 
         if auto_validate:
