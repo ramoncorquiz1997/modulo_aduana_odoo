@@ -37,6 +37,11 @@ except Exception:  # pragma: no cover
     WebDriverWait = None
     EC = None
 
+try:
+    from playwright.sync_api import sync_playwright
+except Exception:  # pragma: no cover
+    sync_playwright = None
+
 _logger = logging.getLogger(__name__)
 
 
@@ -210,6 +215,31 @@ class MxAnamGafete(models.Model):
         tmp_profile_dir = None
         driver_log_file = None
         try:
+            remote_url = os.environ.get("ANAM_SELENIUM_REMOTE_URL")
+            if remote_url:
+                options = ChromeOptions()
+                options.add_argument("--headless=new")
+                options.add_argument("--disable-gpu")
+                options.add_argument("--no-sandbox")
+                options.add_argument("--disable-dev-shm-usage")
+                options.add_argument("--window-size=1365,1024")
+                options.add_argument("--lang=es-MX")
+                _logger.info("ANAM Selenium remote url=%s", remote_url)
+                driver = webdriver.Remote(command_executor=remote_url, options=options)
+                driver.set_page_load_timeout(20)
+                driver.get(url)
+                if WebDriverWait and EC and By:
+                    WebDriverWait(driver, 12).until(
+                        lambda d: (
+                            d.find_elements(By.CSS_SELECTOR, "div.alert-danger")
+                            or d.find_elements(By.CSS_SELECTOR, "div.alert-success")
+                            or d.find_elements(By.CSS_SELECTOR, "#folio")
+                            or ("nombre:" in (d.page_source or "").lower())
+                        )
+                    )
+                html = driver.page_source or ""
+                return html, False
+
             # Prefer explicit server-proven binaries.
             chrome_bin = (
                 os.environ.get("ANAM_CHROME_BIN")
@@ -315,6 +345,70 @@ class MxAnamGafete(models.Model):
                     os.unlink(driver_log_file.name)
                 except Exception:
                     pass
+
+    def _fetch_html_with_playwright(self, url):
+        if not sync_playwright:
+            return False, "Playwright no disponible en servidor."
+        chrome_bin = (
+            os.environ.get("ANAM_CHROME_BIN")
+            or ("/usr/bin/google-chrome" if os.path.exists("/usr/bin/google-chrome") else None)
+            or shutil.which("google-chrome")
+            or shutil.which("google-chrome-stable")
+            or shutil.which("chromium-browser")
+            or shutil.which("chromium")
+        )
+        if not chrome_bin:
+            return False, "No se encontro binario Chrome/Chromium para Playwright."
+
+        profile_dir = tempfile.mkdtemp(prefix="odoo-pw-profile-")
+        browser = None
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(
+                    executable_path=chrome_bin,
+                    headless=True,
+                    args=[
+                        "--no-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--disable-gpu",
+                        "--disable-software-rasterizer",
+                        "--disable-extensions",
+                        "--disable-background-networking",
+                        "--no-first-run",
+                        "--no-default-browser-check",
+                    ],
+                )
+                context = browser.new_context(
+                    viewport={"width": 1365, "height": 1024},
+                    locale="es-MX",
+                    user_agent=(
+                        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) Chrome/145.0 Safari/537.36"
+                    ),
+                )
+                page = context.new_page()
+                page.goto(url, wait_until="domcontentloaded", timeout=20000)
+                try:
+                    page.wait_for_selector(
+                        "div.alert-danger, div.alert-success, #folio",
+                        timeout=12000,
+                    )
+                except Exception:
+                    # If selector does not appear we still capture final DOM.
+                    pass
+                html = page.content() or ""
+                context.close()
+                browser.close()
+                return html, False
+        except Exception as err:
+            return False, str(err)
+        finally:
+            if browser:
+                try:
+                    browser.close()
+                except Exception:
+                    pass
+            shutil.rmtree(profile_dir, ignore_errors=True)
 
     def _fetch_html_with_chrome_dumpdom(self, url):
         chrome_bin = (
@@ -446,26 +540,30 @@ class MxAnamGafete(models.Model):
                 html_text = resp.text or ""
                 selenium_used = False
                 if self._looks_like_anam_shell_html(html_text):
-                    # Prefer dump-dom (no chromedriver). Selenium queda como ultimo fallback.
-                    rendered_html, dom_err = rec._fetch_html_with_chrome_dumpdom(resp.url or url)
+                    # Prefer Playwright (robust JS render), then dump-dom, then Selenium.
+                    rendered_html, pw_err = rec._fetch_html_with_playwright(resp.url or url)
                     if rendered_html:
                         html_text = rendered_html
                     else:
-                        rendered_html, s_err = rec._fetch_html_with_selenium(resp.url or url)
+                        rendered_html, dom_err = rec._fetch_html_with_chrome_dumpdom(resp.url or url)
                         if rendered_html:
                             html_text = rendered_html
-                            selenium_used = True
                         else:
-                            rec.write({
-                                "estado": "indeterminado",
-                                "validado_el": fields.Datetime.now(),
-                                "mensaje_validacion": (
-                                    "Se recibio HTML base de ANAM y no se pudo renderizar. "
-                                    f"dump-dom: {dom_err} | Selenium: {s_err}"
-                                ),
-                                "html_snippet": (html_text or "")[:1500],
-                            })
-                            continue
+                            rendered_html, s_err = rec._fetch_html_with_selenium(resp.url or url)
+                            if rendered_html:
+                                html_text = rendered_html
+                                selenium_used = True
+                            else:
+                                rec.write({
+                                    "estado": "indeterminado",
+                                    "validado_el": fields.Datetime.now(),
+                                    "mensaje_validacion": (
+                                        "Se recibio HTML base de ANAM y no se pudo renderizar. "
+                                        f"Playwright: {pw_err} | dump-dom: {dom_err} | Selenium: {s_err}"
+                                    ),
+                                    "html_snippet": (html_text or "")[:1500],
+                                })
+                                continue
 
                 parsed = rec._parse_estado_desde_html(html_text)
                 folio, nombre = rec._extract_folio_and_nombre(html_text)
