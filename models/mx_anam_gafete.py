@@ -641,31 +641,31 @@ class MxAnamGafete(models.Model):
                 html_text = resp.text or ""
                 selenium_used = False
                 if self._looks_like_anam_shell_html(html_text):
-                    # Prefer Playwright (robust JS render), then dump-dom, then Selenium.
-                    rendered_html, pw_err = rec._fetch_html_with_playwright(resp.url or url)
+                    # Prefer Firefox Selenium first (stable on this host), then other engines.
+                    rendered_html, ff_err = rec._fetch_html_with_firefox(resp.url or url)
                     if rendered_html:
                         html_text = rendered_html
                     else:
-                        rendered_html, dom_err = rec._fetch_html_with_chrome_dumpdom(resp.url or url)
+                        rendered_html, pw_err = rec._fetch_html_with_playwright(resp.url or url)
                         if rendered_html:
                             html_text = rendered_html
                         else:
-                            rendered_html, s_err = rec._fetch_html_with_selenium(resp.url or url)
+                            rendered_html, dom_err = rec._fetch_html_with_chrome_dumpdom(resp.url or url)
                             if rendered_html:
                                 html_text = rendered_html
-                                selenium_used = True
                             else:
-                                rendered_html, ff_err = rec._fetch_html_with_firefox(resp.url or url)
+                                rendered_html, s_err = rec._fetch_html_with_selenium(resp.url or url)
                                 if rendered_html:
                                     html_text = rendered_html
+                                    selenium_used = True
                                 else:
                                     rec._safe_write({
                                         "estado": "indeterminado",
                                         "validado_el": fields.Datetime.now(),
                                         "mensaje_validacion": (
                                             "Se recibio HTML base de ANAM y no se pudo renderizar. "
-                                            f"Playwright: {pw_err} | dump-dom: {dom_err} | "
-                                            f"Selenium Chrome: {s_err} | Selenium Firefox: {ff_err}"
+                                            f"Selenium Firefox: {ff_err} | Playwright: {pw_err} | "
+                                            f"dump-dom: {dom_err} | Selenium Chrome: {s_err}"
                                         ),
                                         "html_snippet": (html_text or "")[:1500],
                                     })
