@@ -38,6 +38,17 @@
         <xpath expr="//field[@name='vat']" position="attributes">
           <attribute name="string">RFC</attribute>
         </xpath>
+        <xpath expr="//div[@name='button_box']" position="inside">
+          <button name="action_open_gafete_qr_camera"
+                  type="object"
+                  class="oe_stat_button"
+                  icon="fa-qrcode"
+                  invisible="x_contact_role != 'chofer' and x_contact_role != 'transportista'">
+            <div class="o_stat_info">
+              <span class="o_stat_text">Escanear Gafete</span>
+            </div>
+          </button>
+        </xpath>
         <xpath expr="//field[@name='child_ids']" position="attributes">
           <attribute name="context">{'default_parent_id': id, 'default_type': 'contact', 'default_function': 'Chofer', 'default_x_contact_role': 'chofer', 'default_company_type': 'person'}</attribute>
         </xpath>

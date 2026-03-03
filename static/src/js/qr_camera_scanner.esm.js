@@ -14,6 +14,7 @@ class QrCameraScannerAction extends Component {
         this.action = useService("action");
         this.notification = useService("notification");
         this.videoRef = useRef("video");
+        this.canvasRef = useRef("canvas");
         this.state = useState({
             scanning: false,
             supported: typeof window !== "undefined" && "BarcodeDetector" in window,
@@ -23,6 +24,7 @@ class QrCameraScannerAction extends Component {
         });
         this.stream = null;
         this.detector = null;
+        this.scanTimer = null;
         this.params = this.props.action.params || {};
         onMounted(async () => {
             await this.startCamera();
@@ -48,6 +50,11 @@ class QrCameraScannerAction extends Component {
             await video.play();
             this.state.scanning = true;
             if (this.state.supported) {
+                const supportedFormats = await window.BarcodeDetector.getSupportedFormats();
+                if (!supportedFormats.includes("qr_code")) {
+                    this.state.error = "Este navegador no soporta lectura QR con BarcodeDetector.";
+                    return;
+                }
                 this.detector = new window.BarcodeDetector({ formats: ["qr_code"] });
                 this.scanLoop();
             } else {
@@ -60,6 +67,10 @@ class QrCameraScannerAction extends Component {
 
     stopCamera() {
         this.state.scanning = false;
+        if (this.scanTimer) {
+            clearTimeout(this.scanTimer);
+            this.scanTimer = null;
+        }
         if (this.stream) {
             this.stream.getTracks().forEach((t) => t.stop());
             this.stream = null;
@@ -69,7 +80,17 @@ class QrCameraScannerAction extends Component {
     async scanLoop() {
         while (this.state.scanning && this.detector && this.videoRef.el) {
             try {
-                const codes = await this.detector.detect(this.videoRef.el);
+                const video = this.videoRef.el;
+                const canvas = this.canvasRef.el;
+                if (!video.videoWidth || !video.videoHeight) {
+                    await sleep(250);
+                    continue;
+                }
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const codes = await this.detector.detect(canvas);
                 if (codes && codes.length) {
                     const value = (codes[0].rawValue || "").trim();
                     if (value) {
@@ -82,7 +103,7 @@ class QrCameraScannerAction extends Component {
             } catch (_err) {
                 // Ignore detector transient errors.
             }
-            await sleep(250);
+            await sleep(180);
         }
     }
 
