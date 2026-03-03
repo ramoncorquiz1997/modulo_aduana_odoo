@@ -97,6 +97,23 @@ class MxAnamGafete(models.Model):
         )
     ]
 
+    @staticmethod
+    def _clean_text(value, max_len=False):
+        if value is False or value is None:
+            return value
+        txt = str(value).replace("\x00", "")
+        if max_len:
+            txt = txt[:max_len]
+        return txt
+
+    def _safe_write(self, vals):
+        safe_vals = dict(vals or {})
+        for key in ("mensaje_validacion", "html_snippet", "qr_url", "numero_gafete"):
+            if key in safe_vals and safe_vals[key] not in (False, None):
+                max_len = 1500 if key == "html_snippet" else False
+                safe_vals[key] = self._clean_text(safe_vals[key], max_len=max_len)
+        return self.write(safe_vals)
+
     @api.depends("numero_gafete", "chofer_id")
     def _compute_name(self):
         for rec in self:
@@ -606,7 +623,7 @@ class MxAnamGafete(models.Model):
                         break
 
                 if resp is None:
-                    rec.write({
+                    rec._safe_write({
                         "estado": "error",
                         "validado_el": fields.Datetime.now(),
                         "mensaje_validacion": "No fue posible consultar el verificador ANAM (timeout/conexion).",
@@ -614,7 +631,7 @@ class MxAnamGafete(models.Model):
                     })
                     continue
                 if resp.status_code >= 400:
-                    rec.write({
+                    rec._safe_write({
                         "estado": "error",
                         "validado_el": fields.Datetime.now(),
                         "mensaje_validacion": f"HTTP {resp.status_code}: {resp.text[:500]}",
@@ -642,7 +659,7 @@ class MxAnamGafete(models.Model):
                                 if rendered_html:
                                     html_text = rendered_html
                                 else:
-                                    rec.write({
+                                    rec._safe_write({
                                         "estado": "indeterminado",
                                         "validado_el": fields.Datetime.now(),
                                         "mensaje_validacion": (
@@ -672,9 +689,9 @@ class MxAnamGafete(models.Model):
                         vals["mensaje_validacion"] = f"{vals['mensaje_validacion']} | Chofer asignado: {chofer.name} ({reason})"
                     else:
                         vals["mensaje_validacion"] = f"{vals['mensaje_validacion']} | Nombre detectado: {nombre}. {reason} Selecciona chofer manualmente."
-                rec.write(vals)
+                rec._safe_write(vals)
             except Exception as err:
-                rec.write({
+                rec._safe_write({
                     "estado": "error",
                     "validado_el": fields.Datetime.now(),
                     "mensaje_validacion": str(err),
@@ -709,14 +726,14 @@ class MxAnamGafete(models.Model):
             if not value:
                 raise ValidationError("No se recibió un valor de QR.")
             # Permite escanear primero sin bloquear por campos que aún no se conocen.
-            rec.write({"qr_url": value, "active": True})
+            rec._safe_write({"qr_url": value, "active": True})
             if auto_validate:
                 try:
                     with self.env.cr.savepoint():
                         rec.action_validar_qr_url()
                 except Exception as err:
                     _logger.exception("Fallo validacion automatica de QR (gafete id=%s)", rec.id)
-                    rec.write({
+                    rec._safe_write({
                         "estado": "error",
                         "validado_el": fields.Datetime.now(),
                         "mensaje_validacion": f"Error en validacion automatica: {err}",
