@@ -255,6 +255,7 @@ class MxAnamGafete(models.Model):
             "params": {
                 "model": rec._name,
                 "resId": rec.id,
+                "res_id": rec.id,
                 "title": "Escanear QR de Gafete ANAM",
             },
         }

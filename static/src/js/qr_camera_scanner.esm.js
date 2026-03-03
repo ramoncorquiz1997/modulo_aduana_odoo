@@ -34,6 +34,26 @@ class QrCameraScannerAction extends Component {
         });
     }
 
+    _getModelAndResId() {
+        const action = this.props.action || {};
+        const params = this.params || {};
+        const ctx = action.context || {};
+        const model =
+            params.model ||
+            params.res_model ||
+            action.res_model ||
+            ctx.active_model ||
+            false;
+        const resIdRaw =
+            params.resId ||
+            params.res_id ||
+            action.res_id ||
+            ctx.active_id ||
+            false;
+        const resId = Number(resIdRaw) || false;
+        return { model, resId };
+    }
+
     async startCamera() {
         this.state.error = "";
         this.state.fallbackActive = false;
@@ -135,8 +155,7 @@ class QrCameraScannerAction extends Component {
     }
 
     async startServerFallbackLoop() {
-        const model = this.params.model;
-        const resId = this.params.resId;
+        const { model, resId } = this._getModelAndResId();
         if (!model || !resId) {
             this.state.error = "No se puede usar fallback sin modelo y registro. Guarda el registro y vuelve a abrir el escaner.";
             return;
@@ -187,8 +206,7 @@ class QrCameraScannerAction extends Component {
             this.notification.add("Escanea un QR o pega una URL.", { type: "warning" });
             return;
         }
-        const model = this.params.model;
-        const resId = this.params.resId;
+        const { model, resId } = this._getModelAndResId();
         if (!model || !resId) {
             this.notification.add("Guarda primero el registro y vuelve a abrir el escaner.", { type: "danger" });
             return;

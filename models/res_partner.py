@@ -408,6 +408,7 @@ class ResPartner(models.Model):
             "params": {
                 "model": self._name,
                 "resId": self.id,
+                "res_id": self.id,
                 "title": "Escanear QR de Gafete (Chofer)",
             },
         }
