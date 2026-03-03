@@ -519,6 +519,14 @@ class MxAnamGafete(models.Model):
         try:
             use_xvfb = os.environ.get("ANAM_USE_XVFB", "0") in ("1", "true", "True")
             env = os.environ.copy()
+            # In hardened servers Firefox sandbox may crash with EPERM (userns/pidns).
+            # Allow disabling sandbox for this worker context only.
+            if os.environ.get("ANAM_DISABLE_FIREFOX_SANDBOX", "1") in ("1", "true", "True"):
+                env["MOZ_SANDBOX"] = "0"
+                env["MOZ_DISABLE_CONTENT_SANDBOX"] = "1"
+                env["MOZ_DISABLE_GMP_SANDBOX"] = "1"
+                env["MOZ_DISABLE_RDD_SANDBOX"] = "1"
+            env.setdefault("NO_AT_BRIDGE", "1")
             if use_xvfb:
                 xvfb_bin = shutil.which("Xvfb")
                 if not xvfb_bin:
