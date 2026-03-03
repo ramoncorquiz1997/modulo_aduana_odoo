@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 import unicodedata
 from urllib.parse import urlsplit, urlunsplit
 
@@ -513,16 +514,44 @@ class MxAnamGafete(models.Model):
 
         driver = None
         gecko_log_file = None
+        xvfb_proc = None
+        display = None
         try:
+            use_xvfb = os.environ.get("ANAM_USE_XVFB", "0") in ("1", "true", "True")
+            env = os.environ.copy()
+            if use_xvfb:
+                xvfb_bin = shutil.which("Xvfb")
+                if not xvfb_bin:
+                    return False, "ANAM_USE_XVFB=1 pero no existe Xvfb instalado en servidor."
+                display = os.environ.get("ANAM_XVFB_DISPLAY", ":99")
+                xvfb_cmd = [
+                    xvfb_bin,
+                    display,
+                    "-screen",
+                    "0",
+                    "1365x1024x24",
+                    "-nolisten",
+                    "tcp",
+                ]
+                xvfb_proc = subprocess.Popen(
+                    xvfb_cmd,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                # Small warm-up so Firefox can attach to virtual display.
+                time.sleep(0.4)
+                env["DISPLAY"] = display
+
             options = FirefoxOptions()
             options.binary_location = firefox_bin
-            options.add_argument("-headless")
+            if not use_xvfb:
+                options.add_argument("-headless")
 
             gecko_log_file = tempfile.NamedTemporaryFile(prefix="geckodriver-", suffix=".log", delete=False)
             gecko_log_path = gecko_log_file.name
             gecko_log_file.close()
 
-            service = FirefoxService(executable_path=geckodriver_bin, log_output=gecko_log_path)
+            service = FirefoxService(executable_path=geckodriver_bin, log_output=gecko_log_path, env=env)
             driver = webdriver.Firefox(service=service, options=options)
             driver.set_page_load_timeout(25)
             driver.get(url)
@@ -553,6 +582,15 @@ class MxAnamGafete(models.Model):
                     driver.quit()
                 except Exception:
                     pass
+            if xvfb_proc:
+                try:
+                    xvfb_proc.terminate()
+                    xvfb_proc.wait(timeout=2)
+                except Exception:
+                    try:
+                        xvfb_proc.kill()
+                    except Exception:
+                        pass
             if gecko_log_file and os.path.exists(gecko_log_file.name):
                 try:
                     os.unlink(gecko_log_file.name)
@@ -597,6 +635,7 @@ class MxAnamGafete(models.Model):
 
     def action_validar_qr_url(self):
         fail_fast_render = os.environ.get("ANAM_FAIL_FAST_RENDER", "1") not in ("0", "false", "False")
+        disable_js_render = os.environ.get("ANAM_DISABLE_JS_RENDER", "0") in ("1", "true", "True")
         for rec in self:
             url = (rec.qr_url or "").strip()
             if not url:
@@ -642,6 +681,17 @@ class MxAnamGafete(models.Model):
                 html_text = resp.text or ""
                 selenium_used = False
                 if self._looks_like_anam_shell_html(html_text):
+                    if disable_js_render:
+                        rec._safe_write({
+                            "estado": "indeterminado",
+                            "validado_el": fields.Datetime.now(),
+                            "mensaje_validacion": (
+                                "Se recibio HTML base de ANAM. Render JS deshabilitado por configuracion "
+                                "(ANAM_DISABLE_JS_RENDER=1)."
+                            ),
+                            "html_snippet": (html_text or "")[:1500],
+                        })
+                        continue
                     # Prefer Firefox Selenium first (stable on this host), then other engines.
                     rendered_html, ff_err = rec._fetch_html_with_firefox(resp.url or url)
                     if rendered_html:
