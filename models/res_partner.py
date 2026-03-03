@@ -482,13 +482,25 @@ class ResPartner(models.Model):
                 "qr_url": value,
                 "active": False,
             })
+            _logger.info("QR created new gafete id=%s chofer=%s", gafete.id, target_chofer.id)
         else:
             gafete.write({"qr_url": value})
+            _logger.info("QR updated existing gafete id=%s chofer=%s", gafete.id, target_chofer.id)
 
         if auto_validate:
-            gafete.action_validar_qr_url()
+            try:
+                with self.env.cr.savepoint():
+                    gafete.action_validar_qr_url()
+            except Exception as err:
+                _logger.exception("Fallo validacion automatica de QR para chofer=%s gafete=%s", target_chofer.id, gafete.id)
+                gafete.write({
+                    "estado": "error",
+                    "validado_el": fields.Datetime.now(),
+                    "mensaje_validacion": f"Error en validacion automatica: {err}",
+                })
             if gafete.numero_gafete and not gafete.active:
                 gafete.active = True
+        _logger.info("QR save completed gafete id=%s estado=%s numero=%s", gafete.id, gafete.estado, gafete.numero_gafete or "")
         return True
 
     def action_decode_qr_image_from_camera(self, image_data):

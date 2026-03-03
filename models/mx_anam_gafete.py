@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import base64
 import io
+import logging
 import re
 import unicodedata
 
@@ -15,6 +16,8 @@ try:
 except Exception:  # pragma: no cover
     Image = None
     qr_decode = None
+
+_logger = logging.getLogger(__name__)
 
 
 class MxAnamGafete(models.Model):
@@ -201,7 +204,7 @@ class MxAnamGafete(models.Model):
             if not url:
                 raise ValidationError("Captura la URL QR antes de validar.")
             try:
-                resp = requests.get(url, timeout=25)
+                resp = requests.get(url, timeout=10)
                 if resp.status_code >= 400:
                     rec.write({
                         "estado": "error",
@@ -268,7 +271,16 @@ class MxAnamGafete(models.Model):
             # Permite escanear primero sin bloquear por campos que aún no se conocen.
             rec.write({"qr_url": value, "active": False if not rec.numero_gafete else rec.active})
             if auto_validate:
-                rec.action_validar_qr_url()
+                try:
+                    with self.env.cr.savepoint():
+                        rec.action_validar_qr_url()
+                except Exception as err:
+                    _logger.exception("Fallo validacion automatica de QR (gafete id=%s)", rec.id)
+                    rec.write({
+                        "estado": "error",
+                        "validado_el": fields.Datetime.now(),
+                        "mensaje_validacion": f"Error en validacion automatica: {err}",
+                    })
             if rec.numero_gafete and rec.chofer_id and not rec.active:
                 rec.active = True
         return True
