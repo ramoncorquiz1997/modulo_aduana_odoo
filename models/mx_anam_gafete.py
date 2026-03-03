@@ -596,6 +596,7 @@ class MxAnamGafete(models.Model):
         return False, "No se encontro chofer por nombre."
 
     def action_validar_qr_url(self):
+        fail_fast_render = os.environ.get("ANAM_FAIL_FAST_RENDER", "1") not in ("0", "false", "False")
         for rec in self:
             url = (rec.qr_url or "").strip()
             if not url:
@@ -646,6 +647,17 @@ class MxAnamGafete(models.Model):
                     if rendered_html:
                         html_text = rendered_html
                     else:
+                        if fail_fast_render:
+                            rec._safe_write({
+                                "estado": "indeterminado",
+                                "validado_el": fields.Datetime.now(),
+                                "mensaje_validacion": (
+                                    "Se recibio HTML base de ANAM y no se pudo renderizar con Selenium Firefox. "
+                                    f"Error: {ff_err}"
+                                ),
+                                "html_snippet": (html_text or "")[:1500],
+                            })
+                            continue
                         rendered_html, pw_err = rec._fetch_html_with_playwright(resp.url or url)
                         if rendered_html:
                             html_text = rendered_html
