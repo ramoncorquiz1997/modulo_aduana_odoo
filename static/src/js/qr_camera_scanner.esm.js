@@ -25,11 +25,18 @@ class QrCameraScannerAction extends Component {
         });
         this.stream = null;
         this.detector = null;
+        this.autoSaveTimer = null;
+        this.lastResolvedModel = null;
+        this.lastResolvedResId = null;
         this.params = this.props.action.params || {};
         onMounted(async () => {
             await this.startCamera();
         });
         onWillUnmount(() => {
+            if (this.autoSaveTimer) {
+                clearTimeout(this.autoSaveTimer);
+                this.autoSaveTimer = null;
+            }
             this.stopCamera();
         });
     }
@@ -51,7 +58,9 @@ class QrCameraScannerAction extends Component {
             ctx.active_id ||
             false;
         const resId = Number(resIdRaw) || false;
-        return { model, resId };
+        const finalModel = model || this.lastResolvedModel || false;
+        const finalResId = resId || this.lastResolvedResId || false;
+        return { model: finalModel, resId: finalResId };
     }
 
     async startCamera() {
@@ -103,10 +112,34 @@ class QrCameraScannerAction extends Component {
 
     stopCamera() {
         this.state.scanning = false;
+        if (this.autoSaveTimer) {
+            clearTimeout(this.autoSaveTimer);
+            this.autoSaveTimer = null;
+        }
         if (this.stream) {
             this.stream.getTracks().forEach((t) => t.stop());
             this.stream = null;
         }
+    }
+
+    _looksLikeQrUrl(value) {
+        const txt = (value || "").trim();
+        return /^https?:\/\//i.test(txt) && txt.length > 20;
+    }
+
+    _scheduleAutoSave() {
+        if (this.autoSaveTimer) {
+            clearTimeout(this.autoSaveTimer);
+        }
+        this.autoSaveTimer = setTimeout(async () => {
+            if (this.state.saving) {
+                return;
+            }
+            if (!this._looksLikeQrUrl(this.state.result)) {
+                return;
+            }
+            await this.useResult();
+        }, 250);
     }
 
     async scanLoop() {
@@ -128,7 +161,7 @@ class QrCameraScannerAction extends Component {
                     if (value) {
                         this.state.result = value;
                         this.stopCamera();
-                        await this.useResult();
+                        this._scheduleAutoSave();
                         return;
                     }
                 }
@@ -160,6 +193,8 @@ class QrCameraScannerAction extends Component {
             this.state.error = "No se puede usar fallback sin modelo y registro. Guarda el registro y vuelve a abrir el escaner.";
             return;
         }
+        this.lastResolvedModel = model;
+        this.lastResolvedResId = resId;
 
         this.state.fallbackActive = true;
         try {
@@ -182,7 +217,7 @@ class QrCameraScannerAction extends Component {
                     if (decoded && String(decoded).trim()) {
                         this.state.result = String(decoded).trim();
                         this.stopCamera();
-                        await this.useResult();
+                        this._scheduleAutoSave();
                         return;
                     }
                 }
@@ -217,6 +252,10 @@ class QrCameraScannerAction extends Component {
             this.notification.add("QR detectado, guardado y validado.", { type: "success" });
             this.close();
             await this.action.doAction({ type: "ir.actions.client", tag: "reload" });
+        } catch (err) {
+            const msg = err?.message || err?.data?.message || String(err);
+            this.state.error = `Error al guardar QR: ${msg}`;
+            this.notification.add(`Error al guardar QR: ${msg}`, { type: "danger" });
         } finally {
             this.state.saving = false;
         }
@@ -229,6 +268,10 @@ class QrCameraScannerAction extends Component {
         } else {
             this.action.doAction({ type: "ir.actions.client", tag: "reload" });
         }
+    }
+
+    onResultInput() {
+        this._scheduleAutoSave();
     }
 }
 

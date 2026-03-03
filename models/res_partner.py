@@ -457,6 +457,7 @@ class ResPartner(models.Model):
 
     def action_set_qr_url_from_camera(self, qr_url, auto_validate=True):
         self.ensure_one()
+        _logger.info("QR save request model=res.partner id=%s role=%s auto_validate=%s", self.id, self.x_contact_role, auto_validate)
         if self.x_contact_role not in ("chofer", "transportista"):
             raise UserError("Solo se puede asignar QR de gafete a contacto chofer o transportista.")
         value = (qr_url or "").strip()
