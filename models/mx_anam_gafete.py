@@ -18,6 +18,19 @@ except Exception:  # pragma: no cover
     Image = None
     qr_decode = None
 
+try:
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options as ChromeOptions
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+except Exception:  # pragma: no cover
+    webdriver = None
+    ChromeOptions = None
+    By = None
+    WebDriverWait = None
+    EC = None
+
 _logger = logging.getLogger(__name__)
 
 
@@ -163,6 +176,63 @@ class MxAnamGafete(models.Model):
 
         return folio or False, nombre or False
 
+    def _looks_like_anam_shell_html(self, html_text):
+        txt = (html_text or "").lower()
+        if not txt:
+            return False
+        shell_signals = [
+            "<!doctype html",
+            "consultaqrgafete.anam.gob.mx",
+            "js-1/lib/main.js",
+        ]
+        has_shell = sum(1 for s in shell_signals if s in txt) >= 2
+        has_data = any(
+            marker in txt
+            for marker in [
+                "vencido desde",
+                "gafete vigente",
+                "id=\"folio\"",
+                "nombre:",
+            ]
+        )
+        return has_shell and not has_data
+
+    def _fetch_html_with_selenium(self, url):
+        if not webdriver or not ChromeOptions:
+            return False, "Selenium no disponible en servidor."
+        driver = None
+        try:
+            options = ChromeOptions()
+            options.add_argument("--headless=new")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--window-size=1365,1024")
+            options.add_argument("--lang=es-MX")
+            driver = webdriver.Chrome(options=options)
+            driver.set_page_load_timeout(20)
+            driver.get(url)
+
+            if WebDriverWait and EC and By:
+                WebDriverWait(driver, 12).until(
+                    lambda d: (
+                        d.find_elements(By.CSS_SELECTOR, "div.alert-danger")
+                        or d.find_elements(By.CSS_SELECTOR, "div.alert-success")
+                        or d.find_elements(By.CSS_SELECTOR, "#folio")
+                        or ("nombre:" in (d.page_source or "").lower())
+                    )
+                )
+            html = driver.page_source or ""
+            return html, False
+        except Exception as err:
+            return False, str(err)
+        finally:
+            if driver:
+                try:
+                    driver.quit()
+                except Exception:
+                    pass
+
     @staticmethod
     def _normalize_person_name(name):
         txt = (name or "").strip().upper()
@@ -243,13 +313,28 @@ class MxAnamGafete(models.Model):
                     })
                     continue
                 html_text = resp.text or ""
+                selenium_used = False
+                if self._looks_like_anam_shell_html(html_text):
+                    rendered_html, s_err = rec._fetch_html_with_selenium(resp.url or url)
+                    if rendered_html:
+                        html_text = rendered_html
+                        selenium_used = True
+                    else:
+                        rec.write({
+                            "estado": "indeterminado",
+                            "validado_el": fields.Datetime.now(),
+                            "mensaje_validacion": f"Se recibio HTML base de ANAM y no se pudo renderizar con Selenium: {s_err}",
+                            "html_snippet": (html_text or "")[:1500],
+                        })
+                        continue
+
                 parsed = rec._parse_estado_desde_html(html_text)
                 folio, nombre = rec._extract_folio_and_nombre(html_text)
                 vals = {
                     "estado": parsed["estado"],
                     "vencido_desde": parsed["vencido_desde"],
                     "validado_el": fields.Datetime.now(),
-                    "mensaje_validacion": parsed["mensaje"],
+                    "mensaje_validacion": parsed["mensaje"] + (" (render Selenium)" if selenium_used else ""),
                     "html_snippet": parsed["snippet"],
                 }
                 if folio:
