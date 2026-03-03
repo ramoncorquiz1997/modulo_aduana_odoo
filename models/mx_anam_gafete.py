@@ -2,7 +2,9 @@
 import base64
 import io
 import logging
+import os
 import re
+import shutil
 import unicodedata
 from urllib.parse import urlsplit, urlunsplit
 
@@ -20,12 +22,14 @@ except Exception:  # pragma: no cover
 
 try:
     from selenium import webdriver
+    from selenium.webdriver.chrome.service import Service as ChromeService
     from selenium.webdriver.chrome.options import Options as ChromeOptions
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
 except Exception:  # pragma: no cover
     webdriver = None
+    ChromeService = None
     ChromeOptions = None
     By = None
     WebDriverWait = None
@@ -202,14 +206,40 @@ class MxAnamGafete(models.Model):
             return False, "Selenium no disponible en servidor."
         driver = None
         try:
+            # Prefer explicit server-proven binaries.
+            chrome_bin = (
+                os.environ.get("ANAM_CHROME_BIN")
+                or ("/usr/bin/google-chrome" if os.path.exists("/usr/bin/google-chrome") else None)
+                or shutil.which("google-chrome")
+                or shutil.which("google-chrome-stable")
+                or shutil.which("chromium-browser")
+                or shutil.which("chromium")
+            )
+            chromedriver_bin = (
+                os.environ.get("ANAM_CHROMEDRIVER_BIN")
+                or ("/usr/local/bin/chromedriver" if os.path.exists("/usr/local/bin/chromedriver") else None)
+                or shutil.which("chromedriver")
+            )
+            if not chrome_bin:
+                return False, "No se encontro binario de Chrome/Chromium en servidor."
+            if not chromedriver_bin:
+                return False, "No se encontro chromedriver en servidor."
+
+            _logger.info("ANAM Selenium bins chrome=%s driver=%s", chrome_bin, chromedriver_bin)
             options = ChromeOptions()
+            options.binary_location = chrome_bin
             options.add_argument("--headless=new")
             options.add_argument("--disable-gpu")
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-software-rasterizer")
+            options.add_argument("--disable-extensions")
+            options.add_argument("--remote-debugging-port=9222")
+            options.add_argument("--user-data-dir=/tmp/odoo-chrome-profile")
             options.add_argument("--window-size=1365,1024")
             options.add_argument("--lang=es-MX")
-            driver = webdriver.Chrome(options=options)
+            service = ChromeService(executable_path=chromedriver_bin)
+            driver = webdriver.Chrome(service=service, options=options)
             driver.set_page_load_timeout(20)
             driver.get(url)
 
