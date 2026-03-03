@@ -398,6 +398,8 @@ class ResPartner(models.Model):
 
     def action_open_gafete_qr_camera(self):
         self.ensure_one()
+        if not self.id:
+            raise UserError("Guarda primero el contacto antes de escanear.")
         if self.x_contact_role not in ("chofer", "transportista"):
             raise UserError("Este boton solo aplica para contactos con rol Chofer o Transportista.")
         return {
@@ -505,3 +507,20 @@ class ResPartner(models.Model):
             return result[0].data.decode("utf-8", errors="ignore")
         except Exception:
             return False
+
+    def action_qr_decoder_status(self):
+        self.ensure_one()
+        missing = []
+        if not Image:
+            missing.append("Pillow")
+        if not decode:
+            missing.append("pyzbar/zbar")
+        if missing:
+            return {
+                "ready": False,
+                "message": "Faltan dependencias de decoder servidor: %s." % ", ".join(missing),
+            }
+        return {
+            "ready": True,
+            "message": "Decoder servidor listo.",
+        }

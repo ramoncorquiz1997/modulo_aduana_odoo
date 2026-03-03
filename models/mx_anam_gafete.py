@@ -241,12 +241,20 @@ class MxAnamGafete(models.Model):
 
     def action_open_qr_camera(self):
         self.ensure_one()
+        rec = self
+        if not rec.id:
+            if not rec.chofer_id or not rec.chofer_id.id:
+                raise ValidationError("Guarda primero el chofer para poder escanear el gafete.")
+            rec = self.create({
+                "chofer_id": rec.chofer_id.id,
+                "active": False,
+            })
         return {
             "type": "ir.actions.client",
             "tag": "mx_qr_camera_scanner",
             "params": {
-                "model": self._name,
-                "resId": self.id,
+                "model": rec._name,
+                "resId": rec.id,
                 "title": "Escanear QR de Gafete ANAM",
             },
         }
@@ -282,6 +290,23 @@ class MxAnamGafete(models.Model):
             return result[0].data.decode("utf-8", errors="ignore")
         except Exception:
             return False
+
+    def action_qr_decoder_status(self):
+        self.ensure_one()
+        missing = []
+        if not Image:
+            missing.append("Pillow")
+        if not qr_decode:
+            missing.append("pyzbar/zbar")
+        if missing:
+            return {
+                "ready": False,
+                "message": "Faltan dependencias de decoder servidor: %s." % ", ".join(missing),
+            }
+        return {
+            "ready": True,
+            "message": "Decoder servidor listo.",
+        }
 
     @api.model
     def cron_validar_gafetes_anam(self, limit=300):
