@@ -349,25 +349,17 @@ class MxAnamGafete(models.Model):
     def _fetch_html_with_playwright(self, url):
         if not sync_playwright:
             return False, "Playwright no disponible en servidor."
-        chrome_bin = (
-            os.environ.get("ANAM_CHROME_BIN")
-            or ("/usr/bin/google-chrome" if os.path.exists("/usr/bin/google-chrome") else None)
-            or shutil.which("google-chrome")
-            or shutil.which("google-chrome-stable")
-            or shutil.which("chromium-browser")
-            or shutil.which("chromium")
-        )
-        if not chrome_bin:
-            return False, "No se encontro binario Chrome/Chromium para Playwright."
+        # Important: default to Playwright-managed Chromium for stability.
+        # Only use external executable if explicitly configured.
+        chrome_bin = os.environ.get("ANAM_PLAYWRIGHT_CHROME_BIN") or None
 
         profile_dir = tempfile.mkdtemp(prefix="odoo-pw-profile-")
         browser = None
         try:
             with sync_playwright() as p:
-                browser = p.chromium.launch(
-                    executable_path=chrome_bin,
-                    headless=True,
-                    args=[
+                launch_kwargs = {
+                    "headless": True,
+                    "args": [
                         "--no-sandbox",
                         "--disable-dev-shm-usage",
                         "--disable-gpu",
@@ -377,7 +369,10 @@ class MxAnamGafete(models.Model):
                         "--no-first-run",
                         "--no-default-browser-check",
                     ],
-                )
+                }
+                if chrome_bin:
+                    launch_kwargs["executable_path"] = chrome_bin
+                browser = p.chromium.launch(**launch_kwargs)
                 context = browser.new_context(
                     viewport={"width": 1365, "height": 1024},
                     locale="es-MX",
