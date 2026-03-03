@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 import unicodedata
 from urllib.parse import urlsplit, urlunsplit
@@ -315,6 +316,54 @@ class MxAnamGafete(models.Model):
                 except Exception:
                     pass
 
+    def _fetch_html_with_chrome_dumpdom(self, url):
+        chrome_bin = (
+            os.environ.get("ANAM_CHROME_BIN")
+            or ("/usr/bin/google-chrome" if os.path.exists("/usr/bin/google-chrome") else None)
+            or shutil.which("google-chrome")
+            or shutil.which("google-chrome-stable")
+            or shutil.which("chromium-browser")
+            or shutil.which("chromium")
+        )
+        if not chrome_bin:
+            return False, "No se encontro binario de Chrome/Chromium para dump-dom."
+
+        tmp_profile_dir = tempfile.mkdtemp(prefix="odoo-chrome-dom-")
+        try:
+            cmd = [
+                chrome_bin,
+                "--headless=new",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-software-rasterizer",
+                "--disable-extensions",
+                "--disable-background-networking",
+                "--no-first-run",
+                "--no-default-browser-check",
+                f"--user-data-dir={tmp_profile_dir}",
+                "--dump-dom",
+                url,
+            ]
+            proc = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=25,
+                text=True,
+            )
+            if proc.returncode != 0:
+                err = (proc.stderr or "").strip()
+                return False, f"Chrome dump-dom fallo ({proc.returncode}): {err[:800]}"
+            html = (proc.stdout or "").strip()
+            if not html:
+                return False, "Chrome dump-dom no devolvio HTML."
+            return html, False
+        except Exception as err:
+            return False, str(err)
+        finally:
+            shutil.rmtree(tmp_profile_dir, ignore_errors=True)
+
     @staticmethod
     def _normalize_person_name(name):
         txt = (name or "").strip().upper()
@@ -397,18 +446,26 @@ class MxAnamGafete(models.Model):
                 html_text = resp.text or ""
                 selenium_used = False
                 if self._looks_like_anam_shell_html(html_text):
-                    rendered_html, s_err = rec._fetch_html_with_selenium(resp.url or url)
+                    # Prefer dump-dom (no chromedriver). Selenium queda como ultimo fallback.
+                    rendered_html, dom_err = rec._fetch_html_with_chrome_dumpdom(resp.url or url)
                     if rendered_html:
                         html_text = rendered_html
-                        selenium_used = True
                     else:
-                        rec.write({
-                            "estado": "indeterminado",
-                            "validado_el": fields.Datetime.now(),
-                            "mensaje_validacion": f"Se recibio HTML base de ANAM y no se pudo renderizar con Selenium: {s_err}",
-                            "html_snippet": (html_text or "")[:1500],
-                        })
-                        continue
+                        rendered_html, s_err = rec._fetch_html_with_selenium(resp.url or url)
+                        if rendered_html:
+                            html_text = rendered_html
+                            selenium_used = True
+                        else:
+                            rec.write({
+                                "estado": "indeterminado",
+                                "validado_el": fields.Datetime.now(),
+                                "mensaje_validacion": (
+                                    "Se recibio HTML base de ANAM y no se pudo renderizar. "
+                                    f"dump-dom: {dom_err} | Selenium: {s_err}"
+                                ),
+                                "html_snippet": (html_text or "")[:1500],
+                            })
+                            continue
 
                 parsed = rec._parse_estado_desde_html(html_text)
                 folio, nombre = rec._extract_folio_and_nombre(html_text)
