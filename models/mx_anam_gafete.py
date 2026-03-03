@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import shutil
+import tempfile
 import unicodedata
 from urllib.parse import urlsplit, urlunsplit
 
@@ -205,6 +206,7 @@ class MxAnamGafete(models.Model):
         if not webdriver or not ChromeOptions:
             return False, "Selenium no disponible en servidor."
         driver = None
+        tmp_profile_dir = None
         try:
             # Prefer explicit server-proven binaries.
             chrome_bin = (
@@ -235,7 +237,8 @@ class MxAnamGafete(models.Model):
             options.add_argument("--disable-software-rasterizer")
             options.add_argument("--disable-extensions")
             options.add_argument("--remote-debugging-port=9222")
-            options.add_argument("--user-data-dir=/tmp/odoo-chrome-profile")
+            tmp_profile_dir = tempfile.mkdtemp(prefix="odoo-chrome-profile-")
+            options.add_argument(f"--user-data-dir={tmp_profile_dir}")
             options.add_argument("--window-size=1365,1024")
             options.add_argument("--lang=es-MX")
             service = ChromeService(executable_path=chromedriver_bin)
@@ -262,6 +265,8 @@ class MxAnamGafete(models.Model):
                     driver.quit()
                 except Exception:
                     pass
+            if tmp_profile_dir and os.path.isdir(tmp_profile_dir):
+                shutil.rmtree(tmp_profile_dir, ignore_errors=True)
 
     @staticmethod
     def _normalize_person_name(name):
