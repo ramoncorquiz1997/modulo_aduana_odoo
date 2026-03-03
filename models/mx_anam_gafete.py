@@ -221,6 +221,10 @@ class MxAnamGafete(models.Model):
                 options.add_argument("--headless=new")
                 options.add_argument("--disable-gpu")
                 options.add_argument("--no-sandbox")
+                options.add_argument("--disable-setuid-sandbox")
+                options.add_argument("--disable-seccomp-filter-sandbox")
+                options.add_argument("--no-zygote")
+                options.add_argument("--single-process")
                 options.add_argument("--disable-dev-shm-usage")
                 options.add_argument("--window-size=1365,1024")
                 options.add_argument("--lang=es-MX")
@@ -282,6 +286,10 @@ class MxAnamGafete(models.Model):
                     options.add_argument(headless_arg)
                     options.add_argument("--disable-gpu")
                     options.add_argument("--no-sandbox")
+                    options.add_argument("--disable-setuid-sandbox")
+                    options.add_argument("--disable-seccomp-filter-sandbox")
+                    options.add_argument("--no-zygote")
+                    options.add_argument("--single-process")
                     options.add_argument("--disable-dev-shm-usage")
                     options.add_argument("--disable-software-rasterizer")
                     options.add_argument("--disable-extensions")
@@ -361,6 +369,10 @@ class MxAnamGafete(models.Model):
                     "headless": True,
                     "args": [
                         "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--disable-seccomp-filter-sandbox",
+                        "--no-zygote",
+                        "--single-process",
                         "--disable-dev-shm-usage",
                         "--disable-gpu",
                         "--disable-software-rasterizer",
@@ -423,6 +435,10 @@ class MxAnamGafete(models.Model):
                 chrome_bin,
                 "--headless=new",
                 "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-seccomp-filter-sandbox",
+                "--no-zygote",
+                "--single-process",
                 "--disable-dev-shm-usage",
                 "--disable-gpu",
                 "--disable-software-rasterizer",
