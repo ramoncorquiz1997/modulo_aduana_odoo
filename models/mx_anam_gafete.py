@@ -4,6 +4,7 @@ import io
 import logging
 import re
 import unicodedata
+from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
@@ -204,7 +205,35 @@ class MxAnamGafete(models.Model):
             if not url:
                 raise ValidationError("Captura la URL QR antes de validar.")
             try:
-                resp = requests.get(url, timeout=3, allow_redirects=True)
+                resp = None
+                urls_to_try = [url]
+                parts = urlsplit(url)
+                if parts.scheme.lower() == "http":
+                    https_url = urlunsplit(("https", parts.netloc, parts.path, parts.query, parts.fragment))
+                    if https_url not in urls_to_try:
+                        urls_to_try.append(https_url)
+
+                for target_url in urls_to_try:
+                    for _attempt in range(2):
+                        try:
+                            resp = requests.get(target_url, timeout=12, allow_redirects=True)
+                            if resp.status_code < 500:
+                                break
+                        except requests.exceptions.Timeout:
+                            continue
+                        except requests.exceptions.RequestException:
+                            continue
+                    if resp is not None:
+                        break
+
+                if resp is None:
+                    rec.write({
+                        "estado": "error",
+                        "validado_el": fields.Datetime.now(),
+                        "mensaje_validacion": "No fue posible consultar el verificador ANAM (timeout/conexion).",
+                        "html_snippet": False,
+                    })
+                    continue
                 if resp.status_code >= 400:
                     rec.write({
                         "estado": "error",
