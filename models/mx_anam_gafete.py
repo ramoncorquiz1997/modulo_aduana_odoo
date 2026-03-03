@@ -516,6 +516,7 @@ class MxAnamGafete(models.Model):
         gecko_log_file = None
         xvfb_proc = None
         display = None
+        xdg_runtime_dir = None
         try:
             use_xvfb = os.environ.get("ANAM_USE_XVFB", "0") in ("1", "true", "True")
             env = os.environ.copy()
@@ -527,6 +528,10 @@ class MxAnamGafete(models.Model):
                 env["MOZ_DISABLE_GMP_SANDBOX"] = "1"
                 env["MOZ_DISABLE_RDD_SANDBOX"] = "1"
             env.setdefault("NO_AT_BRIDGE", "1")
+            env.setdefault("HOME", "/opt/odoo")
+            xdg_runtime_dir = tempfile.mkdtemp(prefix="odoo-xdg-")
+            os.chmod(xdg_runtime_dir, 0o700)
+            env["XDG_RUNTIME_DIR"] = xdg_runtime_dir
             xvfb_stderr = None
             if use_xvfb:
                 xvfb_bin = shutil.which("Xvfb")
@@ -568,6 +573,14 @@ class MxAnamGafete(models.Model):
             options.binary_location = firefox_bin
             if not use_xvfb:
                 options.add_argument("-headless")
+            if os.environ.get("ANAM_DISABLE_FIREFOX_SANDBOX", "1") in ("1", "true", "True"):
+                options.set_preference("security.sandbox.content.level", 0)
+                options.set_preference("security.sandbox.gpu.level", 0)
+                options.set_preference("security.sandbox.rdd.level", 0)
+                options.set_preference("security.sandbox.socket.process.level", 0)
+            options.set_preference("browser.tabs.remote.autostart", False)
+            options.set_preference("browser.tabs.remote.autostart.2", False)
+            options.set_preference("browser.tabs.remote.autostart.2.1", False)
 
             gecko_log_file = tempfile.NamedTemporaryFile(prefix="geckodriver-", suffix=".log", delete=False)
             gecko_log_path = gecko_log_file.name
@@ -618,6 +631,8 @@ class MxAnamGafete(models.Model):
                     os.unlink(xvfb_stderr.name)
                 except Exception:
                     pass
+            if xdg_runtime_dir and os.path.isdir(xdg_runtime_dir):
+                shutil.rmtree(xdg_runtime_dir, ignore_errors=True)
             if gecko_log_file and os.path.exists(gecko_log_file.name):
                 try:
                     os.unlink(gecko_log_file.name)
