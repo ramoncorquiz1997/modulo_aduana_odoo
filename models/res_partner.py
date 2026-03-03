@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import base64
+import io
 import json
 import logging
 import re
@@ -17,8 +18,10 @@ try:
     from pyzbar.pyzbar import decode
     from pdf2image import convert_from_bytes
     from bs4 import BeautifulSoup
+    from PIL import Image
 except ImportError:
     decode = None
+    Image = None
 
 _logger = logging.getLogger(__name__)
 
@@ -483,3 +486,22 @@ class ResPartner(models.Model):
             if gafete.numero_gafete and not gafete.active:
                 gafete.active = True
         return True
+
+    def action_decode_qr_image_from_camera(self, image_data):
+        self.ensure_one()
+        if not decode or not Image:
+            return False
+        if not image_data:
+            return False
+        raw = image_data
+        if "," in raw:
+            raw = raw.split(",", 1)[1]
+        try:
+            binary = base64.b64decode(raw)
+            img = Image.open(io.BytesIO(binary))
+            result = decode(img)
+            if not result:
+                return False
+            return result[0].data.decode("utf-8", errors="ignore")
+        except Exception:
+            return False

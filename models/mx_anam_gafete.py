@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import base64
+import io
 import re
 import unicodedata
 
@@ -6,6 +8,13 @@ import requests
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
+
+try:
+    from PIL import Image
+    from pyzbar.pyzbar import decode as qr_decode
+except Exception:  # pragma: no cover
+    Image = None
+    qr_decode = None
 
 
 class MxAnamGafete(models.Model):
@@ -254,6 +263,25 @@ class MxAnamGafete(models.Model):
             if rec.numero_gafete and rec.chofer_id and not rec.active:
                 rec.active = True
         return True
+
+    def action_decode_qr_image_from_camera(self, image_data):
+        self.ensure_one()
+        if not qr_decode or not Image:
+            return False
+        if not image_data:
+            return False
+        raw = image_data
+        if "," in raw:
+            raw = raw.split(",", 1)[1]
+        try:
+            binary = base64.b64decode(raw)
+            img = Image.open(io.BytesIO(binary))
+            result = qr_decode(img)
+            if not result:
+                return False
+            return result[0].data.decode("utf-8", errors="ignore")
+        except Exception:
+            return False
 
     @api.model
     def cron_validar_gafetes_anam(self, limit=300):

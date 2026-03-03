@@ -25,6 +25,7 @@ class QrCameraScannerAction extends Component {
         this.stream = null;
         this.detector = null;
         this.scanTimer = null;
+        this.serverScanTimer = null;
         this.params = this.props.action.params || {};
         onMounted(async () => {
             await this.startCamera();
@@ -52,13 +53,15 @@ class QrCameraScannerAction extends Component {
             if (this.state.supported) {
                 const supportedFormats = await window.BarcodeDetector.getSupportedFormats();
                 if (!supportedFormats.includes("qr_code")) {
-                    this.state.error = "Este navegador no soporta lectura QR con BarcodeDetector.";
+                    this.state.error = "El navegador no soporta detector local QR. Activando fallback servidor...";
+                    this.startServerFallbackLoop();
                     return;
                 }
                 this.detector = new window.BarcodeDetector({ formats: ["qr_code"] });
                 this.scanLoop();
             } else {
-                this.state.error = "BarcodeDetector no disponible. Puedes pegar la URL manualmente.";
+                this.state.error = "BarcodeDetector no disponible. Activando fallback servidor...";
+                this.startServerFallbackLoop();
             }
         } catch (err) {
             this.state.error = `No fue posible abrir la cámara: ${err.message || err}`;
@@ -70,6 +73,10 @@ class QrCameraScannerAction extends Component {
         if (this.scanTimer) {
             clearTimeout(this.scanTimer);
             this.scanTimer = null;
+        }
+        if (this.serverScanTimer) {
+            clearTimeout(this.serverScanTimer);
+            this.serverScanTimer = null;
         }
         if (this.stream) {
             this.stream.getTracks().forEach((t) => t.stop());
@@ -104,6 +111,45 @@ class QrCameraScannerAction extends Component {
                 // Ignore detector transient errors.
             }
             await sleep(180);
+        }
+    }
+
+    _captureFrameDataUrl() {
+        const video = this.videoRef.el;
+        const canvas = this.canvasRef.el;
+        if (!video || !canvas || !video.videoWidth || !video.videoHeight) {
+            return null;
+        }
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL("image/jpeg", 0.92);
+    }
+
+    async startServerFallbackLoop() {
+        const model = this.params.model;
+        const resId = this.params.resId;
+        if (!model || !resId) {
+            this.state.error = "No se puede usar fallback sin modelo y registro.";
+            return;
+        }
+        while (this.state.scanning) {
+            try {
+                const imageData = this._captureFrameDataUrl();
+                if (imageData) {
+                    const decoded = await this.orm.call(model, "action_decode_qr_image_from_camera", [[resId], imageData]);
+                    if (decoded && String(decoded).trim()) {
+                        this.state.result = String(decoded).trim();
+                        this.stopCamera();
+                        await this.useResult();
+                        return;
+                    }
+                }
+            } catch (_err) {
+                // Ignore transient decode errors.
+            }
+            await sleep(550);
         }
     }
 
