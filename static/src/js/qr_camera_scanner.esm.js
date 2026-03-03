@@ -63,6 +63,40 @@ class QrCameraScannerAction extends Component {
         return { model: finalModel, resId: finalResId };
     }
 
+    async _ensureTargetRecord() {
+        let { model, resId } = this._getModelAndResId();
+        if (model && resId) {
+            this.lastResolvedModel = model;
+            this.lastResolvedResId = resId;
+            return { model, resId };
+        }
+
+        const action = this.props.action || {};
+        const ctx = action.context || {};
+
+        // If scanner was opened from an unsaved gafete line, bootstrap it with default_chofer_id.
+        if (model === "mx.anam.gafete" || !model) {
+            const defaultChoferId = Number(ctx.default_chofer_id || this.params.default_chofer_id || 0) || false;
+            if (defaultChoferId) {
+                const createdId = await this.orm.create("mx.anam.gafete", [{ chofer_id: defaultChoferId, active: false }]);
+                model = "mx.anam.gafete";
+                resId = Number(createdId) || false;
+            }
+        }
+
+        // Fallback for partner actions where active_id is present in context.
+        if ((!model || !resId) && (ctx.active_model || this.params.model) === "res.partner") {
+            model = "res.partner";
+            resId = Number(ctx.active_id || this.params.resId || this.params.res_id || 0) || false;
+        }
+
+        if (model && resId) {
+            this.lastResolvedModel = model;
+            this.lastResolvedResId = resId;
+        }
+        return { model: model || false, resId: resId || false };
+    }
+
     async startCamera() {
         this.state.error = "";
         this.state.fallbackActive = false;
@@ -188,7 +222,7 @@ class QrCameraScannerAction extends Component {
     }
 
     async startServerFallbackLoop() {
-        const { model, resId } = this._getModelAndResId();
+        const { model, resId } = await this._ensureTargetRecord();
         if (!model || !resId) {
             this.state.error = "No se puede usar fallback sin modelo y registro. Guarda el registro y vuelve a abrir el escaner.";
             return;
@@ -241,7 +275,7 @@ class QrCameraScannerAction extends Component {
             this.notification.add("Escanea un QR o pega una URL.", { type: "warning" });
             return;
         }
-        const { model, resId } = this._getModelAndResId();
+        const { model, resId } = await this._ensureTargetRecord();
         if (!model || !resId) {
             this.notification.add("Guarda primero el registro y vuelve a abrir el escaner.", { type: "danger" });
             return;
