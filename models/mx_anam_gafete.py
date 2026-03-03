@@ -26,6 +26,8 @@ try:
     from selenium import webdriver
     from selenium.webdriver.chrome.service import Service as ChromeService
     from selenium.webdriver.chrome.options import Options as ChromeOptions
+    from selenium.webdriver.firefox.service import Service as FirefoxService
+    from selenium.webdriver.firefox.options import Options as FirefoxOptions
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
@@ -33,6 +35,8 @@ except Exception:  # pragma: no cover
     webdriver = None
     ChromeService = None
     ChromeOptions = None
+    FirefoxService = None
+    FirefoxOptions = None
     By = None
     WebDriverWait = None
     EC = None
@@ -469,6 +473,75 @@ class MxAnamGafete(models.Model):
         finally:
             shutil.rmtree(tmp_profile_dir, ignore_errors=True)
 
+    def _fetch_html_with_firefox(self, url):
+        if not webdriver or not FirefoxOptions:
+            return False, "Selenium Firefox no disponible en servidor."
+
+        firefox_bin = (
+            os.environ.get("ANAM_FIREFOX_BIN")
+            or ("/usr/bin/firefox" if os.path.exists("/usr/bin/firefox") else None)
+            or shutil.which("firefox")
+        )
+        geckodriver_bin = (
+            os.environ.get("ANAM_GECKODRIVER_BIN")
+            or ("/usr/bin/geckodriver" if os.path.exists("/usr/bin/geckodriver") else None)
+            or shutil.which("geckodriver")
+        )
+        if not firefox_bin:
+            return False, "No se encontro binario de Firefox."
+        if not geckodriver_bin:
+            return False, "No se encontro geckodriver."
+
+        _logger.info("ANAM Firefox bins firefox=%s geckodriver=%s", firefox_bin, geckodriver_bin)
+
+        driver = None
+        gecko_log_file = None
+        try:
+            options = FirefoxOptions()
+            options.binary_location = firefox_bin
+            options.add_argument("-headless")
+
+            gecko_log_file = tempfile.NamedTemporaryFile(prefix="geckodriver-", suffix=".log", delete=False)
+            gecko_log_path = gecko_log_file.name
+            gecko_log_file.close()
+
+            service = FirefoxService(executable_path=geckodriver_bin, log_output=gecko_log_path)
+            driver = webdriver.Firefox(service=service, options=options)
+            driver.set_page_load_timeout(25)
+            driver.get(url)
+
+            if WebDriverWait and By:
+                WebDriverWait(driver, 14).until(
+                    lambda d: (
+                        d.find_elements(By.CSS_SELECTOR, "div.alert-danger")
+                        or d.find_elements(By.CSS_SELECTOR, "div.alert-success")
+                        or d.find_elements(By.CSS_SELECTOR, "#folio")
+                        or ("nombre:" in (d.page_source or "").lower())
+                    )
+                )
+            html = driver.page_source or ""
+            return html, False
+        except Exception as err:
+            gecko_tail = ""
+            if gecko_log_file and os.path.exists(gecko_log_file.name):
+                try:
+                    with open(gecko_log_file.name, "r", encoding="utf-8", errors="ignore") as fh:
+                        gecko_tail = "".join(fh.readlines()[-20:]).strip()
+                except Exception:
+                    gecko_tail = ""
+            return False, f"{err} | gecko_log: {gecko_tail[:800]}"
+        finally:
+            if driver:
+                try:
+                    driver.quit()
+                except Exception:
+                    pass
+            if gecko_log_file and os.path.exists(gecko_log_file.name):
+                try:
+                    os.unlink(gecko_log_file.name)
+                except Exception:
+                    pass
+
     @staticmethod
     def _normalize_person_name(name):
         txt = (name or "").strip().upper()
@@ -565,16 +638,21 @@ class MxAnamGafete(models.Model):
                                 html_text = rendered_html
                                 selenium_used = True
                             else:
-                                rec.write({
-                                    "estado": "indeterminado",
-                                    "validado_el": fields.Datetime.now(),
-                                    "mensaje_validacion": (
-                                        "Se recibio HTML base de ANAM y no se pudo renderizar. "
-                                        f"Playwright: {pw_err} | dump-dom: {dom_err} | Selenium: {s_err}"
-                                    ),
-                                    "html_snippet": (html_text or "")[:1500],
-                                })
-                                continue
+                                rendered_html, ff_err = rec._fetch_html_with_firefox(resp.url or url)
+                                if rendered_html:
+                                    html_text = rendered_html
+                                else:
+                                    rec.write({
+                                        "estado": "indeterminado",
+                                        "validado_el": fields.Datetime.now(),
+                                        "mensaje_validacion": (
+                                            "Se recibio HTML base de ANAM y no se pudo renderizar. "
+                                            f"Playwright: {pw_err} | dump-dom: {dom_err} | "
+                                            f"Selenium Chrome: {s_err} | Selenium Firefox: {ff_err}"
+                                        ),
+                                        "html_snippet": (html_text or "")[:1500],
+                                    })
+                                    continue
 
                 parsed = rec._parse_estado_desde_html(html_text)
                 folio, nombre = rec._extract_folio_and_nombre(html_text)
