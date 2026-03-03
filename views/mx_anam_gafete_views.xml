@@ -60,6 +60,7 @@
       <field name="name">Gafetes ANAM</field>
       <field name="res_model">mx.anam.gafete</field>
       <field name="view_mode">list,form</field>
+      <field name="context">{'active_test': False}</field>
     </record>
 
     <menuitem id="mx_anam_gafete_menu"

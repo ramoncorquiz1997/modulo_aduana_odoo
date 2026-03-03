@@ -248,8 +248,8 @@ class QrCameraScannerAction extends Component {
         }
         this.state.saving = true;
         try {
-            await this.orm.call(model, "action_set_qr_url_from_camera", [[resId], qrValue], { auto_validate: true });
-            this.notification.add("QR detectado, guardado y validado.", { type: "success" });
+            await this.orm.call(model, "action_set_qr_url_from_camera", [[resId], qrValue], { auto_validate: false });
+            this.notification.add("QR detectado y guardado.", { type: "success" });
             this.close();
             await this.action.doAction({ type: "ir.actions.client", tag: "reload" });
         } catch (err) {

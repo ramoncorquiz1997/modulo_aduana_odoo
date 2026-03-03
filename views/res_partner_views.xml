@@ -101,7 +101,7 @@
                 </field>
                 <field name="gafete_anam_ids"
                        invisible="x_contact_role != 'chofer'"
-                       context="{'default_chofer_id': id}">
+                       context="{'default_chofer_id': id, 'active_test': False}">
                   <list editable="bottom">
                     <field name="numero_gafete"/>
                     <field name="estado"/>

@@ -204,7 +204,7 @@ class MxAnamGafete(models.Model):
             if not url:
                 raise ValidationError("Captura la URL QR antes de validar.")
             try:
-                resp = requests.get(url, timeout=10)
+                resp = requests.get(url, timeout=3, allow_redirects=True)
                 if resp.status_code >= 400:
                     rec.write({
                         "estado": "error",
