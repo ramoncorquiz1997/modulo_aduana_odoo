@@ -284,8 +284,8 @@ class QrCameraScannerAction extends Component {
         try {
             await this.orm.call(model, "action_set_qr_url_from_camera", [[resId], qrValue], { auto_validate: false });
             this.notification.add("QR detectado y guardado.", { type: "success" });
-            this.close();
-            await this.action.doAction({ type: "ir.actions.client", tag: "reload" });
+            this.stopCamera();
+            await this._openTargetAfterSave(model, resId);
         } catch (err) {
             const msg = err?.message || err?.data?.message || String(err);
             this.state.error = `Error al guardar QR: ${msg}`;
@@ -295,13 +295,42 @@ class QrCameraScannerAction extends Component {
         }
     }
 
-    close() {
-        this.stopCamera();
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            this.action.doAction({ type: "ir.actions.client", tag: "reload" });
+    async _openTargetAfterSave(model, resId) {
+        let targetModel = model;
+        let targetId = resId;
+
+        if (model === "mx.anam.gafete") {
+            const data = await this.orm.read(model, [resId], ["chofer_id"]);
+            const chofer = data && data.length ? data[0].chofer_id : false;
+            if (chofer && chofer[0]) {
+                targetModel = "res.partner";
+                targetId = chofer[0];
+            }
         }
+
+        if (targetModel && targetId) {
+            await this.action.doAction({
+                type: "ir.actions.act_window",
+                res_model: targetModel,
+                res_id: targetId,
+                views: [[false, "form"]],
+                view_mode: "form",
+                target: "current",
+            });
+            return;
+        }
+
+        await this.action.doAction({ type: "ir.actions.client", tag: "reload" });
+    }
+
+    async close() {
+        this.stopCamera();
+        const { model, resId } = this._getModelAndResId();
+        if (model && resId) {
+            await this._openTargetAfterSave(model, resId);
+            return;
+        }
+        await this.action.doAction({ type: "ir.actions.client", tag: "reload" });
     }
 
     onResultInput() {
