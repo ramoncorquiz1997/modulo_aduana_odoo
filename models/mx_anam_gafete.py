@@ -207,6 +207,7 @@ class MxAnamGafete(models.Model):
             return False, "Selenium no disponible en servidor."
         driver = None
         tmp_profile_dir = None
+        driver_log_file = None
         try:
             # Prefer explicit server-proven binaries.
             chrome_bin = (
@@ -228,23 +229,64 @@ class MxAnamGafete(models.Model):
                 return False, "No se encontro chromedriver en servidor."
 
             _logger.info("ANAM Selenium bins chrome=%s driver=%s", chrome_bin, chromedriver_bin)
-            options = ChromeOptions()
-            options.binary_location = chrome_bin
-            options.add_argument("--headless=new")
-            options.add_argument("--disable-gpu")
-            options.add_argument("--no-sandbox")
-            options.add_argument("--disable-dev-shm-usage")
-            options.add_argument("--disable-software-rasterizer")
-            options.add_argument("--disable-extensions")
-            options.add_argument("--remote-debugging-port=9222")
-            tmp_profile_dir = tempfile.mkdtemp(prefix="odoo-chrome-profile-")
-            options.add_argument(f"--user-data-dir={tmp_profile_dir}")
-            options.add_argument("--window-size=1365,1024")
-            options.add_argument("--lang=es-MX")
-            service = ChromeService(executable_path=chromedriver_bin)
-            driver = webdriver.Chrome(service=service, options=options)
-            driver.set_page_load_timeout(20)
-            driver.get(url)
+
+            start_errors = []
+            for headless_arg in ("--headless=new", "--headless"):
+                if driver:
+                    try:
+                        driver.quit()
+                    except Exception:
+                        pass
+                    driver = None
+                if tmp_profile_dir and os.path.isdir(tmp_profile_dir):
+                    shutil.rmtree(tmp_profile_dir, ignore_errors=True)
+                tmp_profile_dir = tempfile.mkdtemp(prefix="odoo-chrome-profile-")
+                driver_log_file = tempfile.NamedTemporaryFile(prefix="chromedriver-", suffix=".log", delete=False)
+                driver_log_path = driver_log_file.name
+                driver_log_file.close()
+
+                try:
+                    options = ChromeOptions()
+                    options.binary_location = chrome_bin
+                    options.add_argument(headless_arg)
+                    options.add_argument("--disable-gpu")
+                    options.add_argument("--no-sandbox")
+                    options.add_argument("--disable-dev-shm-usage")
+                    options.add_argument("--disable-software-rasterizer")
+                    options.add_argument("--disable-extensions")
+                    options.add_argument("--disable-background-networking")
+                    options.add_argument("--disable-crash-reporter")
+                    options.add_argument("--no-first-run")
+                    options.add_argument("--no-default-browser-check")
+                    options.add_argument("--remote-debugging-pipe")
+                    options.add_argument(f"--user-data-dir={tmp_profile_dir}")
+                    options.add_argument("--window-size=1365,1024")
+                    options.add_argument("--lang=es-MX")
+
+                    service = ChromeService(executable_path=chromedriver_bin, log_output=driver_log_path)
+                    driver = webdriver.Chrome(service=service, options=options)
+                    driver.set_page_load_timeout(20)
+                    driver.get(url)
+                    break
+                except Exception as err:
+                    log_tail = ""
+                    if os.path.exists(driver_log_path):
+                        try:
+                            with open(driver_log_path, "r", encoding="utf-8", errors="ignore") as fh:
+                                lines = fh.readlines()[-20:]
+                            log_tail = "".join(lines).strip()
+                        except Exception:
+                            log_tail = ""
+                    start_errors.append(f"{headless_arg}: {err} | driver_log: {log_tail[:800]}")
+                    if driver:
+                        try:
+                            driver.quit()
+                        except Exception:
+                            pass
+                        driver = None
+
+            if not driver:
+                return False, "No se pudo iniciar ChromeDriver. " + " || ".join(start_errors)
 
             if WebDriverWait and EC and By:
                 WebDriverWait(driver, 12).until(
@@ -267,6 +309,11 @@ class MxAnamGafete(models.Model):
                     pass
             if tmp_profile_dir and os.path.isdir(tmp_profile_dir):
                 shutil.rmtree(tmp_profile_dir, ignore_errors=True)
+            if driver_log_file and os.path.exists(driver_log_file.name):
+                try:
+                    os.unlink(driver_log_file.name)
+                except Exception:
+                    pass
 
     @staticmethod
     def _normalize_person_name(name):
