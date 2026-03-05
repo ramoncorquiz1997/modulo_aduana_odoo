@@ -25,19 +25,28 @@ class MxPedOperacionCuentaAduanera(models.Model):
     folio_constancia = fields.Char(string="Folio constancia", size=17)
     fecha_constancia = fields.Date(string="Fecha constancia")
     tipo_cuenta = fields.Char(string="Tipo cuenta", size=2, default="0")
-    tipo_garantia = fields.Char(string="Tipo garantia", size=2)
+    tipo_garantia_id = fields.Many2one(
+        "aduana.catalogo.tipo_garantia",
+        string="Tipo garantia",
+        ondelete="restrict",
+    )
+    tipo_garantia = fields.Char(
+        string="Clave tipo garantia",
+        related="tipo_garantia_id.code",
+        store=True,
+        readonly=True,
+    )
     valor_unitario_titulo = fields.Float(string="Valor unitario titulo", digits=(16, 4))
     total_garantia = fields.Float(string="Total garantia", digits=(16, 2))
     cantidad_um = fields.Float(string="Cantidad UM", digits=(16, 4))
     titulos_asignados = fields.Float(string="Titulos asignados", digits=(16, 2))
     notes = fields.Char(string="Notas")
 
-    @api.constrains("tipo_cuenta", "tipo_garantia")
+    @api.constrains("tipo_cuenta")
     def _check_codes(self):
         for rec in self:
             for value, label in (
                 (rec.tipo_cuenta, "Tipo cuenta"),
-                (rec.tipo_garantia, "Tipo garantia"),
             ):
                 txt = (value or "").strip()
                 if txt and not txt.isdigit():

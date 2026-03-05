@@ -280,7 +280,7 @@
                       <field name="folio_constancia"/>
                       <field name="fecha_constancia"/>
                       <field name="tipo_cuenta"/>
-                      <field name="tipo_garantia"/>
+                      <field name="tipo_garantia_id"/>
                       <field name="valor_unitario_titulo"/>
                       <field name="total_garantia"/>
                       <field name="cantidad_um"/>
@@ -295,7 +295,7 @@
                         <field name="folio_constancia"/>
                         <field name="fecha_constancia"/>
                         <field name="tipo_cuenta"/>
-                        <field name="tipo_garantia"/>
+                        <field name="tipo_garantia_id"/>
                         <field name="valor_unitario_titulo"/>
                         <field name="total_garantia"/>
                         <field name="cantidad_um"/>

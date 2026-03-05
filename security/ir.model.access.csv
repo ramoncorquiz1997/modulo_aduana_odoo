@@ -49,6 +49,7 @@ access_aduana_catalogo_regimen,aduana.catalogo.regimen,model_aduana_catalogo_reg
 access_aduana_catalogo_aduana,aduana.catalogo.aduana,model_aduana_catalogo_aduana,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_aduana_catalogo_clave_pedimento,aduana.catalogo.clave_pedimento,model_aduana_catalogo_clave_pedimento,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_aduana_catalogo_institucion_financiera,aduana.catalogo.institucion.financiera,model_aduana_catalogo_institucion_financiera,modulo_aduana_odoo.group_aduana_user,1,0,0,0
+access_aduana_catalogo_tipo_garantia,aduana.catalogo.tipo.garantia,model_aduana_catalogo_tipo_garantia,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_mx_nom_user,mx.nom.user,model_mx_nom,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_mx_nom_reg,mx.nom.reg,model_mx_nom,base.group_system,1,1,1,1
 access_mx_rrna_user,mx.rrna.user,model_mx_rrna,modulo_aduana_odoo.group_aduana_user,1,0,0,0
@@ -82,3 +83,4 @@ access_aduana_catalogo_regimen_admin,aduana.catalogo.regimen.admin,model_aduana_
 access_aduana_catalogo_aduana_admin,aduana.catalogo.aduana.admin,model_aduana_catalogo_aduana,base.group_system,1,1,1,1
 access_aduana_catalogo_clave_pedimento_admin,aduana.catalogo.clave_pedimento.admin,model_aduana_catalogo_clave_pedimento,base.group_system,1,1,1,1
 access_aduana_catalogo_institucion_financiera_admin,aduana.catalogo.institucion.financiera.admin,model_aduana_catalogo_institucion_financiera,base.group_system,1,1,1,1
+access_aduana_catalogo_tipo_garantia_admin,aduana.catalogo.tipo.garantia.admin,model_aduana_catalogo_tipo_garantia,base.group_system,1,1,1,1

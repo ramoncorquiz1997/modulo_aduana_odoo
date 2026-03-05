@@ -81,3 +81,22 @@ class AduanaCatalogoInstitucionFinanciera(models.Model):
             "La clave de institucion financiera debe ser unica.",
         ),
     ]
+
+
+class AduanaCatalogoTipoGarantia(models.Model):
+    _name = "aduana.catalogo.tipo_garantia"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _description = "Aduana - Catalogo Tipo de Garantia"
+    _order = "code"
+
+    code = fields.Char(required=True, index=True, size=2)
+    name = fields.Char(required=True)
+    active = fields.Boolean(default=True)
+
+    _sql_constraints = [
+        (
+            "aduana_tipo_garantia_code_uniq",
+            "unique(code)",
+            "La clave de tipo de garantia debe ser unica.",
+        ),
+    ]
