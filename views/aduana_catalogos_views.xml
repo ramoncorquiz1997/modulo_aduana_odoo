@@ -106,7 +106,7 @@
       <field name="model">aduana.catalogo.moneda</field>
       <field name="arch" type="xml">
         <list>
-          <field name="country_id"/>
+          <field name="country_name"/>
           <field name="code"/>
           <field name="name"/>
           <field name="active"/>
@@ -260,7 +260,7 @@
         <form string="Catalogo de monedas">
           <sheet>
             <group>
-              <field name="country_id"/>
+              <field name="country_name"/>
               <field name="code"/>
               <field name="name"/>
               <field name="active"/>
