@@ -159,8 +159,8 @@ class AduanaCatalogoMoneda(models.Model):
 
     _sql_constraints = [
         (
-            "aduana_catalogo_moneda_code_uniq",
-            "unique(code)",
-            "La clave de moneda ya existe.",
+            "aduana_catalogo_moneda_country_code_uniq",
+            "unique(country_name, code)",
+            "La combinacion Pais + Clave moneda ya existe.",
         ),
     ]
