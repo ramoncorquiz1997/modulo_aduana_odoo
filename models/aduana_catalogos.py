@@ -119,3 +119,28 @@ class AduanaCatalogoMedioTransporte(models.Model):
             "La clave de medio de transporte debe ser unica.",
         ),
     ]
+
+
+class AduanaCatalogoPais(models.Model):
+    _name = "aduana.catalogo.pais"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _description = "Aduana - Catalogo Paises"
+    _order = "saai_fiii, saai_m3, id"
+
+    saai_fiii = fields.Char(string="Clave SAAI FIII", required=True, index=True, size=3)
+    saai_m3 = fields.Char(string="Clave SAAI M3", required=True, index=True, size=3)
+    name = fields.Char(string="Pais", required=True)
+    active = fields.Boolean(default=True)
+
+    _sql_constraints = [
+        (
+            "aduana_catalogo_pais_saai_fiii_uniq",
+            "unique(saai_fiii)",
+            "La Clave SAAI FIII ya existe.",
+        ),
+        (
+            "aduana_catalogo_pais_saai_m3_uniq",
+            "unique(saai_m3)",
+            "La Clave SAAI M3 ya existe.",
+        ),
+    ]
