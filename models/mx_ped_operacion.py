@@ -373,7 +373,7 @@ class MxPedOperacion(models.Model):
     cuenta_aduanera_ids = fields.One2many(
         "mx.ped.operacion.cuenta.aduanera",
         "operacion_id",
-        string="Cuentas aduaneras/garantia (508)",
+        string="Cuentas aduaneras/garantia",
         copy=True,
     )
 

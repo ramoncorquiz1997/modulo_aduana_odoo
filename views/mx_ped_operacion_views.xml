@@ -270,12 +270,12 @@
                   </field>
                 </group>
               </page>
-              <page string="Cuenta aduanera 508">
-                <group string="Lineas 508 por operacion">
+              <page string="Cuenta aduanera">
+                <group string="Lineas de cuenta aduanera">
                   <field name="cuenta_aduanera_ids" context="{'default_operacion_id': id}">
                     <list editable="bottom">
                       <field name="sequence" optional="hide"/>
-                      <field name="institucion_emisora"/>
+                      <field name="institucion_financiera_id"/>
                       <field name="numero_contrato"/>
                       <field name="folio_constancia"/>
                       <field name="fecha_constancia"/>
@@ -287,10 +287,10 @@
                       <field name="titulos_asignados"/>
                       <field name="notes"/>
                     </list>
-                    <form string="Cuenta aduanera 508">
+                    <form string="Cuenta aduanera">
                       <group>
                         <field name="sequence"/>
-                        <field name="institucion_emisora"/>
+                        <field name="institucion_financiera_id"/>
                         <field name="numero_contrato"/>
                         <field name="folio_constancia"/>
                         <field name="fecha_constancia"/>

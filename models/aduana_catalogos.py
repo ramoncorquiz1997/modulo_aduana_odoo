@@ -62,3 +62,22 @@ class AduanaCatalogoClavePedimento(models.Model):
     _sql_constraints = [
         ("aduana_clave_pedimento_code_uniq", "unique(code)", "La clave de pedimento debe ser unica."),
     ]
+
+
+class AduanaCatalogoInstitucionFinanciera(models.Model):
+    _name = "aduana.catalogo.institucion_financiera"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _description = "Aduana - Catalogo Institucion Financiera"
+    _order = "code"
+
+    code = fields.Char(required=True, index=True, size=2)
+    name = fields.Char(required=True)
+    active = fields.Boolean(default=True)
+
+    _sql_constraints = [
+        (
+            "aduana_institucion_financiera_code_uniq",
+            "unique(code)",
+            "La clave de institucion financiera debe ser unica.",
+        ),
+    ]
