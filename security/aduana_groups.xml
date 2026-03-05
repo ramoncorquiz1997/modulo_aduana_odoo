@@ -18,5 +18,47 @@
       <field name="category_id" ref="module_category_aduana"/>
       <field name="implied_ids" eval="[(4, ref('modulo_aduana_odoo.group_aduana_user'))]"/>
     </record>
+
+    <record id="group_aduana_btn_pedimento_core" model="res.groups">
+      <field name="name">Aduana Boton Pedimento Core</field>
+      <field name="category_id" ref="module_category_aduana"/>
+      <field name="implied_ids" eval="[(4, ref('modulo_aduana_odoo.group_aduana_user'))]"/>
+    </record>
+
+    <record id="group_aduana_btn_export_txt" model="res.groups">
+      <field name="name">Aduana Boton Exportar TXT</field>
+      <field name="category_id" ref="module_category_aduana"/>
+      <field name="implied_ids" eval="[(4, ref('modulo_aduana_odoo.group_aduana_user'))]"/>
+    </record>
+
+    <record id="group_aduana_btn_cargar_lead" model="res.groups">
+      <field name="name">Aduana Boton Cargar Lead</field>
+      <field name="category_id" ref="module_category_aduana"/>
+      <field name="implied_ids" eval="[(4, ref('modulo_aduana_odoo.group_aduana_user'))]"/>
+    </record>
+
+    <record id="group_aduana_btn_crear_factura" model="res.groups">
+      <field name="name">Aduana Boton Crear Factura</field>
+      <field name="category_id" ref="module_category_aduana"/>
+      <field name="implied_ids" eval="[(4, ref('modulo_aduana_odoo.group_aduana_user'))]"/>
+    </record>
+
+    <record id="group_aduana_avc_generar" model="res.groups">
+      <field name="name">Aduana AVC Generar</field>
+      <field name="category_id" ref="module_category_aduana"/>
+      <field name="implied_ids" eval="[(4, ref('modulo_aduana_odoo.group_aduana_user'))]"/>
+    </record>
+
+    <record id="group_aduana_avc_consultar" model="res.groups">
+      <field name="name">Aduana AVC Consultar</field>
+      <field name="category_id" ref="module_category_aduana"/>
+      <field name="implied_ids" eval="[(4, ref('modulo_aduana_odoo.group_aduana_user'))]"/>
+    </record>
+
+    <record id="group_aduana_avc_eliminar" model="res.groups">
+      <field name="name">Aduana AVC Eliminar</field>
+      <field name="category_id" ref="module_category_aduana"/>
+      <field name="implied_ids" eval="[(4, ref('modulo_aduana_odoo.group_aduana_user'))]"/>
+    </record>
   </data>
 </odoo>
