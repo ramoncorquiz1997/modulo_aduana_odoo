@@ -58,3 +58,23 @@ class MxPedOperacionCuentaAduanera(models.Model):
             txt = (rec.numero_contrato or "").strip()
             if txt and not txt.isdigit():
                 raise ValidationError("Numero contrato debe ser numerico.")
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            records.mapped("operacion_id")._auto_refresh_generated_registros()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            self.mapped("operacion_id")._auto_refresh_generated_registros()
+        return res
+
+    def unlink(self):
+        ops = self.mapped("operacion_id")
+        res = super().unlink()
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            ops._auto_refresh_generated_registros()
+        return res

@@ -1816,3 +1816,33 @@ class CrmLeadFecha506(models.Model):
             "Solo se permite una fecha por tipo (506) en la misma operacion.",
         ),
     ]
+
+    def _refresh_related_operaciones(self):
+        leads = self.mapped("lead_id")
+        if not leads:
+            return
+        ops = self.env["mx.ped.operacion"].search([("lead_id", "in", leads.ids)])
+        if ops:
+            ops._auto_refresh_generated_registros()
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            records._refresh_related_operaciones()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            self._refresh_related_operaciones()
+        return res
+
+    def unlink(self):
+        leads = self.mapped("lead_id")
+        res = super().unlink()
+        if not self.env.context.get("skip_auto_generated_refresh") and leads:
+            ops = self.env["mx.ped.operacion"].search([("lead_id", "in", leads.ids)])
+            if ops:
+                ops._auto_refresh_generated_registros()
+        return res
