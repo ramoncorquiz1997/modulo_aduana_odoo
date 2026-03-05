@@ -370,6 +370,12 @@ class MxPedOperacion(models.Model):
         string="Identificadores de operacion",
         copy=True,
     )
+    cuenta_aduanera_ids = fields.One2many(
+        "mx.ped.operacion.cuenta.aduanera",
+        "operacion_id",
+        string="Cuentas aduaneras/garantia (508)",
+        copy=True,
+    )
 
     partida_count = fields.Integer(
         string="Partidas",
@@ -3004,6 +3010,57 @@ class MxPedOperacion(models.Model):
                 valores[campo.nombre] = val
         return valores
 
+    @staticmethod
+    def _format_508_date(value):
+        if not value:
+            return ""
+        dt = fields.Date.to_date(value)
+        return dt.strftime("%d%m%Y") if dt else ""
+
+    def _build_508_valores(self, layout_reg, cuenta_line):
+        self.ensure_one()
+        valores = {}
+        fecha_txt = self._format_508_date(cuenta_line.fecha_constancia)
+        for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            campo_name = (campo.nombre or "").strip().lower()
+            source_norm = (source_name or "").strip().lower()
+            token = f"{campo_name} {source_norm}".strip()
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro"):
+                val = "508"
+            elif "pedimento" in token and ("numero" in token or "num" in token or token == "pedimento"):
+                val = self.pedimento_numero or ""
+            elif ("institucion" in token and "emisora" in token) or "institucion_emisora" in token:
+                val = cuenta_line.institucion_emisora or ""
+            elif ("numero" in token and "contrato" in token) or "numero_contrato" in token:
+                val = cuenta_line.numero_contrato or ""
+            elif ("folio" in token and "constancia" in token) or "folio_constancia" in token:
+                val = cuenta_line.folio_constancia or ""
+            elif "fecha" in token and "constancia" in token:
+                val = fecha_txt
+            elif ("tipo" in token and "cuenta" in token) or "tipo_cuenta" in token:
+                val = cuenta_line.tipo_cuenta or ""
+            elif ("tipo" in token and "garantia" in token) or "tipo_garantia" in token:
+                val = cuenta_line.tipo_garantia or ""
+            elif ("valor" in token and "unitario" in token and "titulo" in token) or "valor_unitario_titulo" in token:
+                val = cuenta_line.valor_unitario_titulo
+            elif ("total" in token and "garantia" in token) or "total_garantia" in token:
+                val = cuenta_line.total_garantia
+            elif ("cantidad" in token and ("unidad" in token or "um" in token)) or "cantidad_um" in token:
+                val = cuenta_line.cantidad_um
+            elif ("titulos" in token and "asignados" in token) or "titulos_asignados" in token:
+                val = cuenta_line.titulos_asignados
+            else:
+                val = self._field_value_for_layout(campo, partida=False)
+                if val in (None, "", False) and campo.default:
+                    val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = val
+        return valores
+
     def action_cargar_desde_lead(self):
         self.ensure_one()
         if not self.layout_id:
@@ -3057,6 +3114,18 @@ class MxPedOperacion(models.Model):
                         "codigo": layout_reg.codigo,
                         "secuencia": secuencia,
                         "valores": self._build_507_valores(layout_reg, ident_line),
+                    }))
+                continue
+
+            if code == "508":
+                cuenta_lines = self.cuenta_aduanera_ids.sorted(lambda l: (l.sequence or 0, l.id))
+                if not cuenta_lines:
+                    continue
+                for secuencia, cuenta_line in enumerate(cuenta_lines, start=1):
+                    registros.append((0, 0, {
+                        "codigo": layout_reg.codigo,
+                        "secuencia": secuencia,
+                        "valores": self._build_508_valores(layout_reg, cuenta_line),
                     }))
                 continue
 

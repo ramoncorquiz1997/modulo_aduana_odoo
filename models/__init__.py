@@ -11,6 +11,7 @@ from . import mx_ped_aduana_seccion
 from . import mx_ped_fraccion
 from . import mx_ped_regulatorio
 from . import mx_ped_identificador
+from . import mx_ped_cuenta_aduanera
 from . import mx_ped_credencial_ws
 from . import mx_anam_gafete
 from . import mx_ped_forma_pago
