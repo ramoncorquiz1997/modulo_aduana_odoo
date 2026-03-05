@@ -172,7 +172,7 @@ class AduanaCatalogoContribucion(models.Model):
     _description = "Aduana - Catalogo Contribuciones (Apendice 12)"
     _order = "code"
 
-    code = fields.Char(string="Clave", required=True, index=True, size=2)
+    code = fields.Integer(string="Clave", required=True, index=True)
     contribucion = fields.Char(string="Contribucion", required=True)
     abbreviation = fields.Char(string="Abreviacion")
     level = fields.Char(string="Nivel")

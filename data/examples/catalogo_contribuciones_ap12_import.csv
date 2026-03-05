@@ -1,0 +1,30 @@
+code,contribucion,abbreviation,level
+1,Derecho de trámite aduanero.,DTA,G/C
+2,Cuotas compensatorias.,C.C.,P
+3,Impuesto al Valor Agregado.,IVA,P
+4,Impuesto sobre Automóviles Nuevos.,ISAN,P
+6,Impuesto General de Importación/Exportación.,IGI/IGE,P
+7,Recargos.,REC.,G
+9,Otros.,OTROS,P/G
+11,Multas.,MULT.,G
+12,Contribuciones por aplicación del Artículo 2.5 del T-MEC.,2.5,P/C
+13,Recargos por aplicación del Artículo 2.5 del T-MEC.,RT,G/C
+15,Prevalidación.,PRV,G
+16,Contribuciones por aplicación de los artículos 14 del Anexo III de la Decisión, 15 del Anexo I del TLCAELC y del ACC.,EUR,P/C
+17,Recargos por aplicación de los artículos 14 del Anexo III de la Decisión, 15 del Anexo I del TLCAELC y del ACC.,REU,G/C
+20,Medida de transición.,MT,P
+22,IEPS.- gasolina, artículo 2 de la Ley del IEPS.,IEPS,P
+23,IVA.- prevalidación artículo 16-A de la Ley Aduanera.,IVA/PRV,G
+24,IEPS.- alcohol, alcohol desnaturalizado y mieles inscristalizables artículo 2, I, B) de la Ley del IEPS.,2IB,P
+25,IEPS.- bebidas alcohólicas artículo 2, I, A) de la Ley del IEPS.,2IA2,P
+26,IEPS.- cerveza artículo 2, I, A) de la Ley del IEPS.,2IA1,P
+27,IEPS.- tabacos labrados artículo 2, I, C) de la Ley del IEPS.,2IC,P
+28,IEPS.- bebidas energetizantes, artículo 2, I, F) de la Ley del IEPS.,2IF,P
+29,IEPS.- bebidas saborizadas artículo 2, I, G) de la Ley del IEPS.,2IG,P
+30,IEPS.- alimentos no básicos con alta densidad calórica artículo 2, I, J) de la Ley del IEPS.,2IJ,P
+31,IEPS.- plaguicidas artículo 2, I, I) de la Ley del IEPS.,2II,P
+32,IEPS.- importación de combustibles fósiles distintos a gasolina y diésel.,ICF,P
+33,IEPS.- diésel, artículo 2 de la Ley del IEPS.,IEPSDIE,P
+34,IEPS.- importación de combustibles no fósiles.,ICNF,P
+35,IEPS.- otros.,LIEPS,P
+50,Diferencia a favor del contribuyente.,DFC,G
