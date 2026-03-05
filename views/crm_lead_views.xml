@@ -506,6 +506,7 @@
                    mode="list,form">
 
               <list>
+                <button name="action_open_full_form" type="object" string="Abrir" class="btn-link"/>
                 <field name="name"/>
                 <field name="tipo_operacion"/>
                 <field name="regimen"/>

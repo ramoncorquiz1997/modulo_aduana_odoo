@@ -40,6 +40,16 @@ class MxPedOperacion(models.Model):
         index=True,
     )
 
+    def action_open_full_form(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": self._name,
+            "view_mode": "form",
+            "res_id": self.id,
+            "target": "current",
+        }
+
     # ==========================
     # Clasificación
     # ==========================
