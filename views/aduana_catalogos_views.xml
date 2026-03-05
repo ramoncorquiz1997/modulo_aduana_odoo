@@ -212,9 +212,9 @@
 
     <menuitem id="aduana_catalogo_institucion_financiera_menu"
               name="Instituciones financieras"
-              parent="aduana_catalogo_menu_root"
+              parent="mx_ped_operacion_menu_root"
               action="aduana_catalogo_institucion_financiera_action"
-              sequence="50"/>
+              sequence="85"/>
 
   </data>
 </odoo>
