@@ -100,3 +100,22 @@ class AduanaCatalogoTipoGarantia(models.Model):
             "La clave de tipo de garantia debe ser unica.",
         ),
     ]
+
+
+class AduanaCatalogoMedioTransporte(models.Model):
+    _name = "aduana.catalogo.medio_transporte"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _description = "Aduana - Catalogo Medio de Transporte"
+    _order = "code"
+
+    code = fields.Char(required=True, index=True, size=2)
+    name = fields.Char(required=True)
+    active = fields.Boolean(default=True)
+
+    _sql_constraints = [
+        (
+            "aduana_medio_transporte_code_uniq",
+            "unique(code)",
+            "La clave de medio de transporte debe ser unica.",
+        ),
+    ]
