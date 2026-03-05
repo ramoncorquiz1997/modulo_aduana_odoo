@@ -144,3 +144,29 @@ class AduanaCatalogoPais(models.Model):
             "La Clave SAAI M3 ya existe.",
         ),
     ]
+
+
+class AduanaCatalogoMoneda(models.Model):
+    _name = "aduana.catalogo.moneda"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _description = "Aduana - Catalogo Claves de Moneda"
+    _order = "country_id, code, id"
+
+    country_id = fields.Many2one(
+        "aduana.catalogo.pais",
+        string="Pais",
+        required=True,
+        ondelete="restrict",
+        index=True,
+    )
+    code = fields.Char(string="Clave moneda", required=True, index=True, size=3)
+    name = fields.Char(string="Nombre moneda", required=True)
+    active = fields.Boolean(default=True)
+
+    _sql_constraints = [
+        (
+            "aduana_catalogo_moneda_code_uniq",
+            "unique(code)",
+            "La clave de moneda ya existe.",
+        ),
+    ]

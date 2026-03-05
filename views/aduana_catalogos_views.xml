@@ -101,6 +101,19 @@
       </field>
     </record>
 
+    <record id="aduana_catalogo_moneda_view_list" model="ir.ui.view">
+      <field name="name">aduana.catalogo.moneda.list</field>
+      <field name="model">aduana.catalogo.moneda</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="country_id"/>
+          <field name="code"/>
+          <field name="name"/>
+          <field name="active"/>
+        </list>
+      </field>
+    </record>
+
     <record id="aduana_catalogo_tipo_operacion_view_form" model="ir.ui.view">
       <field name="name">aduana.catalogo.tipo_operacion.form</field>
       <field name="model">aduana.catalogo.tipo_operacion</field>
@@ -240,6 +253,24 @@
       </field>
     </record>
 
+    <record id="aduana_catalogo_moneda_view_form" model="ir.ui.view">
+      <field name="name">aduana.catalogo.moneda.form</field>
+      <field name="model">aduana.catalogo.moneda</field>
+      <field name="arch" type="xml">
+        <form string="Catalogo de monedas">
+          <sheet>
+            <group>
+              <field name="country_id"/>
+              <field name="code"/>
+              <field name="name"/>
+              <field name="active"/>
+            </group>
+          </sheet>
+          <chatter/>
+        </form>
+      </field>
+    </record>
+
     <record id="aduana_catalogo_tipo_operacion_action" model="ir.actions.act_window">
       <field name="name">Tipo operacion</field>
       <field name="res_model">aduana.catalogo.tipo_operacion</field>
@@ -285,6 +316,12 @@
     <record id="aduana_catalogo_pais_action" model="ir.actions.act_window">
       <field name="name">Paises</field>
       <field name="res_model">aduana.catalogo.pais</field>
+      <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="aduana_catalogo_moneda_action" model="ir.actions.act_window">
+      <field name="name">Claves de moneda</field>
+      <field name="res_model">aduana.catalogo.moneda</field>
       <field name="view_mode">list,form</field>
     </record>
 
@@ -340,6 +377,12 @@
               parent="menu_mx_ped_catalogos"
               action="aduana_catalogo_pais_action"
               sequence="88"/>
+
+    <menuitem id="aduana_catalogo_moneda_menu"
+              name="Claves de moneda"
+              parent="menu_mx_ped_catalogos"
+              action="aduana_catalogo_moneda_action"
+              sequence="89"/>
 
   </data>
 </odoo>
