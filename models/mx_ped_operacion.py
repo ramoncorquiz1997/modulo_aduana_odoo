@@ -3,6 +3,7 @@ import base64
 import io
 import json
 import re
+import unicodedata
 from collections import Counter
 import xml.etree.ElementTree as ET
 
@@ -3017,14 +3018,23 @@ class MxPedOperacion(models.Model):
         dt = fields.Date.to_date(value)
         return dt.strftime("%d%m%Y") if dt else ""
 
+    @staticmethod
+    def _norm_layout_token(value):
+        txt = (value or "").strip().lower()
+        if not txt:
+            return ""
+        txt = unicodedata.normalize("NFKD", txt)
+        txt = "".join(ch for ch in txt if not unicodedata.combining(ch))
+        return txt
+
     def _build_508_valores(self, layout_reg, cuenta_line):
         self.ensure_one()
         valores = {}
         fecha_txt = self._format_508_date(cuenta_line.fecha_constancia)
         for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
             source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
-            campo_name = (campo.nombre or "").strip().lower()
-            source_norm = (source_name or "").strip().lower()
+            campo_name = self._norm_layout_token(campo.nombre)
+            source_norm = self._norm_layout_token(source_name)
             token = f"{campo_name} {source_norm}".strip()
 
             val = None
