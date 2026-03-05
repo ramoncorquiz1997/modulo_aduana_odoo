@@ -505,7 +505,7 @@
                    context="{'default_lead_id': id}"
                    mode="list,form">
 
-              <list editable="bottom">
+              <list>
                 <field name="name"/>
                 <field name="tipo_operacion"/>
                 <field name="regimen"/>
