@@ -53,6 +53,7 @@ access_aduana_catalogo_tipo_garantia,aduana.catalogo.tipo.garantia,model_aduana_
 access_aduana_catalogo_medio_transporte,aduana.catalogo.medio.transporte,model_aduana_catalogo_medio_transporte,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_aduana_catalogo_pais,aduana.catalogo.pais,model_aduana_catalogo_pais,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_aduana_catalogo_moneda,aduana.catalogo.moneda,model_aduana_catalogo_moneda,modulo_aduana_odoo.group_aduana_user,1,0,0,0
+access_aduana_catalogo_contribucion,aduana.catalogo.contribucion,model_aduana_catalogo_contribucion,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_mx_nom_user,mx.nom.user,model_mx_nom,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_mx_nom_reg,mx.nom.reg,model_mx_nom,base.group_system,1,1,1,1
 access_mx_rrna_user,mx.rrna.user,model_mx_rrna,modulo_aduana_odoo.group_aduana_user,1,0,0,0
@@ -90,3 +91,4 @@ access_aduana_catalogo_tipo_garantia_admin,aduana.catalogo.tipo.garantia.admin,m
 access_aduana_catalogo_medio_transporte_admin,aduana.catalogo.medio.transporte.admin,model_aduana_catalogo_medio_transporte,base.group_system,1,1,1,1
 access_aduana_catalogo_pais_admin,aduana.catalogo.pais.admin,model_aduana_catalogo_pais,base.group_system,1,1,1,1
 access_aduana_catalogo_moneda_admin,aduana.catalogo.moneda.admin,model_aduana_catalogo_moneda,base.group_system,1,1,1,1
+access_aduana_catalogo_contribucion_admin,aduana.catalogo.contribucion.admin,model_aduana_catalogo_contribucion,base.group_system,1,1,1,1

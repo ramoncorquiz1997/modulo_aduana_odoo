@@ -164,3 +164,24 @@ class AduanaCatalogoMoneda(models.Model):
             "La combinacion Pais + Clave moneda ya existe.",
         ),
     ]
+
+
+class AduanaCatalogoContribucion(models.Model):
+    _name = "aduana.catalogo.contribucion"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _description = "Aduana - Catalogo Contribuciones (Apendice 12)"
+    _order = "code"
+
+    code = fields.Char(string="Clave", required=True, index=True, size=2)
+    contribucion = fields.Char(string="Contribucion", required=True)
+    abbreviation = fields.Char(string="Abreviacion")
+    level = fields.Char(string="Nivel")
+    active = fields.Boolean(default=True)
+
+    _sql_constraints = [
+        (
+            "aduana_catalogo_contribucion_code_uniq",
+            "unique(code)",
+            "La clave de contribucion ya existe.",
+        ),
+    ]

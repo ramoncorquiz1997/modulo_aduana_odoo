@@ -114,6 +114,20 @@
       </field>
     </record>
 
+    <record id="aduana_catalogo_contribucion_view_list" model="ir.ui.view">
+      <field name="name">aduana.catalogo.contribucion.list</field>
+      <field name="model">aduana.catalogo.contribucion</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="code"/>
+          <field name="contribucion"/>
+          <field name="abbreviation"/>
+          <field name="level"/>
+          <field name="active"/>
+        </list>
+      </field>
+    </record>
+
     <record id="aduana_catalogo_tipo_operacion_view_form" model="ir.ui.view">
       <field name="name">aduana.catalogo.tipo_operacion.form</field>
       <field name="model">aduana.catalogo.tipo_operacion</field>
@@ -271,6 +285,25 @@
       </field>
     </record>
 
+    <record id="aduana_catalogo_contribucion_view_form" model="ir.ui.view">
+      <field name="name">aduana.catalogo.contribucion.form</field>
+      <field name="model">aduana.catalogo.contribucion</field>
+      <field name="arch" type="xml">
+        <form string="Contribuciones apendice 12">
+          <sheet>
+            <group>
+              <field name="code"/>
+              <field name="contribucion"/>
+              <field name="abbreviation"/>
+              <field name="level"/>
+              <field name="active"/>
+            </group>
+          </sheet>
+          <chatter/>
+        </form>
+      </field>
+    </record>
+
     <record id="aduana_catalogo_tipo_operacion_action" model="ir.actions.act_window">
       <field name="name">Tipo operacion</field>
       <field name="res_model">aduana.catalogo.tipo_operacion</field>
@@ -322,6 +355,12 @@
     <record id="aduana_catalogo_moneda_action" model="ir.actions.act_window">
       <field name="name">Claves de moneda</field>
       <field name="res_model">aduana.catalogo.moneda</field>
+      <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="aduana_catalogo_contribucion_action" model="ir.actions.act_window">
+      <field name="name">Contribuciones apendice 12</field>
+      <field name="res_model">aduana.catalogo.contribucion</field>
       <field name="view_mode">list,form</field>
     </record>
 
@@ -383,6 +422,12 @@
               parent="menu_mx_ped_catalogos"
               action="aduana_catalogo_moneda_action"
               sequence="89"/>
+
+    <menuitem id="aduana_catalogo_contribucion_menu"
+              name="Contribuciones Ap. 12"
+              parent="menu_mx_ped_catalogos"
+              action="aduana_catalogo_contribucion_action"
+              sequence="90"/>
 
   </data>
 </odoo>
