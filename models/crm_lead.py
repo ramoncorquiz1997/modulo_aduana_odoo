@@ -252,6 +252,22 @@ class CrmLead(models.Model):
     )
     x_origen_destino_mercancia = fields.Char(string="Origen/Destino mercancía (cve)")
 
+    x_medio_transporte_salida_id = fields.Many2one(
+        "aduana.catalogo.medio_transporte",
+        string="Medio transporte salida",
+        domain="[('active','=',True)]",
+    )
+    x_medio_transporte_arribo_id = fields.Many2one(
+        "aduana.catalogo.medio_transporte",
+        string="Medio transporte arribo",
+        domain="[('active','=',True)]",
+    )
+    x_medio_transporte_entrada_salida_id = fields.Many2one(
+        "aduana.catalogo.medio_transporte",
+        string="Medio transporte entrada/salida",
+        domain="[('active','=',True)]",
+    )
+
     x_transportista_id = fields.Many2one(
         comodel_name="res.partner",
         string="Transportista",
@@ -497,6 +513,7 @@ class CrmLead(models.Model):
             rec.x_counterparty_role_505 = role
 
     def write(self, vals):
+        vals = self._sync_medio_transporte_vals(vals)
         res = super().write(vals)
         if "x_bl_file" in vals and not self.env.context.get("skip_bl_autoparse"):
             for rec in self:
@@ -525,12 +542,51 @@ class CrmLead(models.Model):
         code = mapping.get(self.x_modo_transporte)
         if not code:
             return
+        mt = self.env["aduana.catalogo.medio_transporte"].search(
+            [("code", "=", code), ("active", "=", True)],
+            limit=1,
+        )
         if not self.x_medio_transporte_salida:
             self.x_medio_transporte_salida = code
+        if mt and not self.x_medio_transporte_salida_id:
+            self.x_medio_transporte_salida_id = mt
         if not self.x_medio_transporte_arribo:
             self.x_medio_transporte_arribo = code
+        if mt and not self.x_medio_transporte_arribo_id:
+            self.x_medio_transporte_arribo_id = mt
         if not self.x_medio_transporte_entrada_salida:
             self.x_medio_transporte_entrada_salida = code
+        if mt and not self.x_medio_transporte_entrada_salida_id:
+            self.x_medio_transporte_entrada_salida_id = mt
+
+    @api.onchange("x_medio_transporte_salida_id", "x_medio_transporte_arribo_id", "x_medio_transporte_entrada_salida_id")
+    def _onchange_x_medio_transporte_catalog_ids(self):
+        for rec in self:
+            if rec.x_medio_transporte_salida_id:
+                rec.x_medio_transporte_salida = rec.x_medio_transporte_salida_id.code
+            if rec.x_medio_transporte_arribo_id:
+                rec.x_medio_transporte_arribo = rec.x_medio_transporte_arribo_id.code
+            if rec.x_medio_transporte_entrada_salida_id:
+                rec.x_medio_transporte_entrada_salida = rec.x_medio_transporte_entrada_salida_id.code
+
+    @api.model
+    def _sync_medio_transporte_vals(self, vals):
+        vals = dict(vals or {})
+        pairs = [
+            ("x_medio_transporte_salida", "x_medio_transporte_salida_id"),
+            ("x_medio_transporte_arribo", "x_medio_transporte_arribo_id"),
+            ("x_medio_transporte_entrada_salida", "x_medio_transporte_entrada_salida_id"),
+        ]
+        mt_model = self.env["aduana.catalogo.medio_transporte"]
+        for code_field, id_field in pairs:
+            if id_field in vals and vals.get(id_field) and not vals.get(code_field):
+                mt = mt_model.browse(vals[id_field])
+                vals[code_field] = mt.code or False
+            if code_field in vals and vals.get(code_field) and not vals.get(id_field):
+                mt = mt_model.search([("code", "=", vals[code_field]), ("active", "=", True)], limit=1)
+                if mt:
+                    vals[id_field] = mt.id
+        return vals
 
     @api.onchange("x_transportista_id")
     def _onchange_x_transportista_id(self):
@@ -1517,6 +1573,7 @@ class CrmLead(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        vals_list = [self._sync_medio_transporte_vals(vals) for vals in vals_list]
         has_bl_file = [bool(vals.get("x_bl_file")) for vals in vals_list]
         has_cfdi_xml = [bool(vals.get("x_factura_xml_file")) for vals in vals_list]
         has_cfdi_pdf = [bool(vals.get("x_factura_pdf_file")) for vals in vals_list]
