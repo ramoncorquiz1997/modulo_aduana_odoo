@@ -2971,10 +2971,10 @@ class MxPedOperacion(models.Model):
     def _build_507_valores(self, layout_reg, identificador_line):
         self.ensure_one()
         valores = {}
-        code = (identificador_line.code or "").strip()
-        comp1 = (identificador_line.complemento1 or "").strip()
-        comp2 = (identificador_line.complemento2 or "").strip()
-        comp3 = (identificador_line.complemento3 or "").strip()
+        code = ((identificador_line.code if identificador_line else "") or "").strip()
+        comp1 = ((identificador_line.complemento1 if identificador_line else "") or "").strip()
+        comp2 = ((identificador_line.complemento2 if identificador_line else "") or "").strip()
+        comp3 = ((identificador_line.complemento3 if identificador_line else "") or "").strip()
 
         for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
             source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
@@ -3046,6 +3046,11 @@ class MxPedOperacion(models.Model):
             if code == "507":
                 id_lines = self.identificador_pedimento_ids.sorted(lambda l: (l.sequence or 0, l.id))
                 if not id_lines:
+                    registros.append((0, 0, {
+                        "codigo": layout_reg.codigo,
+                        "secuencia": 1,
+                        "valores": self._build_507_valores(layout_reg, False),
+                    }))
                     continue
                 for secuencia, ident_line in enumerate(id_lines, start=1):
                     registros.append((0, 0, {
