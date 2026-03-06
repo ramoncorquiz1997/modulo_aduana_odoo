@@ -272,6 +272,17 @@ class MxPedRulepackConditionRule(models.Model):
         size=2,
         help="Alternativa menos especifica a fraccion exacta.",
     )
+    forma_pago_code = fields.Char(
+        string="Forma pago (cve)",
+        size=3,
+        help="Clave de forma de pago a evaluar (ej. 4).",
+    )
+    forma_pago_match = fields.Selection(
+        [("any", "Cualquiera"), ("present", "Presente"), ("absent", "Ausente")],
+        string="Condicion forma pago",
+        default="any",
+        required=True,
+    )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -294,6 +305,8 @@ class MxPedRulepackConditionRule(models.Model):
                 vals["registro_codigo"] = (vals["registro_codigo"] or "").strip().zfill(3)
             if vals.get("required_identifier_code"):
                 vals["required_identifier_code"] = (vals["required_identifier_code"] or "").strip().upper()
+            if vals.get("forma_pago_code"):
+                vals["forma_pago_code"] = "".join(ch for ch in str(vals["forma_pago_code"]) if ch.isdigit())
         return super().create(vals_list)
 
     def write(self, vals):
@@ -315,6 +328,8 @@ class MxPedRulepackConditionRule(models.Model):
             vals["registro_codigo"] = (vals["registro_codigo"] or "").strip().zfill(3)
         if vals.get("required_identifier_code") is not None:
             vals["required_identifier_code"] = (vals["required_identifier_code"] or "").strip().upper()
+        if vals.get("forma_pago_code") is not None:
+            vals["forma_pago_code"] = "".join(ch for ch in str(vals["forma_pago_code"]) if ch.isdigit())
         return super().write(vals)
 
     @api.onchange("registro_tipo_id")
@@ -349,7 +364,17 @@ class MxPedRulepackConditionRule(models.Model):
             if rec.policy in field_policies:
                 rec.target_type = "field"
 
-    @api.constrains("registro_codigo", "min_occurs", "max_occurs", "target_type", "policy", "field_id", "registro_tipo_id")
+    @api.constrains(
+        "registro_codigo",
+        "min_occurs",
+        "max_occurs",
+        "target_type",
+        "policy",
+        "field_id",
+        "registro_tipo_id",
+        "forma_pago_code",
+        "forma_pago_match",
+    )
     def _check_rule(self):
         for rec in self:
             code = (rec.registro_codigo or rec.registro_tipo_id.codigo or "").strip()
@@ -370,3 +395,5 @@ class MxPedRulepackConditionRule(models.Model):
                     raise ValidationError(_("Policy Default campo requiere Valor default campo."))
             elif rec.policy in {"require_field", "forbid_field", "default_field", "warn_field"}:
                 raise ValidationError(_("Policies de campo solo aplican cuando Target = Campo."))
+            if rec.forma_pago_match != "any" and not (rec.forma_pago_code or "").strip():
+                raise ValidationError(_("Debes indicar la clave de forma de pago cuando la condicion no es 'Cualquiera'."))

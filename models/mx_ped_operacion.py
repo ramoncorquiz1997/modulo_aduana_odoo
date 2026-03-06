@@ -940,6 +940,10 @@ class MxPedOperacion(models.Model):
                 score += 22
             elif getattr(rule, "fraccion_capitulo", False):
                 score += 12
+            if getattr(rule, "forma_pago_match", "any") != "any":
+                score += 12
+            if getattr(rule, "forma_pago_code", False):
+                score += 8
         elif source == "clave":
             if getattr(rule, "scope", "") == "partida":
                 score += 5
@@ -951,6 +955,11 @@ class MxPedOperacion(models.Model):
         mov = self._get_tipo_movimiento_effective()
         fraccion_ids = {p.fraccion_id.id for p in self.partida_ids if p.fraccion_id}
         fraccion_capitulos = {p.fraccion_id.capitulo for p in self.partida_ids if p.fraccion_id and p.fraccion_id.capitulo}
+        declared_formas_pago = {
+            str(code).strip()
+            for code in self._get_declared_formas_pago_codes()
+            if str(code).strip()
+        }
         return {
             "tipo_movimiento": mov,
             "tipo_operacion": self.tipo_operacion or "",
@@ -960,6 +969,7 @@ class MxPedOperacion(models.Model):
             "escenario": escenario_code or "",
             "fraccion_ids": fraccion_ids,
             "fraccion_capitulos": fraccion_capitulos,
+            "declared_formas_pago": declared_formas_pago,
         }
 
     def _rule_condition_match(self, rule, context):
@@ -987,6 +997,15 @@ class MxPedOperacion(models.Model):
         if hasattr(rule, "fraccion_capitulo") and (rule.fraccion_capitulo or "").strip():
             cap = (rule.fraccion_capitulo or "").strip()
             if cap not in (context.get("fraccion_capitulos") or set()):
+                return False
+        forma_pago_match = getattr(rule, "forma_pago_match", "any") or "any"
+        forma_pago_code = str(getattr(rule, "forma_pago_code", "") or "").strip()
+        declared = context.get("declared_formas_pago") or set()
+        if forma_pago_match == "present":
+            if not forma_pago_code or forma_pago_code not in declared:
+                return False
+        elif forma_pago_match == "absent":
+            if forma_pago_code and forma_pago_code in declared:
                 return False
         return True
 
@@ -1744,6 +1763,8 @@ class MxPedOperacion(models.Model):
                 "extra": {
                     "fraccion_id": rule.fraccion_id.id if rule.fraccion_id else False,
                     "fraccion_capitulo": (rule.fraccion_capitulo or "").strip(),
+                    "forma_pago_code": (rule.forma_pago_code or "").strip(),
+                    "forma_pago_match": rule.forma_pago_match or "any",
                 },
             })
         return normalized
