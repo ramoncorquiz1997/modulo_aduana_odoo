@@ -1857,17 +1857,23 @@ class CrmLeadOperacionLine(models.Model):
             ops._auto_refresh_generated_registros()
 
     def write(self, vals):
-        lead_ids = self.mapped("lead_id").ids
-        res = super().write(vals)
+        records = self.exists()
+        if not records:
+            return True
+        lead_ids = records.mapped("lead_id").ids
+        res = super(CrmLeadOperacionLine, records).write(vals)
         if not self.env.context.get("skip_auto_generated_refresh"):
-            self._refresh_related_operaciones(lead_ids + self.mapped("lead_id").ids)
+            records._refresh_related_operaciones(lead_ids + records.mapped("lead_id").ids)
         return res
 
     def unlink(self):
-        lead_ids = self.mapped("lead_id").ids
-        res = super().unlink()
+        records = self.exists()
+        if not records:
+            return True
+        lead_ids = records.mapped("lead_id").ids
+        res = super(CrmLeadOperacionLine, records).unlink()
         if not self.env.context.get("skip_auto_generated_refresh"):
-            self._refresh_related_operaciones(lead_ids)
+            records._refresh_related_operaciones(lead_ids)
         return res
 
 

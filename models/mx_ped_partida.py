@@ -250,14 +250,20 @@ class MxPedPartida(models.Model):
         return records
 
     def write(self, vals):
-        res = super().write(vals)
+        records = self.exists()
+        if not records:
+            return True
+        res = super(MxPedPartida, records).write(vals)
         if not self.env.context.get("skip_auto_generated_refresh"):
-            self.mapped("operacion_id")._auto_refresh_generated_registros()
+            records.mapped("operacion_id")._auto_refresh_generated_registros()
         return res
 
     def unlink(self):
-        operaciones = self.mapped("operacion_id")
-        res = super().unlink()
+        records = self.exists()
+        if not records:
+            return True
+        operaciones = records.mapped("operacion_id")
+        res = super(MxPedPartida, records).unlink()
         if not self.env.context.get("skip_auto_generated_refresh"):
             operaciones._auto_refresh_generated_registros()
         return res
