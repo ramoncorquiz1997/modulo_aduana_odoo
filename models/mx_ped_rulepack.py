@@ -272,10 +272,17 @@ class MxPedRulepackConditionRule(models.Model):
         size=2,
         help="Alternativa menos especifica a fraccion exacta.",
     )
+    forma_pago_id = fields.Many2one(
+        "mx.forma.pago",
+        string="Forma de pago",
+        ondelete="restrict",
+        domain="[('active','=',True)]",
+    )
     forma_pago_code = fields.Char(
         string="Forma pago (cve)",
-        size=3,
-        help="Clave de forma de pago a evaluar (ej. 4).",
+        related="forma_pago_id.code",
+        store=True,
+        readonly=True,
     )
     forma_pago_match = fields.Selection(
         [("any", "Cualquiera"), ("present", "Presente"), ("absent", "Ausente")],
@@ -305,8 +312,12 @@ class MxPedRulepackConditionRule(models.Model):
                 vals["registro_codigo"] = (vals["registro_codigo"] or "").strip().zfill(3)
             if vals.get("required_identifier_code"):
                 vals["required_identifier_code"] = (vals["required_identifier_code"] or "").strip().upper()
-            if vals.get("forma_pago_code"):
-                vals["forma_pago_code"] = "".join(ch for ch in str(vals["forma_pago_code"]) if ch.isdigit())
+            # Compatibilidad: si llega codigo legacy, intenta resolver al catalogo.
+            if vals.get("forma_pago_code") and not vals.get("forma_pago_id"):
+                code = "".join(ch for ch in str(vals["forma_pago_code"]) if ch.isdigit())
+                fp = self.env["mx.forma.pago"].search([("code", "=", code), ("active", "=", True)], limit=1)
+                if fp:
+                    vals["forma_pago_id"] = fp.id
         return super().create(vals_list)
 
     def write(self, vals):
@@ -328,8 +339,12 @@ class MxPedRulepackConditionRule(models.Model):
             vals["registro_codigo"] = (vals["registro_codigo"] or "").strip().zfill(3)
         if vals.get("required_identifier_code") is not None:
             vals["required_identifier_code"] = (vals["required_identifier_code"] or "").strip().upper()
-        if vals.get("forma_pago_code") is not None:
-            vals["forma_pago_code"] = "".join(ch for ch in str(vals["forma_pago_code"]) if ch.isdigit())
+        # Compatibilidad: si llega codigo legacy, intenta resolver al catalogo.
+        if vals.get("forma_pago_code") is not None and not vals.get("forma_pago_id"):
+            code = "".join(ch for ch in str(vals["forma_pago_code"]) if ch.isdigit())
+            fp = self.env["mx.forma.pago"].search([("code", "=", code), ("active", "=", True)], limit=1)
+            if fp:
+                vals["forma_pago_id"] = fp.id
         return super().write(vals)
 
     @api.onchange("registro_tipo_id")
@@ -372,7 +387,7 @@ class MxPedRulepackConditionRule(models.Model):
         "policy",
         "field_id",
         "registro_tipo_id",
-        "forma_pago_code",
+        "forma_pago_id",
         "forma_pago_match",
     )
     def _check_rule(self):
@@ -395,5 +410,5 @@ class MxPedRulepackConditionRule(models.Model):
                     raise ValidationError(_("Policy Default campo requiere Valor default campo."))
             elif rec.policy in {"require_field", "forbid_field", "default_field", "warn_field"}:
                 raise ValidationError(_("Policies de campo solo aplican cuando Target = Campo."))
-            if rec.forma_pago_match != "any" and not (rec.forma_pago_code or "").strip():
-                raise ValidationError(_("Debes indicar la clave de forma de pago cuando la condicion no es 'Cualquiera'."))
+            if rec.forma_pago_match != "any" and not rec.forma_pago_id:
+                raise ValidationError(_("Debes indicar la forma de pago del catalogo cuando la condicion no es 'Cualquiera'."))

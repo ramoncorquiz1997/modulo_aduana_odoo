@@ -108,7 +108,8 @@
                   <field name="clave_pedimento_id"/>
                   <field name="is_virtual"/>
                   <field name="forma_pago_match"/>
-                  <field name="forma_pago_code"/>
+                  <field name="forma_pago_id"/>
+                  <field name="forma_pago_code" optional="hide" readonly="1"/>
                   <field name="escenario_code"/>
                   <field name="fraccion_id"/>
                   <field name="fraccion_capitulo"/>
@@ -137,7 +138,8 @@
                   <field name="clave_pedimento_id"/>
                   <field name="is_virtual"/>
                   <field name="forma_pago_match"/>
-                  <field name="forma_pago_code"/>
+                  <field name="forma_pago_id"/>
+                  <field name="forma_pago_code" optional="hide" readonly="1"/>
                   <field name="escenario_code"/>
                   <field name="fraccion_id"/>
                   <field name="fraccion_capitulo"/>

@@ -942,7 +942,7 @@ class MxPedOperacion(models.Model):
                 score += 12
             if getattr(rule, "forma_pago_match", "any") != "any":
                 score += 12
-            if getattr(rule, "forma_pago_code", False):
+            if getattr(rule, "forma_pago_id", False) or getattr(rule, "forma_pago_code", False):
                 score += 8
         elif source == "clave":
             if getattr(rule, "scope", "") == "partida":
@@ -999,7 +999,11 @@ class MxPedOperacion(models.Model):
             if cap not in (context.get("fraccion_capitulos") or set()):
                 return False
         forma_pago_match = getattr(rule, "forma_pago_match", "any") or "any"
-        forma_pago_code = str(getattr(rule, "forma_pago_code", "") or "").strip()
+        forma_pago_code = ""
+        if getattr(rule, "forma_pago_id", False):
+            forma_pago_code = str(rule.forma_pago_id.code or "").strip()
+        if not forma_pago_code:
+            forma_pago_code = str(getattr(rule, "forma_pago_code", "") or "").strip()
         declared = context.get("declared_formas_pago") or set()
         if forma_pago_match == "present":
             if not forma_pago_code or forma_pago_code not in declared:
@@ -1763,6 +1767,7 @@ class MxPedOperacion(models.Model):
                 "extra": {
                     "fraccion_id": rule.fraccion_id.id if rule.fraccion_id else False,
                     "fraccion_capitulo": (rule.fraccion_capitulo or "").strip(),
+                    "forma_pago_id": rule.forma_pago_id.id if getattr(rule, "forma_pago_id", False) else False,
                     "forma_pago_code": (rule.forma_pago_code or "").strip(),
                     "forma_pago_match": rule.forma_pago_match or "any",
                 },
