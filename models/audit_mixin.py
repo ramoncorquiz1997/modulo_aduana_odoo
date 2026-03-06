@@ -160,12 +160,15 @@ class AduanaAuditMixin(models.AbstractModel):
     def write(self, vals):
         if self.env.context.get("skip_aduana_audit"):
             return super().write(vals)
+        records = self.exists()
+        if not records:
+            return True
         tracked = self._audit_fields_from_vals(vals)
-        before = self._audit_snapshot(tracked) if tracked else {}
-        result = super().write(vals)
+        before = records._audit_snapshot(tracked) if tracked else {}
+        result = super(AduanaAuditMixin, records).write(vals)
         if not tracked:
             return result
-        for rec in self:
+        for rec in records:
             changes = []
             rec_before = before.get(rec.id, {})
             for name in tracked:
@@ -203,9 +206,12 @@ class AduanaAuditMixin(models.AbstractModel):
     def unlink(self):
         if self.env.context.get("skip_aduana_audit"):
             return super().unlink()
-        for rec in self:
+        records = self.exists()
+        if not records:
+            return True
+        for rec in records:
             rec._audit_post_message(_("Registro eliminado por %s.") % self.env.user.display_name)
-        return super().unlink()
+        return super(AduanaAuditMixin, records).unlink()
 
 
 # ====== EXTENSIONES DE MODELOS (HERENCIA DE CLASE) ======
