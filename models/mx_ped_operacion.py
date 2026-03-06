@@ -3207,6 +3207,9 @@ class MxPedOperacion(models.Model):
             if allowed is not None and layout_reg.codigo not in allowed:
                 continue
             code = (layout_reg.codigo or "").strip()
+            # Estos registros se generan/sincronizan desde modelos tecnicos dedicados.
+            if code in {"509", "510", "557", "514"}:
+                continue
             campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
 
             if code == "506":
