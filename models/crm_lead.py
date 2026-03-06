@@ -1364,11 +1364,12 @@ class CrmLead(models.Model):
     )
     def _compute_x_import_summaries(self):
         for rec in self:
-            permiso_names = sorted({name for name in rec.x_operacion_line_ids.mapped("permiso_ids.name") if name})
-            rrna_names = sorted({name for name in rec.x_operacion_line_ids.mapped("rrna_ids.name") if name})
-            nom_names = sorted({name for name in rec.x_operacion_line_ids.mapped("nom_ids.code") if name})
-            tagged = len(rec.x_operacion_line_ids.filtered("labeling_required"))
-            total = len(rec.x_operacion_line_ids)
+            lines = rec.x_operacion_line_ids.exists()
+            permiso_names = sorted({name for name in lines.mapped("permiso_ids.name") if name})
+            rrna_names = sorted({name for name in lines.mapped("rrna_ids.name") if name})
+            nom_names = sorted({name for name in lines.mapped("nom_ids.code") if name})
+            tagged = len(lines.filtered("labeling_required"))
+            total = len(lines)
 
             rec.x_resumen_permisos = ", ".join(permiso_names) if permiso_names else "Sin permisos"
             rec.x_resumen_rrna = ", ".join(rrna_names) if rrna_names else "Sin RRNA"
@@ -1384,7 +1385,7 @@ class CrmLead(models.Model):
     )
     def _compute_x_totales_partidas(self):
         for rec in self:
-            lines = rec.x_operacion_line_ids
+            lines = rec.x_operacion_line_ids.exists()
             rec.x_bultos = int(sum(lines.mapped("packages_line") or [0]))
             rec.x_peso_bruto = sum(lines.mapped("gross_weight_line") or [0.0])
             rec.x_peso_neto = sum(lines.mapped("net_weight_line") or [0.0])
@@ -1410,10 +1411,11 @@ class CrmLead(models.Model):
                 rec.x_dta_estimado = rec.x_dta_estimado_manual
                 rec.x_prv_estimado = rec.x_prv_estimado_manual
             else:
-                rec.x_iva_estimado = sum(rec.x_operacion_line_ids.mapped("iva_estimado"))
-                rec.x_igi_estimado = sum(rec.x_operacion_line_ids.mapped("igi_estimado"))
-                rec.x_dta_estimado = sum(rec.x_operacion_line_ids.mapped("dta_estimado"))
-                rec.x_prv_estimado = sum(rec.x_operacion_line_ids.mapped("prv_estimado"))
+                lines = rec.x_operacion_line_ids.exists()
+                rec.x_iva_estimado = sum(lines.mapped("iva_estimado"))
+                rec.x_igi_estimado = sum(lines.mapped("igi_estimado"))
+                rec.x_dta_estimado = sum(lines.mapped("dta_estimado"))
+                rec.x_prv_estimado = sum(lines.mapped("prv_estimado"))
             rec.x_total_impuestos_estimado = (
                 rec.x_iva_estimado + rec.x_igi_estimado + rec.x_dta_estimado + rec.x_prv_estimado
             )
@@ -1432,8 +1434,9 @@ class CrmLead(models.Model):
         permiso_model = self.env["mx.permiso"].sudo()
         rrna_model = self.env["mx.rrna"].sudo()
         for rec in self:
-            if rec.x_operacion_line_ids:
-                lines = rec.x_operacion_line_ids
+            existing_lines = rec.x_operacion_line_ids.exists()
+            if existing_lines:
+                lines = existing_lines
             else:
                 line_vals = {
                     "lead_id": rec.id,
