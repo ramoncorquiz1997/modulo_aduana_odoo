@@ -1231,7 +1231,63 @@ class MxPedOperacion(models.Model):
             )
             if stale_managed:
                 stale_managed.with_context(skip_auto_generated_refresh=True).unlink()
+        self._sync_contribuciones_510_from_557()
         return True
+
+    def _sync_contribuciones_510_from_557(self):
+        """Consolida 557 para mantener 510 sincronizado sin captura manual."""
+        self.ensure_one()
+        grouped = {}
+        for line in self.partida_contribucion_ids.sorted(
+            lambda l: ((l.partida_id.numero_partida or 0) if l.partida_id else 0, l.sequence or 0, l.id)
+        ):
+            tipo = (line.tipo_contribucion or "").strip().upper()
+            if not tipo:
+                continue
+            tasa = float(line.tasa or 0.0)
+            forma_pago_id = line.forma_pago_id.id if line.forma_pago_id else False
+            key = (tipo, tasa, forma_pago_id)
+            if key not in grouped:
+                grouped[key] = {
+                    "tipo_contribucion": tipo,
+                    "tasa": tasa,
+                    "base": 0.0,
+                    "importe": 0.0,
+                    "forma_pago_id": forma_pago_id,
+                }
+            grouped[key]["base"] += float(line.base or 0.0)
+            grouped[key]["importe"] += float(line.importe or 0.0)
+
+        existing_by_key = {}
+        for rec in self.contribucion_global_ids:
+            key = (
+                (rec.tipo_contribucion or "").strip().upper(),
+                float(rec.tasa or 0.0),
+                rec.forma_pago_id.id if rec.forma_pago_id else False,
+            )
+            if key not in existing_by_key:
+                existing_by_key[key] = rec
+
+        global_model = self.env["mx.ped.contribucion.global"].with_context(skip_auto_generated_refresh=True)
+        for item in grouped.values():
+            key = (
+                item["tipo_contribucion"],
+                float(item["tasa"] or 0.0),
+                item["forma_pago_id"],
+            )
+            line = existing_by_key.get(key)
+            vals = {
+                "tipo_contribucion": item["tipo_contribucion"],
+                "tasa": item["tasa"],
+                "base": item["base"],
+                "importe": item["importe"],
+                "forma_pago_id": item["forma_pago_id"],
+            }
+            if line:
+                line.with_context(skip_auto_generated_refresh=True).write(vals)
+            else:
+                vals["operacion_id"] = self.id
+                global_model.create(vals)
 
     @staticmethod
     def _norm_contrib_key(value):
@@ -1375,6 +1431,8 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         if not self.layout_id:
             return
+        # Asegura 557/509 al dia aun cuando no hubo write previo en UI.
+        self.with_context(skip_auto_generated_refresh=True).action_generar_contribuciones_557()
 
         layout_regs = {
             reg.codigo: reg
@@ -1468,6 +1526,26 @@ class MxPedOperacion(models.Model):
                 used |= created
 
         (stale - used).unlink()
+
+    def _relax_technical_required_states(self, states):
+        """Relaja min/required en registros tecnicos cuando no hay fuente de datos."""
+        self.ensure_one()
+        relaxed = dict(states or {})
+        docs_514 = self.documento_ids.filtered(lambda d: (d.registro_codigo or "").strip() == "514")
+        has_source = {
+            "509": bool(self._build_509_sources_from_partida_contribuciones()),
+            "510": bool(self.contribucion_global_ids),
+            "514": bool(docs_514),
+            "557": bool(self.partida_contribucion_ids),
+        }
+        for code, present in has_source.items():
+            if present or code not in relaxed:
+                continue
+            state = dict(relaxed.get(code) or {})
+            state["required"] = False
+            state["min"] = 0
+            relaxed[code] = state
+        return relaxed
 
     def _validate_cancel_desist_structure(self):
         """Movimientos 2/3: estructura minima 500/800/801 sin mezclar otros."""
@@ -1929,7 +2007,7 @@ class MxPedOperacion(models.Model):
 
         plan = self._build_record_plan()
         self._store_rule_trace(plan)
-        states = plan["states"]
+        states = self._relax_technical_required_states(plan["states"])
 
         for code, state in states.items():
             present = counts.get(code, 0)
@@ -2117,7 +2195,7 @@ class MxPedOperacion(models.Model):
     def action_simular_estructura(self):
         self.ensure_one()
         plan = self._build_record_plan()
-        states = plan.get("states") or {}
+        states = self._relax_technical_required_states(plan.get("states") or {})
         counts = Counter((r.codigo or "") for r in self.registro_ids)
 
         missing = []
