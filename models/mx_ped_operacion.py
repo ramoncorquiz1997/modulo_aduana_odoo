@@ -1178,6 +1178,12 @@ class MxPedOperacion(models.Model):
             for code in self.partida_contribucion_ids.mapped("forma_pago_code")
             if code
         }
+        # Fuente primaria en captura operativa: selector por partida.
+        codes |= {
+            str(code).strip()
+            for code in self.partida_ids.mapped("forma_pago_sugerida_id.code")
+            if code
+        }
         docs_514 = self.documento_ids.filtered(
             lambda d: (d.registro_codigo or "").strip() == "514"
         )
