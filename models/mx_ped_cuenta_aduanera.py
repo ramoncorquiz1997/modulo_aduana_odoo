@@ -37,10 +37,21 @@ class MxPedOperacionCuentaAduanera(models.Model):
         readonly=True,
     )
     valor_unitario_titulo = fields.Float(string="Valor unitario titulo", digits=(16, 4))
-    total_garantia = fields.Float(string="Total garantia", digits=(16, 2))
+    total_garantia = fields.Float(
+        string="Total garantia",
+        digits=(16, 2),
+        compute="_compute_total_garantia",
+        store=True,
+        readonly=True,
+    )
     cantidad_um = fields.Float(string="Cantidad UM", digits=(16, 4))
     titulos_asignados = fields.Float(string="Titulos asignados", digits=(16, 2))
     notes = fields.Char(string="Notas")
+
+    @api.depends("valor_unitario_titulo", "titulos_asignados")
+    def _compute_total_garantia(self):
+        for rec in self:
+            rec.total_garantia = (rec.valor_unitario_titulo or 0.0) * (rec.titulos_asignados or 0.0)
 
     @api.constrains("tipo_cuenta")
     def _check_codes(self):

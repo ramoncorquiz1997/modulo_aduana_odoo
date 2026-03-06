@@ -1223,11 +1223,12 @@ class MxPedOperacion(models.Model):
                 for line in existing_lines
                 if (line.tipo_contribucion or "").strip()
             }
-            candidate_codes = {(c[0] or "").strip().upper() for c in candidates}
+            candidate_codes = set()
 
             for tax_code, amount, rate in candidates:
                 if not partida.forma_pago_sugerida_id:
                     continue
+                candidate_codes.add((tax_code or "").strip().upper())
                 line = existing_by_tipo.get(tax_code)
                 if line:
                     line.with_context(skip_auto_generated_refresh=True).write({
