@@ -5,6 +5,7 @@ import logging
 import re
 from datetime import datetime
 import xml.etree.ElementTree as ET
+import requests
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError, ValidationError
 
@@ -17,6 +18,8 @@ _logger = logging.getLogger(__name__)
 _UUID_RE = re.compile(
     r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
 )
+_BANXICO_FIX_SERIE_DEFAULT = "SF43718"
+_BANXICO_BASE_URL = "https://www.banxico.org.mx/SieAPIRest/service/v1/series"
 
 
 class CrmLead(models.Model):
@@ -515,6 +518,8 @@ class CrmLead(models.Model):
     def write(self, vals):
         vals = self._sync_medio_transporte_vals(vals)
         res = super().write(vals)
+        if not self.env.context.get("skip_sync_tipo_cambio_banxico"):
+            self._sync_tipo_cambio_banxico()
         if "x_bl_file" in vals and not self.env.context.get("skip_bl_autoparse"):
             for rec in self:
                 rec._autofill_from_bl(onchange_mode=False)
@@ -529,6 +534,45 @@ class CrmLead(models.Model):
             for rec in self:
                 rec._set_cfdi_pending_for_pdf(onchange_mode=False)
         return res
+
+    @api.model
+    def _banxico_series_url(self, serie_code=None):
+        code = (serie_code or _BANXICO_FIX_SERIE_DEFAULT).strip() or _BANXICO_FIX_SERIE_DEFAULT
+        return f"{_BANXICO_BASE_URL}/{code}/datos/oportuno"
+
+    @api.model
+    def _get_banxico_fix_rate(self):
+        icp = self.env["ir.config_parameter"].sudo()
+        serie_code = (icp.get_param("mx_ped.banxico_fix_series") or _BANXICO_FIX_SERIE_DEFAULT).strip()
+        token = (icp.get_param("mx_ped.banxico_token") or "").strip()
+        url = self._banxico_series_url(serie_code)
+        headers = {"Accept": "application/json", "Bmx-Token": token} if token else {"Accept": "application/json"}
+        try:
+            resp = requests.get(url, headers=headers, timeout=12)
+            resp.raise_for_status()
+            payload = resp.json() or {}
+            series = (((payload.get("bmx") or {}).get("series")) or [])
+            if not series:
+                return False
+            datos = (series[0].get("datos") or [])
+            if not datos:
+                return False
+            raw = (datos[0].get("dato") or "").strip()
+            if not raw or raw.upper() in {"N/E", "N/D"}:
+                return False
+            return float(raw.replace(",", ""))
+        except Exception:
+            _logger.exception("No se pudo obtener tipo de cambio FIX desde Banxico.")
+            return False
+
+    def _sync_tipo_cambio_banxico(self):
+        rate = self._get_banxico_fix_rate()
+        if not rate:
+            return
+        to_update = self.filtered(lambda r: abs((r.x_tipo_cambio or 0.0) - rate) > 0.00001)
+        if not to_update:
+            return
+        to_update.with_context(skip_sync_tipo_cambio_banxico=True).write({"x_tipo_cambio": rate})
     
     @api.onchange("x_modo_transporte")
     def _onchange_x_modo_transporte_set_default_codes(self):
@@ -1582,6 +1626,8 @@ class CrmLead(models.Model):
         has_cfdi_pdf = [bool(vals.get("x_factura_pdf_file")) for vals in vals_list]
         create_flags = [bool(vals.pop("x_create_pedimento", False)) for vals in vals_list]
         leads = super().create(vals_list)
+        if not self.env.context.get("skip_sync_tipo_cambio_banxico"):
+            leads._sync_tipo_cambio_banxico()
         for i, lead in enumerate(leads):
             if has_bl_file[i]:
                 lead._autofill_from_bl(onchange_mode=False)
