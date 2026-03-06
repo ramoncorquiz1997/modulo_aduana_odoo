@@ -1734,7 +1734,10 @@ class CrmLeadOperacionLine(models.Model):
                 continue
             last = self.search([("lead_id", "=", lead_id)], order="numero_partida desc, id desc", limit=1)
             vals["numero_partida"] = max(last.numero_partida or 0, 0) + 1
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            records._refresh_related_operaciones(records.mapped("lead_id").ids)
+        return records
 
     @api.constrains("lead_id", "numero_partida")
     def _check_numero_partida(self):
@@ -1845,6 +1848,27 @@ class CrmLeadOperacionLine(models.Model):
             f"PERMISO: {permisos or 'N/A'} | "
             f"RRNA: {rrna or 'N/A'}"
         )
+
+    def _refresh_related_operaciones(self, lead_ids):
+        if not lead_ids:
+            return
+        ops = self.env["mx.ped.operacion"].search([("lead_id", "in", list(set(lead_ids)))])
+        if ops:
+            ops._auto_refresh_generated_registros()
+
+    def write(self, vals):
+        lead_ids = self.mapped("lead_id").ids
+        res = super().write(vals)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            self._refresh_related_operaciones(lead_ids + self.mapped("lead_id").ids)
+        return res
+
+    def unlink(self):
+        lead_ids = self.mapped("lead_id").ids
+        res = super().unlink()
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            self._refresh_related_operaciones(lead_ids)
+        return res
 
 
 class CrmLeadFecha506(models.Model):

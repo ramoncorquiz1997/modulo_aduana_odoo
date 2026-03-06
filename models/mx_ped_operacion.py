@@ -1258,7 +1258,11 @@ class MxPedOperacion(models.Model):
             grouped[key]["base"] += float(line.base or 0.0)
             grouped[key]["importe"] += float(line.importe or 0.0)
 
+        # 510 no debe transmitir montos cero.
+        grouped = {k: v for k, v in grouped.items() if float(v.get("importe") or 0.0) > 0.0}
+
         existing_by_key = {}
+        stale_existing = self.env["mx.ped.contribucion.global"]
         for rec in self.contribucion_global_ids:
             key = (
                 (rec.tipo_contribucion or "").strip().upper(),
@@ -1267,8 +1271,10 @@ class MxPedOperacion(models.Model):
             )
             if key not in existing_by_key:
                 existing_by_key[key] = rec
+            stale_existing |= rec
 
         global_model = self.env["mx.ped.contribucion.global"].with_context(skip_auto_generated_refresh=True)
+        used = self.env["mx.ped.contribucion.global"]
         for item in grouped.values():
             key = (
                 item["tipo_contribucion"],
@@ -1285,9 +1291,15 @@ class MxPedOperacion(models.Model):
             }
             if line:
                 line.with_context(skip_auto_generated_refresh=True).write(vals)
+                used |= line
             else:
                 vals["operacion_id"] = self.id
-                global_model.create(vals)
+                created = global_model.create(vals)
+                used |= created
+
+        stale = (stale_existing - used)
+        if stale:
+            stale.with_context(skip_auto_generated_refresh=True).unlink()
 
     @staticmethod
     def _norm_contrib_key(value):
@@ -1337,6 +1349,8 @@ class MxPedOperacion(models.Model):
             lambda l: ((l.partida_id.numero_partida or 0) if l.partida_id else 0, l.sequence or 0, l.id)
         )
         for line in lines:
+            if float(line.importe or 0.0) <= 0.0:
+                continue
             ap12_code = self._resolve_ap12_contrib_code(line.tipo_contribucion)
             if not ap12_code:
                 continue
@@ -1360,6 +1374,43 @@ class MxPedOperacion(models.Model):
             grouped.values(),
             key=lambda x: (x.get("clave_contribucion") or 0, x.get("tasa") or 0.0, x.get("tipo_tasa") or ""),
         )
+
+    def _has_forma_pago_code(self, code):
+        target = str(code or "").strip()
+        if not target:
+            return False
+        return target in self._get_declared_formas_pago_codes()
+
+    def _validate_508_cuenta_aduanera_rules(self):
+        """Valida condicion base de 508 contra formas de pago y calidad de datos."""
+        self.ensure_one()
+        has_fp4 = self._has_forma_pago_code("4")
+        has_508 = bool(self.cuenta_aduanera_ids)
+
+        if has_fp4 and not has_508:
+            raise ValidationError(_("Existe forma de pago 4, pero no hay lineas de cuenta aduanera (508)."))
+
+        # En importacion, 508 debe venir por cuenta aduanera/garantia (forma de pago 4).
+        if self.tipo_operacion != "exportacion" and has_508 and not has_fp4:
+            raise ValidationError(_("Hay lineas de cuenta aduanera (508) pero no se detecta forma de pago 4."))
+
+        for line in self.cuenta_aduanera_ids:
+            contrato = (line.numero_contrato or "").strip()
+            folio = (line.folio_constancia or "").strip()
+            if not contrato or set(contrato) == {"0"}:
+                raise ValidationError(_("508: numero de contrato invalido en la linea %s.") % (line.sequence or line.id))
+            if not folio or set(folio) == {"0"}:
+                raise ValidationError(_("508: folio de constancia invalido en la linea %s.") % (line.sequence or line.id))
+            if (
+                line.valor_unitario_titulo
+                and line.titulos_asignados
+                and line.total_garantia
+                and abs((line.valor_unitario_titulo * line.titulos_asignados) - line.total_garantia) > 0.02
+            ):
+                raise ValidationError(
+                    _("508: incoherencia en montos (valor_unitario*titulos != total_garantia) en la linea %s.")
+                    % (line.sequence or line.id)
+                )
 
     def _build_sync_payload_from_layout(self, layout_reg, source, code):
         """Construye payload usando campo.nombre y heuristicas por codigo."""
@@ -1609,6 +1660,7 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         self._validate_cancel_desist_structure()
         self._run_process_stage_checks("pre_validate")
+        self._validate_508_cuenta_aduanera_rules()
 
     def _normalize_structure_rules(self, estructura_rule, source_weight):
         normalized = []
