@@ -573,6 +573,12 @@ class CrmLead(models.Model):
         if not to_update:
             return
         to_update.with_context(skip_sync_tipo_cambio_banxico=True).write({"x_tipo_cambio": rate})
+
+    def web_read(self, specification):
+        # Al abrir un caso en formulario, refresca FIX en tiempo real.
+        if not self.env.context.get("skip_sync_tipo_cambio_banxico") and len(self) == 1:
+            self._sync_tipo_cambio_banxico()
+        return super().web_read(specification)
     
     @api.onchange("x_modo_transporte")
     def _onchange_x_modo_transporte_set_default_codes(self):

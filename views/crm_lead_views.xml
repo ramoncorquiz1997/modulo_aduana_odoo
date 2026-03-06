@@ -423,7 +423,7 @@
               <group string="Base de valoracion aduanera">
                 <field name="x_valor_factura"/>
                 <field name="x_valor_aduana_estimado"/>
-                <field name="x_tipo_cambio"/>
+                <field name="x_tipo_cambio" readonly="1"/>
               </group>
             </group>
             <group>
