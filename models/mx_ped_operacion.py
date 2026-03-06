@@ -602,7 +602,10 @@ class MxPedOperacion(models.Model):
                 rec.layout_id = rec._get_latest_layout().id or False
             if not rec.layout_id or not rec.lead_id:
                 continue
-            rec.with_context(skip_auto_generated_refresh=True).action_cargar_desde_lead()
+            rec_ctx = rec.with_context(skip_auto_generated_refresh=True)
+            rec_ctx.action_generar_contribuciones_557()
+            rec_ctx.action_cargar_desde_lead()
+            rec_ctx._sync_registro_ids_from_tecnicos()
 
     def _get_latest_layout(self):
         return self.env["mx.ped.layout"].search(
@@ -1172,9 +1175,8 @@ class MxPedOperacion(models.Model):
         icp = self.env["ir.config_parameter"].sudo()
         dta_rate = float(icp.get_param("mx_ped.dta_rate", "0.0") or 0.0)
         prv_rate = float(icp.get_param("mx_ped.prv_rate", "0.0") or 0.0)
+        managed_codes = {"IGI", "IVA", "DTA", "PRV"}
         for partida in self.partida_ids:
-            if not partida.forma_pago_sugerida_id:
-                continue
             tipo = "importacion" if self.tipo_operacion != "exportacion" else "exportacion"
             tasa = False
             if partida.fraccion_id:
@@ -1191,8 +1193,6 @@ class MxPedOperacion(models.Model):
                 ("PRV", partida.prv_estimado or 0.0, prv_rate),
             ]
             candidates = [c for c in candidates if c[1] > 0]
-            if not candidates:
-                continue
 
             existing_lines = partida.contribucion_ids.filtered(lambda c: c.operacion_id == self)
             existing_by_tipo = {
@@ -1200,22 +1200,21 @@ class MxPedOperacion(models.Model):
                 for line in existing_lines
                 if (line.tipo_contribucion or "").strip()
             }
+            candidate_codes = {(c[0] or "").strip().upper() for c in candidates}
+
             for tax_code, amount, rate in candidates:
+                if not partida.forma_pago_sugerida_id:
+                    continue
                 line = existing_by_tipo.get(tax_code)
                 if line:
-                    updates = {}
-                    if not line.forma_pago_id:
-                        updates["forma_pago_id"] = partida.forma_pago_sugerida_id.id
-                    if not line.importe:
-                        updates["importe"] = amount
-                    if not line.base:
-                        updates["base"] = partida.value_mxn or 0.0
-                    if not line.tasa and rate:
-                        updates["tasa"] = rate
-                    if updates:
-                        line.write(updates)
+                    line.with_context(skip_auto_generated_refresh=True).write({
+                        "forma_pago_id": partida.forma_pago_sugerida_id.id,
+                        "importe": amount,
+                        "base": partida.value_mxn or 0.0,
+                        "tasa": rate,
+                    })
                     continue
-                contrib_model.create({
+                contrib_model.with_context(skip_auto_generated_refresh=True).create({
                     "operacion_id": self.id,
                     "partida_id": partida.id,
                     "tipo_contribucion": tax_code,
@@ -1224,6 +1223,14 @@ class MxPedOperacion(models.Model):
                     "importe": amount,
                     "forma_pago_id": partida.forma_pago_sugerida_id.id,
                 })
+
+            # Limpia solo las contribuciones autogestionadas que ya no aplican.
+            stale_managed = existing_lines.filtered(
+                lambda l: (l.tipo_contribucion or "").strip().upper() in managed_codes
+                and (l.tipo_contribucion or "").strip().upper() not in candidate_codes
+            )
+            if stale_managed:
+                stale_managed.with_context(skip_auto_generated_refresh=True).unlink()
         return True
 
     @staticmethod
