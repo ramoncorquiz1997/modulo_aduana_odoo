@@ -1390,9 +1390,8 @@ class MxPedOperacion(models.Model):
         if has_fp4 and not has_508:
             raise ValidationError(_("Existe forma de pago 4, pero no hay lineas de cuenta aduanera (508)."))
 
-        # En importacion, 508 debe venir por cuenta aduanera/garantia (forma de pago 4).
-        if self.tipo_operacion != "exportacion" and has_508 and not has_fp4:
-            raise ValidationError(_("Hay lineas de cuenta aduanera (508) pero no se detecta forma de pago 4."))
+        # NOTA: 508 es condicional; su presencia no siempre implica forma de pago 4.
+        # El caso de exportacion con DMCA se controla por regla de negocio/rulepack.
 
         for line in self.cuenta_aduanera_ids:
             contrato = (line.numero_contrato or "").strip()
