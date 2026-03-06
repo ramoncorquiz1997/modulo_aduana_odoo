@@ -1226,6 +1226,78 @@ class MxPedOperacion(models.Model):
                 })
         return True
 
+    @staticmethod
+    def _norm_contrib_key(value):
+        txt = (value or "").strip().upper()
+        if not txt:
+            return ""
+        return re.sub(r"[^A-Z0-9/]+", "", txt)
+
+    def _resolve_ap12_contrib_code(self, tipo_contribucion):
+        """Resuelve la clave Ap.12 desde el tipo capturado en 557 (IGI/IVA/DTA/PRV...)."""
+        token = self._norm_contrib_key(tipo_contribucion)
+        if not token:
+            return False
+
+        fallback_map = {
+            "DTA": 1,
+            "IVA": 3,
+            "ISAN": 4,
+            "IGI": 6,
+            "IGE": 6,
+            "REC": 7,
+            "PRV": 15,
+            "IEPS": 22,
+        }
+        if token in fallback_map:
+            return fallback_map[token]
+
+        catalog = self.env["aduana.catalogo.contribucion"].search([("active", "=", True)])
+        for rec in catalog:
+            abbr = self._norm_contrib_key(rec.abbreviation)
+            if not abbr:
+                continue
+            parts = {p for p in abbr.split("/") if p}
+            if token == abbr or token in parts:
+                return rec.code
+        return False
+
+    def _build_509_sources_from_partida_contribuciones(self):
+        """Consolida lineas 557 para construir registros 509 a nivel pedimento."""
+        self.ensure_one()
+        grouped = {}
+        tipo_tasa_default = str(
+            self.env["ir.config_parameter"].sudo().get_param("mx_ped.tipo_tasa_default", "1") or "1"
+        ).strip()
+
+        lines = self.partida_contribucion_ids.sorted(
+            lambda l: ((l.partida_id.numero_partida or 0) if l.partida_id else 0, l.sequence or 0, l.id)
+        )
+        for line in lines:
+            ap12_code = self._resolve_ap12_contrib_code(line.tipo_contribucion)
+            if not ap12_code:
+                continue
+            tasa = line.tasa if line.tasa not in (None, False) else 0.0
+            tipo_tasa = tipo_tasa_default
+            key = (int(ap12_code), float(tasa), tipo_tasa)
+            if key not in grouped:
+                grouped[key] = {
+                    "clave_contribucion": int(ap12_code),
+                    "tipo_contribucion": line.tipo_contribucion,
+                    "tasa": tasa,
+                    "tipo_tasa": tipo_tasa,
+                    "base": 0.0,
+                    "importe": 0.0,
+                    "pedimento_numero": self.pedimento_numero or "",
+                }
+            grouped[key]["base"] += float(line.base or 0.0)
+            grouped[key]["importe"] += float(line.importe or 0.0)
+
+        return sorted(
+            grouped.values(),
+            key=lambda x: (x.get("clave_contribucion") or 0, x.get("tasa") or 0.0, x.get("tipo_tasa") or ""),
+        )
+
     def _build_sync_payload_from_layout(self, layout_reg, source, code):
         """Construye payload usando campo.nombre y heuristicas por codigo."""
         values = {}
@@ -1234,6 +1306,8 @@ class MxPedOperacion(models.Model):
         def _read_attr(obj, name):
             if not obj or not name:
                 return None
+            if isinstance(obj, dict):
+                return obj.get(name)
             if hasattr(obj, name):
                 return getattr(obj, name)
             return None
@@ -1242,6 +1316,12 @@ class MxPedOperacion(models.Model):
             # 510 / 557
             if "forma" in norm_name and "pago" in norm_name:
                 return _read_attr(source, "forma_pago_code") or default
+            if "pedimento" in norm_name and ("numero" in norm_name or "num" in norm_name or norm_name == "pedimento"):
+                return _read_attr(source, "pedimento_numero") or default
+            if "tipo" in norm_name and "tasa" in norm_name:
+                return _read_attr(source, "tipo_tasa") or default
+            if "clave" in norm_name and ("contrib" in norm_name or "impuesto" in norm_name):
+                return _read_attr(source, "clave_contribucion") or _read_attr(source, "tipo_contribucion") or default
             if "contrib" in norm_name or "impuesto" in norm_name:
                 return _read_attr(source, "tipo_contribucion") or default
             if "tasa" in norm_name:
@@ -1277,26 +1357,40 @@ class MxPedOperacion(models.Model):
             ) or campo.nombre
             value = _read_attr(source, source_name)
             if value in (None, "", False):
-                norm = (campo.nombre or "").strip().lower()
+                norm = self._norm_layout_token(campo.nombre)
                 value = _pick_by_name(norm, default=value)
             if value not in (None, "", False):
                 values[campo.nombre] = value
         return values
 
     def _sync_registro_ids_from_tecnicos(self):
-        """Sincroniza registro_ids para codigos 510/557/514 desde modelos tecnicos."""
+        """Sincroniza registro_ids para codigos tecnicos (509/510/557/514)."""
         self.ensure_one()
         if not self.layout_id:
             return
 
         layout_regs = {
             reg.codigo: reg
-            for reg in self.layout_id.registro_ids.filtered(lambda r: r.codigo in {"510", "557", "514"})
+            for reg in self.layout_id.registro_ids.filtered(lambda r: r.codigo in {"509", "510", "557", "514"})
         }
         if not layout_regs:
             return
 
         desired = []
+        if "509" in layout_regs:
+            fuentes_509 = self._build_509_sources_from_partida_contribuciones()
+            for idx, src in enumerate(fuentes_509, start=1):
+                key = f"509:{src.get('clave_contribucion')}:{src.get('tasa')}:{src.get('tipo_tasa')}"
+                payload = self._build_sync_payload_from_layout(layout_regs["509"], src, "509")
+                payload["__sync_origin"] = "tecnico"
+                payload["__sync_key"] = key
+                desired.append({
+                    "codigo": "509",
+                    "secuencia": idx,
+                    "key": key,
+                    "valores": payload,
+                })
+
         if "510" in layout_regs:
             for idx, line in enumerate(self.contribucion_global_ids.sorted(lambda l: (l.sequence or 0, l.id)), start=1):
                 key = f"510:{line.id}"
@@ -1344,7 +1438,7 @@ class MxPedOperacion(models.Model):
 
         by_key = {}
         stale = self.env["mx.ped.registro"]
-        for reg in self.registro_ids.filtered(lambda r: (r.codigo or "") in {"510", "557", "514"}):
+        for reg in self.registro_ids.filtered(lambda r: (r.codigo or "") in {"509", "510", "557", "514"}):
             vals = reg.valores or {}
             if isinstance(vals, dict) and vals.get("__sync_origin") == "tecnico" and vals.get("__sync_key"):
                 by_key[vals.get("__sync_key")] = reg
