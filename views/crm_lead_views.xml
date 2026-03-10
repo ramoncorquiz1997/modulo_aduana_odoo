@@ -299,7 +299,7 @@
                   <field name="es_documento_principal"/>
                   <field name="cfdi_valor_usd"/>
                   <field name="cfdi_valor_moneda"/>
-                  <field name="diferencia_valor_moneda"/>
+                  <field name="diferencia_resumen"/>
                   <field name="estatus"/>
                   <button name="action_open_full_form" type="object" string="Abrir" class="btn-link"/>
                 </list>

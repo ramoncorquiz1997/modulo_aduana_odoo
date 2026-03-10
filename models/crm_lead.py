@@ -2368,6 +2368,11 @@ class CrmLeadDocumento(models.Model):
         compute="_compute_linked_partida_metrics",
         store=False,
     )
+    diferencia_resumen = fields.Char(
+        string="Diferencia",
+        compute="_compute_linked_partida_metrics",
+        store=False,
+    )
     tipo = fields.Selection(
         [
             ("factura", "Factura"),
@@ -2431,6 +2436,12 @@ class CrmLeadDocumento(models.Model):
             rec.saldo_valor_usd = max(diff_usd, 0.0)
             rec.saldo_valor_moneda = max(diff_moneda, 0.0)
             rec.has_difference = abs(diff_usd) > 0.01 or abs(diff_moneda) > 0.01
+            parts = []
+            if abs(diff_moneda) > 0.01:
+                parts.append("Mon: %.2f" % diff_moneda)
+            if abs(diff_usd) > 0.01:
+                parts.append("USD: %.2f" % diff_usd)
+            rec.diferencia_resumen = " | ".join(parts) if parts else "0.00"
 
     def action_open_full_form(self):
         self.ensure_one()
