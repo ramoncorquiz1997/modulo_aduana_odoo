@@ -142,11 +142,6 @@ class MxPedConsolidadoRemesa(models.Model):
             "target": "new",
         }
 
-    def action_archive(self):
-        self.ensure_one()
-        self.active = False
-        return True
-
     def action_archive_and_close(self):
         self.ensure_one()
         self.active = False
