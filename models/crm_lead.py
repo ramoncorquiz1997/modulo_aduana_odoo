@@ -370,12 +370,12 @@ class CrmLead(models.Model):
     x_comprador_name = fields.Char(string="Comprador (texto)")
     x_counterparty_partner_id = fields.Many2one(
         "res.partner",
-        string="Contraparte 505",
+        string="Contraparte comercial",
         compute="_compute_x_counterparty_505",
         store=False,
     )
     x_counterparty_name_505 = fields.Char(
-        string="Nombre contraparte 505",
+        string="Nombre comercial",
         compute="_compute_x_counterparty_505",
         store=False,
     )
@@ -384,7 +384,7 @@ class CrmLead(models.Model):
             ("proveedor", "Proveedor"),
             ("comprador", "Comprador"),
         ],
-        string="Rol contraparte 505",
+        string="Rol contraparte comercial",
         compute="_compute_x_counterparty_505",
         store=False,
     )
@@ -489,7 +489,8 @@ class CrmLead(models.Model):
     x_documento_505_ids = fields.One2many(
         "crm.lead.documento",
         "lead_id",
-        string="Facturas / CFDI / Documentos 505",
+        string="Facturas / CFDI / Documentos comerciales",
+        domain=[("active", "=", True)],
         copy=True,
     )
     x_ped_preflight_state = fields.Selection(
@@ -622,7 +623,7 @@ class CrmLead(models.Model):
 
     def _ensure_default_505_document(self):
         self.ensure_one()
-        docs = self.x_documento_505_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+        docs = self.x_documento_505_ids.filtered(lambda d: d.active and d.tipo in ("factura", "cove", "otro"))
         if docs:
             return docs[:1]
         if not self._has_legacy_cfdi_capture():
@@ -642,7 +643,7 @@ class CrmLead(models.Model):
     )
     def _compute_x_ped_preflight(self):
         for rec in self:
-            docs = rec.x_documento_505_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+            docs = rec.x_documento_505_ids.filtered(lambda d: d.active and d.tipo in ("factura", "cove", "otro"))
             lines = rec.x_operacion_line_ids.exists().sorted(lambda l: (l.numero_partida or 0, l.sequence or 0, l.id))
             issues = []
             summary = []
@@ -684,12 +685,12 @@ class CrmLead(models.Model):
                 )
                 if abs(total_usd - (doc.cfdi_valor_usd or 0.0)) > 0.01:
                     issues.append(
-                        _("La suma USD de las partidas ligadas a %s no cuadra con su 505.")
+                        _("La suma USD de las partidas ligadas a %s no cuadra con su documento comercial.")
                         % (doc.display_name or doc.folio or doc.id,)
                     )
                 if abs(total_comercial - (doc.cfdi_valor_moneda or 0.0)) > 0.01:
                     issues.append(
-                        _("La suma de valor comercial de las partidas ligadas a %s no cuadra con su 505.")
+                        _("La suma de valor comercial de las partidas ligadas a %s no cuadra con su documento comercial.")
                         % (doc.display_name or doc.folio or doc.id,)
                     )
             rec.x_ped_factura_resumen = "\n".join(summary) if summary else False
@@ -735,7 +736,7 @@ class CrmLead(models.Model):
 
     def _sync_lead_documents_to_operacion(self, operacion):
         self.ensure_one()
-        docs = self.x_documento_505_ids
+        docs = self.x_documento_505_ids.filtered("active")
         if not docs:
             docs = self._ensure_default_505_document()
         operacion.documento_ids.filtered(lambda d: not d.remesa_id).unlink()
@@ -2125,7 +2126,7 @@ class CrmLeadOperacionLine(models.Model):
 
     def _get_eligible_factura_documentos(self):
         self.ensure_one()
-        docs = self.lead_id.x_documento_505_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+        docs = self.lead_id.x_documento_505_ids.filtered(lambda d: d.active and d.tipo in ("factura", "cove", "otro"))
         return docs
 
     def _get_default_factura_documento(self):
@@ -2274,10 +2275,11 @@ class CrmLeadOperacionLine(models.Model):
 
 class CrmLeadDocumento(models.Model):
     _name = "crm.lead.documento"
-    _description = "CRM Lead - Documento comercial 505"
+    _description = "CRM Lead - Documento comercial"
     _order = "sequence, id"
     _rec_name = "display_name"
 
+    active = fields.Boolean(default=True)
     lead_id = fields.Many2one("crm.lead", required=True, ondelete="cascade", index=True)
     sequence = fields.Integer(default=10)
     tipo = fields.Selection(
@@ -2296,19 +2298,19 @@ class CrmLeadDocumento(models.Model):
     es_documento_principal = fields.Boolean(string="Documento principal", default=False)
     folio = fields.Char(string="Folio")
     fecha = fields.Datetime(string="Fecha")
-    cfdi_termino_facturacion = fields.Char(string="Termino facturacion 505")
-    cfdi_moneda_id = fields.Many2one("res.currency", string="Moneda documento 505")
-    cfdi_valor_usd = fields.Monetary(string="Valor USD 505", currency_field="company_currency_id")
-    cfdi_valor_moneda = fields.Monetary(string="Valor moneda documento 505", currency_field="cfdi_moneda_id")
-    cfdi_pais_id = fields.Many2one("res.country", string="Pais documento 505")
-    cfdi_estado_id = fields.Many2one("res.country.state", string="Entidad documento 505")
-    cfdi_id_fiscal = fields.Char(string="Identificacion fiscal 505")
-    counterparty_name_505 = fields.Char(string="Proveedor / comprador 505")
-    counterparty_street_505 = fields.Char(string="Calle 505")
-    counterparty_num_int_505 = fields.Char(string="Numero interior 505")
-    counterparty_num_ext_505 = fields.Char(string="Numero exterior 505")
-    counterparty_zip_505 = fields.Char(string="Codigo postal 505")
-    counterparty_city_505 = fields.Char(string="Municipio / ciudad 505")
+    cfdi_termino_facturacion = fields.Char(string="Termino de facturacion")
+    cfdi_moneda_id = fields.Many2one("res.currency", string="Moneda documento")
+    cfdi_valor_usd = fields.Monetary(string="Valor USD", currency_field="company_currency_id")
+    cfdi_valor_moneda = fields.Monetary(string="Valor en moneda documento", currency_field="cfdi_moneda_id")
+    cfdi_pais_id = fields.Many2one("res.country", string="Pais documento")
+    cfdi_estado_id = fields.Many2one("res.country.state", string="Entidad documento")
+    cfdi_id_fiscal = fields.Char(string="Identificacion fiscal")
+    counterparty_name_505 = fields.Char(string="Proveedor / comprador")
+    counterparty_street_505 = fields.Char(string="Calle")
+    counterparty_num_int_505 = fields.Char(string="Numero interior")
+    counterparty_num_ext_505 = fields.Char(string="Numero exterior")
+    counterparty_zip_505 = fields.Char(string="Codigo postal")
+    counterparty_city_505 = fields.Char(string="Municipio / ciudad")
     archivo_file = fields.Binary(string="Archivo")
     archivo_filename = fields.Char(string="Nombre archivo")
     estatus = fields.Selection([("pendiente", "Pendiente"), ("ok", "OK"), ("rechazado", "Rechazado")], default="pendiente")
@@ -2321,6 +2323,22 @@ class CrmLeadDocumento(models.Model):
         for rec in self:
             tipo = dict(self._fields["tipo"].selection).get(rec.tipo, rec.tipo or "Documento")
             rec.display_name = " | ".join([p for p in [tipo, rec.folio] if p]) or tipo
+
+    def action_open_full_form(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": self._name,
+            "view_mode": "form",
+            "res_id": self.id,
+            "view_id": self.env.ref("modulo_aduana_odoo.crm_lead_documento_view_form").id,
+            "target": "new",
+        }
+
+    def action_archive_and_close(self):
+        self.ensure_one()
+        self.active = False
+        return {"type": "ir.actions.act_window_close"}
 
     def _prepare_snapshot_vals_from_lead(self):
         self.ensure_one()

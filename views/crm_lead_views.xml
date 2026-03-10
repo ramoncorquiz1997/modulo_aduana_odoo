@@ -291,7 +291,7 @@
 
             <group string="Facturas / CFDI / Documentos comerciales">
               <field name="x_documento_505_ids" context="{'default_lead_id': id, 'default_tipo': 'factura'}">
-                <list editable="bottom" delete="0" open_form_view="1">
+                <list editable="bottom" delete="0">
                   <field name="sequence" optional="hide"/>
                   <field name="tipo"/>
                   <field name="folio"/>
@@ -300,6 +300,7 @@
                   <field name="cfdi_valor_usd"/>
                   <field name="cfdi_valor_moneda"/>
                   <field name="estatus"/>
+                  <button name="action_open_full_form" type="object" string="Abrir" class="btn-link"/>
                 </list>
                 <form string="Documento comercial">
                   <group>
@@ -622,6 +623,55 @@
             <button name="action_apply" type="object" string="Aplicar" class="btn-primary"/>
             <button string="Cancelar" special="cancel" class="btn-secondary"/>
           </footer>
+        </form>
+      </field>
+    </record>
+
+    <record id="crm_lead_documento_view_form" model="ir.ui.view">
+      <field name="name">crm.lead.documento.form</field>
+      <field name="model">crm.lead.documento</field>
+      <field name="arch" type="xml">
+        <form string="Documento comercial" delete="0">
+          <header>
+            <button name="action_archive_and_close"
+                    type="object"
+                    string="Eliminar documento"
+                    class="btn-secondary"
+                    confirm="Esta accion ocultara el documento actual del CRM. Deseas continuar?"/>
+          </header>
+          <sheet>
+            <group>
+              <group string="Captura basica">
+                <field name="tipo"/>
+                <field name="folio"/>
+                <field name="fecha"/>
+                <field name="es_documento_principal"/>
+                <field name="archivo_file" filename="archivo_filename"/>
+                <field name="archivo_filename" invisible="1"/>
+                <field name="estatus"/>
+                <field name="notas"/>
+              </group>
+              <group string="Datos comerciales">
+                <field name="cfdi_termino_facturacion"/>
+                <field name="cfdi_moneda_id"/>
+                <field name="cfdi_valor_usd"/>
+                <field name="cfdi_valor_moneda"/>
+                <field name="cfdi_pais_id"/>
+                <field name="cfdi_estado_id"/>
+                <field name="cfdi_id_fiscal"/>
+                <field name="counterparty_name_505"/>
+                <field name="counterparty_street_505"/>
+                <field name="counterparty_num_int_505"/>
+                <field name="counterparty_num_ext_505"/>
+                <field name="counterparty_zip_505"/>
+                <field name="counterparty_city_505"/>
+              </group>
+            </group>
+            <group invisible="1">
+              <field name="lead_id"/>
+              <field name="active"/>
+            </group>
+          </sheet>
         </form>
       </field>
     </record>
