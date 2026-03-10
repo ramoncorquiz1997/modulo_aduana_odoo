@@ -12,6 +12,7 @@
         "security/ir.model.access.csv",
         "views/mx_ped_consolidado_views.xml",
         "views/mx_ped_operacion_views.xml",
+        "views/mx_ped_partida_factura_wizard_views.xml",
         "views/crm_lead_views.xml",
         "views/aduana_catalogos_views.xml",
         "views/aduana_layout_tecnico_views.xml",

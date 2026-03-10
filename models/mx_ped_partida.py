@@ -15,6 +15,30 @@ class MxPedPartida(models.Model):
     operacion_id = fields.Many2one(
         "mx.ped.operacion", required=True, ondelete="cascade", index=True
     )
+    remesa_assignment_ids = fields.One2many(
+        "mx.ped.consolidado.remesa.partida",
+        "partida_id",
+        string="Asignaciones remesa",
+        readonly=True,
+    )
+    remesa_context_id = fields.Many2one(
+        "mx.ped.consolidado.remesa",
+        string="Remesa contexto",
+        compute="_compute_factura_context",
+        store=False,
+    )
+    eligible_documento_ids = fields.Many2many(
+        "mx.ped.documento",
+        string="Documentos elegibles",
+        compute="_compute_factura_context",
+        store=False,
+    )
+    factura_documento_id = fields.Many2one(
+        "mx.ped.documento",
+        string="Factura / CFDI",
+        domain="[('id', 'in', eligible_documento_ids)]",
+        ondelete="set null",
+    )
     display_name = fields.Char(
         string="Nombre",
         compute="_compute_display_name",
@@ -177,6 +201,39 @@ class MxPedPartida(models.Model):
                 pieces.append(descripcion)
             rec.display_name = " | ".join(pieces)
 
+    @api.depends(
+        "operacion_id",
+        "operacion_id.documento_ids",
+        "operacion_id.documento_ids.remesa_id",
+        "remesa_assignment_ids.remesa_id",
+    )
+    def _compute_factura_context(self):
+        for rec in self:
+            remesas = rec.remesa_assignment_ids.mapped("remesa_id")
+            rec.remesa_context_id = remesas[0] if len(remesas) == 1 else False
+            docs = rec.operacion_id.documento_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+            if rec.remesa_context_id:
+                docs = docs.filtered(lambda d: d.remesa_id == rec.remesa_context_id)
+            elif remesas:
+                docs = docs.filtered(lambda d: not d.remesa_id)
+            rec.eligible_documento_ids = docs
+
+    def _get_default_factura_documento(self):
+        self.ensure_one()
+        docs = self.eligible_documento_ids
+        if len(docs) == 1:
+            return docs[0]
+        previous = self.operacion_id.partida_ids.filtered(
+            lambda p: p.id != self.id and (
+                (p.numero_partida or 0) < (self.numero_partida or 999999999)
+                or (not self.numero_partida and p.id < self.id)
+            )
+        ).sorted(lambda p: (p.numero_partida or 0, p.id))
+        previous = previous[-1:] if previous else self.env["mx.ped.partida"]
+        if previous and previous.factura_documento_id and previous.factura_documento_id in docs:
+            return previous.factura_documento_id
+        return docs.filtered(lambda d: d.es_documento_principal)[:1]
+
     @api.depends("value_usd", "operacion_id.lead_id.x_tipo_cambio")
     def _compute_value_mxn(self):
         for rec in self:
@@ -200,6 +257,14 @@ class MxPedPartida(models.Model):
 
     def name_get(self):
         return [(rec.id, rec.display_name or ("Partida %s" % (rec.numero_partida or rec.id))) for rec in self]
+
+    @api.onchange("operacion_id", "numero_partida")
+    def _onchange_factura_documento_id(self):
+        for rec in self:
+            if not rec.factura_documento_id:
+                default_doc = rec._get_default_factura_documento()
+                if default_doc:
+                    rec.factura_documento_id = default_doc
 
     def _get_applicable_tasa(self):
         self.ensure_one()
@@ -270,6 +335,19 @@ class MxPedPartida(models.Model):
         for rec in self:
             rec.nico = rec.nico_id.code if rec.nico_id else (rec.fraccion_id.nico if rec.fraccion_id else False)
 
+    @api.constrains("factura_documento_id", "operacion_id", "remesa_assignment_ids")
+    def _check_factura_documento_integrity(self):
+        for rec in self:
+            if not rec.factura_documento_id:
+                continue
+            if rec.factura_documento_id.operacion_id != rec.operacion_id:
+                raise ValidationError("La factura/CFDI asignada debe pertenecer a la misma operacion que la partida.")
+            remesas = rec.remesa_assignment_ids.mapped("remesa_id")
+            if len(remesas) == 1 and rec.factura_documento_id.remesa_id and rec.factura_documento_id.remesa_id != remesas[0]:
+                raise ValidationError("La factura/CFDI de la partida debe pertenecer a la misma remesa.")
+            if len(remesas) > 1 and rec.factura_documento_id.remesa_id:
+                raise ValidationError("La partida esta dividida en multiples remesas; no puede usar una factura ligada a una sola remesa.")
+
     def get_regulatory_summary_text(self):
         self.ensure_one()
         noms = ", ".join(self.nom_ids.mapped("code"))
@@ -283,7 +361,16 @@ class MxPedPartida(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        normalized = []
+        for vals in vals_list:
+            vals = dict(vals)
+            normalized.append(vals)
         records = super().create(vals_list)
+        for rec, vals in zip(records, normalized):
+            if not vals.get("factura_documento_id"):
+                default_doc = rec._get_default_factura_documento()
+                if default_doc:
+                    rec.with_context(skip_auto_generated_refresh=True).write({"factura_documento_id": default_doc.id})
         if not self.env.context.get("skip_auto_generated_refresh"):
             records.mapped("operacion_id")._auto_refresh_generated_registros()
         return records

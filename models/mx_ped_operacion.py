@@ -1004,6 +1004,47 @@ class MxPedOperacion(models.Model):
             "condition": int((rulepack.weight_condition if rulepack else 30) or 30),
         }
 
+    def action_open_partida_factura_wizard(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "mx.ped.partida.factura.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_operacion_id": self.id,
+                "default_partida_ids": [(6, 0, self.partida_ids.ids)],
+            },
+        }
+
+    def _validate_partida_facturas_505(self):
+        self.ensure_one()
+        partidas = self.partida_ids
+        if not partidas:
+            return
+        missing = partidas.filtered(lambda p: not p.factura_documento_id)
+        if missing:
+            nums = ", ".join(str(n) for n in missing.mapped("numero_partida") if n)
+            raise UserError(_("Existen partidas sin factura/CFDI asignado: %s") % (nums or len(missing)))
+
+        docs = partidas.mapped("factura_documento_id")
+        for doc in docs:
+            linked = partidas.filtered(lambda p: p.factura_documento_id == doc)
+            total_usd = sum(linked.mapped("value_usd"))
+            total_comercial = sum(linked.mapped("valor_comercial"))
+            doc_usd = doc.cfdi_valor_usd or 0.0
+            doc_moneda = doc.cfdi_valor_moneda or 0.0
+            if abs(total_usd - doc_usd) > 0.01:
+                raise UserError(
+                    _("La suma de Valor USD de las partidas ligadas a %s no cuadra con el valor USD del 505. Partidas=%.2f Documento=%.2f")
+                    % (doc.display_name or doc.folio or doc.id, total_usd, doc_usd)
+                )
+            if abs(total_comercial - doc_moneda) > 0.01:
+                raise UserError(
+                    _("La suma de Valor Comercial de las partidas ligadas a %s no cuadra con el valor en moneda del 505. Partidas=%.2f Documento=%.2f")
+                    % (doc.display_name or doc.folio or doc.id, total_comercial, doc_moneda)
+                )
+
     def _compute_specificity(self, rule, source):
         score = 0
         if source in ("selector", "condition", "process"):
@@ -2670,6 +2711,7 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         self._sync_registro_ids_from_tecnicos()
         self._validate_confirmacion_pago_formas()
+        self._validate_partida_facturas_505()
         self._run_process_stage_checks("export")
         if not self.layout_id:
             raise UserError(_("Falta seleccionar un layout en la operación."))
@@ -2704,6 +2746,7 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         self._sync_registro_ids_from_tecnicos()
         self._validate_confirmacion_pago_formas()
+        self._validate_partida_facturas_505()
         self._run_process_stage_checks("export")
         if not self.layout_id:
             raise UserError(_("Falta seleccionar un layout en la operación."))
@@ -3296,6 +3339,65 @@ class MxPedOperacion(models.Model):
             source_model=campo.source_model,
         )
 
+    def _document_value_for_505_field(self, campo, documento):
+        self.ensure_one()
+        source_name = (campo.source_field_id.name if campo.source_field_id else campo.source_field) or ""
+        campo_name = (campo.nombre or "").strip().lower()
+        source_norm = (source_name or "").strip().lower()
+        token = f"{campo_name} {source_norm}".strip()
+
+        if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro"):
+            return "505"
+        if "pedimento" in token and ("numero" in token or "num" in token or token == "pedimento"):
+            return self.pedimento_numero or ""
+        if "fecha" in token and ("cfdi" in token or "documento" in token or "acuse" in token):
+            return documento.fecha or self.lead_id.x_cfdi_fecha or False
+        if any(key in token for key in ["acuse de valor", "acuse valor", "numero del acuse", "numero acuse", "numero cfdi", "numero documento", "folio"]):
+            return documento.folio or False
+        if "termino" in token and "facturacion" in token:
+            return documento.cfdi_termino_facturacion or self.lead_id.x_incoterm or False
+        if "moneda" in token and ("cfdi" in token or "documento" in token):
+            return documento.cfdi_moneda_id.code if documento.cfdi_moneda_id and hasattr(documento.cfdi_moneda_id, "code") else (documento.cfdi_moneda_id.name if documento.cfdi_moneda_id else False)
+        if "valor" in token and "dolar" in token:
+            return documento.cfdi_valor_usd or False
+        if "valor" in token and "moneda" in token:
+            return documento.cfdi_valor_moneda or False
+        if "pais" in token and ("cfdi" in token or "documento" in token):
+            return documento.cfdi_pais_id.code if documento.cfdi_pais_id and hasattr(documento.cfdi_pais_id, "code") else (documento.cfdi_pais_id.name if documento.cfdi_pais_id else False)
+        if ("entidad" in token or "estado" in token) and ("cfdi" in token or "documento" in token):
+            return documento.cfdi_estado_id.code if documento.cfdi_estado_id and hasattr(documento.cfdi_estado_id, "code") else (documento.cfdi_estado_id.name if documento.cfdi_estado_id else False)
+        if "identificacion fiscal" in token or "id fiscal" in token:
+            return documento.cfdi_id_fiscal or False
+        if "proveedor" in token or "comprador" in token:
+            return documento.counterparty_name_505 or False
+        if "calle" in token:
+            return documento.counterparty_street_505 or False
+        if "numero interior" in token or "num interior" in token:
+            return documento.counterparty_num_int_505 or False
+        if "numero exterior" in token or "num exterior" in token:
+            return documento.counterparty_num_ext_505 or False
+        if "codigo postal" in token or token.endswith("cp") or token == "cp":
+            return documento.counterparty_zip_505 or False
+        if "municipio" in token or "ciudad" in token:
+            return documento.counterparty_city_505 or False
+
+        # Fallback a source_field tecnico si coincide con documento.
+        source = source_name or campo.nombre
+        if source in documento._fields:
+            return self._record_value_for_field(documento, source)
+        return self._field_value_for_layout(campo, partida=False)
+
+    def _build_505_valores(self, layout_reg, documento):
+        self.ensure_one()
+        valores = {}
+        for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
+            val = self._document_value_for_505_field(campo, documento)
+            if val in (None, "", False) and campo.default:
+                val = campo.default
+            if val not in (None, "", False):
+                valores[campo.nombre] = val
+        return valores
+
     @staticmethod
     def _format_506_date(value):
         if not value:
@@ -3499,6 +3601,17 @@ class MxPedOperacion(models.Model):
                         "valores": self._build_508_valores(layout_reg, cuenta_line),
                     }))
                 continue
+
+            if code == "505":
+                docs_505 = self.documento_ids.sorted(lambda d: (d.es_documento_principal is not True, d.id))
+                if docs_505:
+                    for secuencia, documento in enumerate(docs_505, start=1):
+                        registros.append((0, 0, {
+                            "codigo": layout_reg.codigo,
+                            "secuencia": secuencia,
+                            "valores": self._build_505_valores(layout_reg, documento),
+                        }))
+                    continue
 
             has_partida_source = any(c.source_model == "partida" for c in campos)
             repeat_by_partida = has_partida_source or code in repeat_codes_by_partida

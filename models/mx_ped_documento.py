@@ -5,6 +5,7 @@ from odoo.exceptions import ValidationError
 class MxPedDocumento(models.Model):
     _name = "mx.ped.documento"
     _description = "Pedimento - Documento"
+    _rec_name = "display_name"
 
     company_id = fields.Many2one(
         "res.company", required=True, default=lambda self: self.env.company, index=True
@@ -106,6 +107,11 @@ class MxPedDocumento(models.Model):
     attachment_id = fields.Many2one("ir.attachment", string="Archivo")
     archivo_file = fields.Binary(string="Archivo")
     archivo_filename = fields.Char(string="Nombre archivo")
+    display_name = fields.Char(
+        string="Nombre",
+        compute="_compute_display_name",
+        store=False,
+    )
 
     estatus = fields.Selection(
         [("pendiente", "Pendiente"), ("ok", "OK"), ("rechazado", "Rechazado")],
@@ -114,6 +120,22 @@ class MxPedDocumento(models.Model):
     )
 
     notas = fields.Text()
+
+    @api.depends("tipo", "folio", "remesa_id.folio", "partida_id.numero_partida")
+    def _compute_display_name(self):
+        for rec in self:
+            tipo = dict(self._fields["tipo"].selection).get(rec.tipo, rec.tipo or "Documento")
+            pieces = [tipo]
+            if rec.folio:
+                pieces.append(rec.folio)
+            if rec.remesa_id and rec.remesa_id.folio:
+                pieces.append("Remesa %s" % rec.remesa_id.folio)
+            if rec.partida_id and rec.partida_id.numero_partida:
+                pieces.append("Partida %s" % rec.partida_id.numero_partida)
+            rec.display_name = " | ".join(pieces)
+
+    def name_get(self):
+        return [(rec.id, rec.display_name or ("Documento %s" % rec.id)) for rec in self]
 
     def action_open_full_form(self):
         self.ensure_one()

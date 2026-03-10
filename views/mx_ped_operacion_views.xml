@@ -138,6 +138,10 @@
 
             <notebook>
               <page string="Partidas">
+                <button name="action_open_partida_factura_wizard"
+                        type="object"
+                        string="Asignacion masiva de factura"
+                        class="btn-secondary"/>
                 <field name="partida_ids" context="{'default_operacion_id': id}">
                   <list editable="bottom">
                     <field name="numero_partida"/>
@@ -151,6 +155,7 @@
                     <field name="value_usd"/>
                     <field name="precio_unitario"/>
                     <field name="value_mxn" readonly="1"/>
+                    <field name="factura_documento_id"/>
                     <field name="descripcion"/>
                     <field name="unidad_tarifa"/>
                     <field name="cantidad_tarifa"/>
@@ -187,6 +192,7 @@
                         <field name="value_usd"/>
                         <field name="precio_unitario"/>
                         <field name="value_mxn" readonly="1"/>
+                        <field name="factura_documento_id"/>
                       </group>
                     </group>
                     <group string="Regulatorio">
