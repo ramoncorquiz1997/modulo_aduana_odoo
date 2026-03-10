@@ -19,6 +19,11 @@ class MxPedDocumento(models.Model):
         ondelete="set null",
         index=True,
     )
+    es_documento_principal = fields.Boolean(
+        string="Documento principal",
+        default=False,
+        help="Marca el documento principal o la relacion de facturas que acompana fisicamente a la remesa.",
+    )
 
     partida_id = fields.Many2one("mx.ped.partida", ondelete="set null")
     aplica_partida_especifica = fields.Boolean(
@@ -104,3 +109,14 @@ class MxPedDocumento(models.Model):
                 raise ValidationError("La partida del documento debe pertenecer a la misma operacion.")
             if not rec.aplica_partida_especifica and rec.partida_id:
                 raise ValidationError("Si el documento tiene partida, marca que aplica a una partida especifica.")
+
+    @api.constrains("remesa_id", "es_documento_principal")
+    def _check_single_documento_principal(self):
+        for rec in self.filtered(lambda r: r.remesa_id and r.es_documento_principal):
+            duplicate = self.search_count([
+                ("id", "!=", rec.id),
+                ("remesa_id", "=", rec.remesa_id.id),
+                ("es_documento_principal", "=", True),
+            ])
+            if duplicate:
+                raise ValidationError("Solo puede existir un documento principal por remesa.")
