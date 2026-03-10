@@ -340,6 +340,41 @@ class MxPedOperacion(models.Model):
         default=False,
         help="Muestra secciones tecnicas (510/557/514) para captura avanzada.",
     )
+    es_consolidado = fields.Boolean(
+        string="Pedimento consolidado",
+        help="Marca la operacion cuando el despacho se manejara mediante remesas.",
+    )
+    consolidado_estado = fields.Selection(
+        [
+            ("no_aplica", "No aplica"),
+            ("abierto", "Abierto"),
+            ("en_proceso", "En proceso"),
+            ("pendiente_cierre", "Pendiente de cierre"),
+            ("cerrado", "Cerrado"),
+        ],
+        string="Estado consolidado",
+        compute="_compute_consolidado_estado",
+        store=True,
+        readonly=True,
+    )
+    fecha_apertura = fields.Date(
+        string="Fecha apertura consolidado",
+        help="Fecha en que se abre la captura operativa del consolidado.",
+    )
+    fecha_cierre = fields.Date(
+        string="Fecha cierre consolidado",
+        help="Fecha de cierre operativo del consolidado.",
+    )
+    periodicidad_cierre = fields.Selection(
+        [
+            ("manual", "Manual"),
+            ("semanal", "Semanal"),
+            ("quincenal", "Quincenal"),
+            ("mensual", "Mensual"),
+        ],
+        string="Periodicidad cierre",
+        default="manual",
+    )
 
     registro_ids = fields.One2many(
         comodel_name="mx.ped.registro",
@@ -387,10 +422,20 @@ class MxPedOperacion(models.Model):
         string="Cuentas aduaneras/garantia",
         copy=True,
     )
+    remesa_ids = fields.One2many(
+        "mx.ped.consolidado.remesa",
+        "operacion_id",
+        string="Remesas",
+        copy=True,
+    )
 
     partida_count = fields.Integer(
         string="Partidas",
         compute="_compute_partida_count",
+    )
+    remesa_count = fields.Integer(
+        string="Remesas",
+        compute="_compute_remesa_count",
     )
     total_packages_line = fields.Integer(
         string="Total bultos",
@@ -466,6 +511,45 @@ class MxPedOperacion(models.Model):
     def _compute_partida_count(self):
         for rec in self:
             rec.partida_count = len(rec.partida_ids)
+
+    @api.depends("remesa_ids")
+    def _compute_remesa_count(self):
+        for rec in self:
+            rec.remesa_count = len(rec.remesa_ids)
+
+    @api.depends("es_consolidado", "fecha_cierre", "remesa_ids.estado")
+    def _compute_consolidado_estado(self):
+        for rec in self:
+            if not rec.es_consolidado:
+                rec.consolidado_estado = "no_aplica"
+                continue
+            states = set(rec.remesa_ids.mapped("estado"))
+            if rec.fecha_cierre:
+                rec.consolidado_estado = "cerrado"
+            elif not states:
+                rec.consolidado_estado = "abierto"
+            elif states <= {"cerrada"}:
+                rec.consolidado_estado = "pendiente_cierre"
+            else:
+                rec.consolidado_estado = "en_proceso"
+
+    @api.onchange("es_consolidado")
+    def _onchange_es_consolidado(self):
+        for rec in self:
+            if rec.es_consolidado and not rec.fecha_apertura:
+                rec.fecha_apertura = fields.Date.context_today(rec)
+            if not rec.es_consolidado:
+                rec.fecha_apertura = False
+                rec.fecha_cierre = False
+                rec.periodicidad_cierre = "manual"
+
+    @api.constrains("es_consolidado", "fecha_apertura", "fecha_cierre")
+    def _check_consolidado_fechas(self):
+        for rec in self:
+            if not rec.es_consolidado:
+                continue
+            if rec.fecha_apertura and rec.fecha_cierre and rec.fecha_cierre < rec.fecha_apertura:
+                raise ValidationError(_("La fecha de cierre del consolidado no puede ser menor a la fecha de apertura."))
 
     @api.depends(
         "partida_ids.packages_line",

@@ -546,24 +546,46 @@ class CrmLead(models.Model):
         serie_code = (icp.get_param("mx_ped.banxico_fix_series") or _BANXICO_FIX_SERIE_DEFAULT).strip()
         token = (icp.get_param("mx_ped.banxico_token") or "").strip()
         url = self._banxico_series_url(serie_code)
-        headers = {"Accept": "application/json", "Bmx-Token": token} if token else {"Accept": "application/json"}
-        try:
-            resp = requests.get(url, headers=headers, timeout=12)
-            resp.raise_for_status()
-            payload = resp.json() or {}
-            series = (((payload.get("bmx") or {}).get("series")) or [])
-            if not series:
-                return False
-            datos = (series[0].get("datos") or [])
-            if not datos:
-                return False
-            raw = (datos[0].get("dato") or "").strip()
-            if not raw or raw.upper() in {"N/E", "N/D"}:
-                return False
-            return float(raw.replace(",", ""))
-        except Exception:
+        attempts = []
+        if token:
+            attempts.append(({"Accept": "application/json", "Bmx-Token": token}, None))
+            attempts.append(({"Accept": "application/json"}, {"token": token}))
+        else:
+            attempts.append(({"Accept": "application/json"}, None))
+
+        last_error = None
+        for headers, params in attempts:
+            try:
+                resp = requests.get(url, headers=headers, params=params, timeout=12)
+                resp.raise_for_status()
+                payload = resp.json() or {}
+                series = (((payload.get("bmx") or {}).get("series")) or [])
+                if not series:
+                    continue
+                datos = (series[0].get("datos") or [])
+                if not datos:
+                    continue
+                raw = (datos[0].get("dato") or "").strip()
+                if not raw or raw.upper() in {"N/E", "N/D"}:
+                    continue
+                return float(raw.replace(",", ""))
+            except Exception as exc:
+                last_error = exc
+                snippet = ""
+                try:
+                    snippet = (resp.text or "")[:300]
+                except Exception:
+                    snippet = ""
+                _logger.warning(
+                    "Banxico FIX intento fallido (serie=%s, status=%s, body=%s)",
+                    serie_code,
+                    getattr(resp, "status_code", "N/A"),
+                    snippet,
+                )
+
+        if last_error:
             _logger.exception("No se pudo obtener tipo de cambio FIX desde Banxico.")
-            return False
+        return False
 
     def _sync_tipo_cambio_banxico(self):
         rate = self._get_banxico_fix_rate()

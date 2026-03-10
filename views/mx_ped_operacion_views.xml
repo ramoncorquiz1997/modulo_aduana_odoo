@@ -60,6 +60,11 @@
                 <field name="es_rectificacion" invisible="tipo_movimiento != '1'"/>
                 <field name="formas_pago_claves" invisible="not show_formas_pago_ui"/>
                 <field name="regimen"/>
+                <field name="es_consolidado"/>
+                <field name="consolidado_estado" readonly="1"/>
+                <field name="fecha_apertura" invisible="not es_consolidado"/>
+                <field name="fecha_cierre" invisible="not es_consolidado"/>
+                <field name="periodicidad_cierre" invisible="not es_consolidado"/>
                 <field name="incoterm"/>
                 <field name="fecha_operacion"/>
                 <field name="clave_pedimento_id"
@@ -201,6 +206,59 @@
                       <field name="iva_estimado"/>
                       <field name="dta_estimado"/>
                       <field name="prv_estimado"/>
+                    </group>
+                  </form>
+                </field>
+              </page>
+              <page string="Remesas" invisible="not es_consolidado">
+                <group>
+                  <field name="remesa_count" readonly="1"/>
+                  <field name="consolidado_estado" readonly="1"/>
+                </group>
+                <field name="remesa_ids" context="{'default_operacion_id': id}">
+                  <list editable="bottom">
+                    <field name="sequence"/>
+                    <field name="folio"/>
+                    <field name="fecha_remesa"/>
+                    <field name="estado"/>
+                    <field name="tipo_documento_fuente"/>
+                    <field name="cfdi_uuid" optional="hide"/>
+                    <field name="numero_documento" optional="hide"/>
+                    <field name="transportista_id"/>
+                    <field name="chofer_id"/>
+                    <field name="gafete_id"/>
+                    <field name="acuse_valor" optional="hide"/>
+                    <field name="acuse_presentacion" optional="hide"/>
+                  </list>
+                  <form string="Remesa consolidada">
+                    <group>
+                      <group string="General">
+                        <field name="sequence"/>
+                        <field name="folio"/>
+                        <field name="fecha_remesa"/>
+                        <field name="estado"/>
+                        <field name="tipo_documento_fuente"/>
+                        <field name="attachment_id"/>
+                      </group>
+                      <group string="Documento fuente">
+                        <field name="cfdi_uuid" invisible="tipo_documento_fuente != 'cfdi'"/>
+                        <field name="numero_documento" invisible="tipo_documento_fuente == 'cfdi'"/>
+                        <field name="acuse_valor"/>
+                        <field name="acuse_presentacion"/>
+                      </group>
+                    </group>
+                    <group>
+                      <group string="Cruce">
+                        <field name="transportista_id"/>
+                        <field name="chofer_id"/>
+                        <field name="gafete_id"/>
+                        <field name="placas"/>
+                      </group>
+                      <group string="Equipo">
+                        <field name="contenedor"/>
+                        <field name="candados"/>
+                        <field name="observaciones"/>
+                      </group>
                     </group>
                   </form>
                 </field>
