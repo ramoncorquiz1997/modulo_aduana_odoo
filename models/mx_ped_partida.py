@@ -183,6 +183,24 @@ class MxPedPartida(models.Model):
             tc = rec.operacion_id.lead_id.x_tipo_cambio or 0.0
             rec.value_mxn = (rec.value_usd or 0.0) * tc
 
+    @api.model
+    def name_search(self, name="", args=None, operator="ilike", limit=100):
+        args = list(args or [])
+        domain = []
+        if name:
+            domain = [
+                "|",
+                "|",
+                ("numero_partida", "ilike", name),
+                ("fraccion_arancelaria", operator, name),
+                ("descripcion", operator, name),
+            ]
+        recs = self.search(domain + args, limit=limit)
+        return recs.name_get()
+
+    def name_get(self):
+        return [(rec.id, rec.display_name or ("Partida %s" % (rec.numero_partida or rec.id))) for rec in self]
+
     def _get_applicable_tasa(self):
         self.ensure_one()
         if not self.fraccion_id:

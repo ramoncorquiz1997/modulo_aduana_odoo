@@ -141,6 +141,11 @@ class MxPedConsolidadoRemesa(models.Model):
             "target": "new",
         }
 
+    def action_delete_and_close(self):
+        self.ensure_one()
+        self.unlink()
+        return {"type": "ir.actions.act_window_close"}
+
     @api.constrains("operacion_id")
     def _check_operacion_consolidada(self):
         for rec in self:
