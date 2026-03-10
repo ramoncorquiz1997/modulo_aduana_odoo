@@ -257,7 +257,7 @@
             </group>
 
             <group>
-              <group string="Evidencia de factura de mercancia">
+              <group string="Validacion CFDI">
                 <field name="x_factura_pdf_file" filename="x_factura_pdf_filename"/>
                 <field name="x_factura_pdf_filename"/>
                 <field name="x_factura_xml_file" filename="x_factura_xml_filename"/>
@@ -270,22 +270,22 @@
                        decoration-danger="x_cfdi_validacion_estado == 'invalido_local'"/>
                 <field name="x_cfdi_validacion_mensaje" readonly="1"/>
                 <field name="x_cfdi_validado_el" readonly="1"/>
-                <field name="x_cfdi_uuid"/>
-                <field name="x_cfdi_rfc_emisor"/>
-                <field name="x_cfdi_rfc_receptor"/>
-                <field name="x_cfdi_total"/>
-                <field name="x_cfdi_fecha_emision"/>
               </group>
-              <group string="Captura CFDI / documento equivalente">
-                <field name="x_cfdi_fecha"/>
-                <field name="x_cfdi_numero"/>
-                <field name="x_cfdi_termino_facturacion"/>
-                <field name="x_cfdi_moneda_id"/>
-                <field name="x_cfdi_valor_usd"/>
-                <field name="x_cfdi_valor_moneda"/>
-                <field name="x_cfdi_pais_id"/>
-                <field name="x_cfdi_estado_id"/>
-                <field name="x_cfdi_id_fiscal"/>
+              <group string="Lectura base CFDI" invisible="x_documento_505_ids">
+                <field name="x_cfdi_uuid" readonly="1"/>
+                <field name="x_cfdi_rfc_emisor" readonly="1"/>
+                <field name="x_cfdi_rfc_receptor" readonly="1"/>
+                <field name="x_cfdi_total" readonly="1"/>
+                <field name="x_cfdi_fecha_emision" readonly="1"/>
+                <field name="x_cfdi_fecha" readonly="1"/>
+                <field name="x_cfdi_numero" readonly="1"/>
+                <field name="x_cfdi_termino_facturacion" readonly="1"/>
+                <field name="x_cfdi_moneda_id" readonly="1"/>
+                <field name="x_cfdi_valor_usd" readonly="1"/>
+                <field name="x_cfdi_valor_moneda" readonly="1"/>
+                <field name="x_cfdi_pais_id" readonly="1"/>
+                <field name="x_cfdi_estado_id" readonly="1"/>
+                <field name="x_cfdi_id_fiscal" readonly="1"/>
               </group>
             </group>
 

@@ -3459,11 +3459,24 @@ class MxPedOperacion(models.Model):
             return fields.Date.to_string(value)
         return value
 
+    @staticmethod
+    def _format_layout_date_8(value):
+        if not value:
+            return ""
+        dt = fields.Date.to_date(value)
+        return dt.strftime("%d%m%Y") if dt else ""
+
     def _build_505_valores(self, layout_reg, documento):
         self.ensure_one()
         valores = {}
         for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
             val = self._document_value_for_505_field(campo, documento)
+            source_name = (campo.source_field_id.name if campo.source_field_id else campo.source_field) or ""
+            campo_name = (campo.nombre or "").strip().lower()
+            source_norm = (source_name or "").strip().lower()
+            token = f"{campo_name} {source_norm}".strip()
+            if val not in (None, "", False) and "fecha" in token and ("cfdi" in token or "documento" in token or "acuse" in token):
+                val = self._format_layout_date_8(val)
             if val in (None, "", False) and campo.default:
                 val = campo.default
             if val not in (None, "", False):
