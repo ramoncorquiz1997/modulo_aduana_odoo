@@ -88,6 +88,17 @@ class MxPedDocumento(models.Model):
 
     notas = fields.Text()
 
+    def action_open_full_form(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": self._name,
+            "view_mode": "form",
+            "res_id": self.id,
+            "view_id": self.env.ref("modulo_aduana_odoo.mx_ped_documento_remesa_view_form").id,
+            "target": "new",
+        }
+
     @api.onchange("aplica_partida_especifica")
     def _onchange_aplica_partida_especifica(self):
         for rec in self:
