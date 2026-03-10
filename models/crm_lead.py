@@ -421,11 +421,11 @@ class CrmLead(models.Model):
         tracking=True,
     )
     x_cfdi_validacion_mensaje = fields.Text(string="Mensaje validacion CFDI", readonly=True)
-    x_cfdi_uuid = fields.Char(string="UUID CFDI", index=True, readonly=True)
-    x_cfdi_rfc_emisor = fields.Char(string="RFC emisor CFDI", readonly=True)
-    x_cfdi_rfc_receptor = fields.Char(string="RFC receptor CFDI", readonly=True)
-    x_cfdi_total = fields.Float(string="Total CFDI", digits=(16, 2), readonly=True)
-    x_cfdi_fecha_emision = fields.Datetime(string="Fecha emision CFDI", readonly=True)
+    x_cfdi_uuid = fields.Char(string="UUID CFDI", index=True)
+    x_cfdi_rfc_emisor = fields.Char(string="RFC emisor CFDI")
+    x_cfdi_rfc_receptor = fields.Char(string="RFC receptor CFDI")
+    x_cfdi_total = fields.Float(string="Total CFDI", digits=(16, 2))
+    x_cfdi_fecha_emision = fields.Datetime(string="Fecha emision CFDI")
     x_cfdi_validado_el = fields.Datetime(string="CFDI validado el", readonly=True)
 
     x_docs_completos = fields.Boolean(

@@ -264,11 +264,11 @@
                        decoration-danger="x_cfdi_validacion_estado == 'invalido_local'"/>
                 <field name="x_cfdi_validacion_mensaje" readonly="1"/>
                 <field name="x_cfdi_validado_el" readonly="1"/>
-                <field name="x_cfdi_uuid" readonly="1"/>
-                <field name="x_cfdi_rfc_emisor" readonly="1"/>
-                <field name="x_cfdi_rfc_receptor" readonly="1"/>
-                <field name="x_cfdi_total" readonly="1"/>
-                <field name="x_cfdi_fecha_emision" readonly="1"/>
+                <field name="x_cfdi_uuid"/>
+                <field name="x_cfdi_rfc_emisor"/>
+                <field name="x_cfdi_rfc_receptor"/>
+                <field name="x_cfdi_total"/>
+                <field name="x_cfdi_fecha_emision"/>
               </group>
               <group string="Captura CFDI / documento equivalente">
                 <field name="x_cfdi_fecha"/>
