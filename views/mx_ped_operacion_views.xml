@@ -361,6 +361,22 @@
                   </list>
                 </field>
               </page>
+              <page string="Facturas / COVEs / Documentos">
+                <field name="documento_ids"
+                       domain="[('remesa_id', '=', False)]"
+                       context="{'default_operacion_id': id, 'default_estatus': 'pendiente', 'default_tipo': 'factura', 'default_aplica_partida_especifica': False, 'default_remesa_id': False}">
+                  <list>
+                    <field name="tipo"/>
+                    <field name="folio"/>
+                    <field name="fecha"/>
+                    <field name="es_documento_principal"/>
+                    <field name="aplica_partida_especifica"/>
+                    <field name="partida_id" optional="hide"/>
+                    <field name="estatus"/>
+                    <button name="action_open_full_form" type="object" string="Abrir" class="btn-link"/>
+                  </list>
+                </field>
+              </page>
               <page string="Docs virtuales 514" invisible="not show_advanced">
                 <field name="documento_ids" context="{'default_operacion_id': id, 'default_registro_codigo': '514'}">
                   <list editable="bottom">

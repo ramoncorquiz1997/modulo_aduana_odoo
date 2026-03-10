@@ -223,3 +223,12 @@ class MxPedDocumento(models.Model):
             ])
             if duplicate:
                 raise ValidationError("Solo puede existir un documento principal por remesa.")
+        for rec in self.filtered(lambda r: not r.remesa_id and r.es_documento_principal and r.operacion_id):
+            duplicate = self.search_count([
+                ("id", "!=", rec.id),
+                ("operacion_id", "=", rec.operacion_id.id),
+                ("remesa_id", "=", False),
+                ("es_documento_principal", "=", True),
+            ])
+            if duplicate:
+                raise ValidationError("Solo puede existir un documento principal a nivel operacion cuando no se usa remesa.")
