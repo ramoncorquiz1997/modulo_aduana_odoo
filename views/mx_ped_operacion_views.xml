@@ -242,8 +242,8 @@
                         <field name="attachment_id"/>
                       </group>
                       <group string="Documento fuente">
-                        <field name="cfdi_uuid" invisible="tipo_documento_fuente != 'cfdi'"/>
-                        <field name="numero_documento" invisible="tipo_documento_fuente == 'cfdi'"/>
+                        <field name="cfdi_uuid"/>
+                        <field name="numero_documento"/>
                         <field name="acuse_valor"/>
                         <field name="acuse_presentacion"/>
                       </group>
