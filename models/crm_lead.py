@@ -2250,6 +2250,7 @@ class CrmLeadOperacionLine(models.Model):
         if not lead_ids:
             return
         leads = self.env["crm.lead"].browse(list(set(lead_ids)))
+        leads.mapped("x_documento_505_ids")._sync_automatic_fields()
         leads._compute_x_ped_preflight()
 
     def write(self, vals):
@@ -2282,6 +2283,29 @@ class CrmLeadDocumento(models.Model):
     active = fields.Boolean(default=True)
     lead_id = fields.Many2one("crm.lead", required=True, ondelete="cascade", index=True)
     sequence = fields.Integer(default=10)
+    line_ids = fields.One2many(
+        "crm.lead.operacion.line",
+        "factura_documento_id",
+        string="Partidas vinculadas",
+        readonly=True,
+    )
+    linked_partida_count = fields.Integer(
+        string="Partidas vinculadas",
+        compute="_compute_linked_partida_metrics",
+        store=False,
+    )
+    linked_valor_usd = fields.Monetary(
+        string="Valor USD calculado",
+        currency_field="company_currency_id",
+        compute="_compute_linked_partida_metrics",
+        store=False,
+    )
+    linked_valor_moneda = fields.Monetary(
+        string="Valor comercial calculado",
+        currency_field="cfdi_moneda_id",
+        compute="_compute_linked_partida_metrics",
+        store=False,
+    )
     tipo = fields.Selection(
         [
             ("factura", "Factura"),
@@ -2323,6 +2347,13 @@ class CrmLeadDocumento(models.Model):
         for rec in self:
             tipo = dict(self._fields["tipo"].selection).get(rec.tipo, rec.tipo or "Documento")
             rec.display_name = " | ".join([p for p in [tipo, rec.folio] if p]) or tipo
+
+    @api.depends("line_ids", "line_ids.value_usd", "line_ids.valor_comercial")
+    def _compute_linked_partida_metrics(self):
+        for rec in self:
+            rec.linked_partida_count = len(rec.line_ids)
+            rec.linked_valor_usd = sum(rec.line_ids.mapped("value_usd"))
+            rec.linked_valor_moneda = sum(rec.line_ids.mapped("valor_comercial"))
 
     def action_open_full_form(self):
         self.ensure_one()
@@ -2373,6 +2404,15 @@ class CrmLeadDocumento(models.Model):
             vals.setdefault("counterparty_city_505", partner.x_municipio or partner.city or False)
         return vals
 
+    def _sync_automatic_fields(self):
+        for rec in self:
+            vals = rec._prepare_snapshot_vals_from_lead() if rec.lead_id else {}
+            if rec.line_ids:
+                vals["cfdi_valor_usd"] = sum(rec.line_ids.mapped("value_usd"))
+                vals["cfdi_valor_moneda"] = sum(rec.line_ids.mapped("valor_comercial"))
+            if vals:
+                super(CrmLeadDocumento, rec).write(vals)
+
     @api.onchange("lead_id")
     def _onchange_fill_snapshot(self):
         for rec in self:
@@ -2383,10 +2423,7 @@ class CrmLeadDocumento(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
-        for rec in records:
-            vals = rec._prepare_snapshot_vals_from_lead()
-            if vals:
-                super(CrmLeadDocumento, rec).write(vals)
+        records._sync_automatic_fields()
         leads = records.mapped("lead_id")
         if leads:
             leads._compute_x_ped_preflight()
@@ -2405,6 +2442,7 @@ class CrmLeadDocumento(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
+        self._sync_automatic_fields()
         leads = self.mapped("lead_id")
         if leads:
             leads._compute_x_ped_preflight()

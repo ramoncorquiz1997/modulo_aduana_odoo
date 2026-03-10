@@ -315,19 +315,22 @@
                       <field name="notas"/>
                     </group>
                     <group string="Datos comerciales">
-                      <field name="cfdi_termino_facturacion"/>
-                      <field name="cfdi_moneda_id"/>
-                      <field name="cfdi_valor_usd"/>
-                      <field name="cfdi_valor_moneda"/>
-                      <field name="cfdi_pais_id"/>
-                      <field name="cfdi_estado_id"/>
-                      <field name="cfdi_id_fiscal"/>
-                      <field name="counterparty_name_505"/>
-                      <field name="counterparty_street_505"/>
-                      <field name="counterparty_num_int_505"/>
-                      <field name="counterparty_num_ext_505"/>
-                      <field name="counterparty_zip_505"/>
-                      <field name="counterparty_city_505"/>
+                      <field name="linked_partida_count" readonly="1"/>
+                      <field name="linked_valor_usd" readonly="1"/>
+                      <field name="linked_valor_moneda" readonly="1"/>
+                      <field name="cfdi_termino_facturacion" readonly="1"/>
+                      <field name="cfdi_moneda_id" readonly="1"/>
+                      <field name="cfdi_valor_usd" readonly="1"/>
+                      <field name="cfdi_valor_moneda" readonly="1"/>
+                      <field name="cfdi_pais_id" readonly="1"/>
+                      <field name="cfdi_estado_id" readonly="1"/>
+                      <field name="cfdi_id_fiscal" readonly="1"/>
+                      <field name="counterparty_name_505" readonly="1"/>
+                      <field name="counterparty_street_505" readonly="1"/>
+                      <field name="counterparty_num_int_505" readonly="1"/>
+                      <field name="counterparty_num_ext_505" readonly="1"/>
+                      <field name="counterparty_zip_505" readonly="1"/>
+                      <field name="counterparty_city_505" readonly="1"/>
                     </group>
                   </group>
                 </form>
