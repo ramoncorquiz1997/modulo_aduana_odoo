@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <record id="mx_ped_consolidado_remesa_view_form" model="ir.ui.view">
+      <field name="name">mx.ped.consolidado.remesa.form</field>
+      <field name="model">mx.ped.consolidado.remesa</field>
+      <field name="arch" type="xml">
+        <form string="Remesa consolidada">
+          <sheet>
+            <group col="2">
+              <group string="General">
+                <field name="name" readonly="1"/>
+                <field name="folio"/>
+                <field name="fecha_remesa"/>
+                <field name="estado"/>
+                <field name="tipo_documento_fuente"/>
+                <field name="cfdi_uuid" invisible="tipo_documento_fuente != 'cfdi'"/>
+                <field name="numero_documento" invisible="tipo_documento_fuente == 'cfdi'"/>
+                <field name="archivo_soporte_file" filename="archivo_soporte_filename"/>
+                <field name="archivo_soporte_filename" invisible="1"/>
+              </group>
+              <group string="Cruce">
+                <field name="transportista_id"/>
+                <field name="chofer_id"/>
+                <field name="gafete_id"/>
+                <field name="placas"/>
+                <field name="contenedor"/>
+                <field name="candados"/>
+                <field name="acuse_valor"/>
+                <field name="acuse_presentacion"/>
+              </group>
+            </group>
+
+            <group string="Resumen">
+              <group>
+                <field name="partida_count" readonly="1"/>
+                <field name="total_quantity" readonly="1"/>
+                <field name="total_value_usd" readonly="1"/>
+              </group>
+              <group>
+                <field name="operacion_id" readonly="1"/>
+                <field name="observaciones"/>
+              </group>
+            </group>
+
+            <notebook>
+              <page string="Partidas de la remesa">
+                <field name="partida_rel_ids" context="{'default_remesa_id': id}">
+                  <list editable="bottom">
+                    <field name="partida_id"/>
+                    <field name="quantity"/>
+                    <field name="value_usd"/>
+                    <field name="notes"/>
+                  </list>
+                  <form string="Partida de remesa">
+                    <group>
+                      <field name="partida_id" domain="[('operacion_id', '=', operacion_id)]"/>
+                      <field name="quantity"/>
+                      <field name="value_usd"/>
+                      <field name="notes"/>
+                    </group>
+                    <group invisible="1">
+                      <field name="sequence"/>
+                      <field name="operacion_id"/>
+                      <field name="remesa_id"/>
+                    </group>
+                  </form>
+                </field>
+              </page>
+              <page string="Soportes de la remesa">
+                <field name="documento_ids" context="{'default_operacion_id': operacion_id, 'default_remesa_id': id, 'default_registro_codigo': '514', 'default_estatus': 'pendiente', 'default_tipo': 'otro', 'default_aplica_partida_especifica': False}">
+                  <list editable="bottom">
+                    <field name="tipo"/>
+                    <field name="folio"/>
+                    <field name="fecha"/>
+                    <field name="aplica_partida_especifica"/>
+                    <field name="partida_id" optional="hide"/>
+                    <field name="estatus"/>
+                  </list>
+                  <form string="Soporte de remesa">
+                    <group col="2">
+                      <group string="Datos del soporte">
+                        <field name="tipo"/>
+                        <field name="folio"/>
+                        <field name="fecha"/>
+                        <field name="archivo_file" filename="archivo_filename"/>
+                        <field name="archivo_filename" invisible="1"/>
+                        <field name="estatus"/>
+                        <field name="notas"/>
+                      </group>
+                      <group string="Relacion con mercancia">
+                        <div class="o_form_label">Por default el soporte aplica a toda la remesa. Solo marca la opcion de abajo si corresponde a una partida concreta.</div>
+                        <field name="aplica_partida_especifica"/>
+                        <field name="partida_id"
+                               invisible="not aplica_partida_especifica"
+                               domain="[('operacion_id', '=', operacion_id)]"/>
+                      </group>
+                    </group>
+                    <group invisible="1">
+                      <field name="company_id"/>
+                      <field name="operacion_id"/>
+                      <field name="remesa_id"/>
+                      <field name="registro_codigo"/>
+                      <field name="forma_pago_id"/>
+                      <field name="forma_pago_code"/>
+                      <field name="attachment_id"/>
+                    </group>
+                  </form>
+                </field>
+              </page>
+            </notebook>
+
+            <group invisible="1">
+              <field name="company_id"/>
+              <field name="attachment_id"/>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+  </data>
+</odoo>

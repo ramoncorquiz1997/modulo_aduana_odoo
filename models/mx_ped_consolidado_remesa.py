@@ -57,6 +57,8 @@ class MxPedConsolidadoRemesa(models.Model):
     cfdi_uuid = fields.Char(string="UUID CFDI", index=True)
     numero_documento = fields.Char(string="Numero documento")
     attachment_id = fields.Many2one("ir.attachment", string="Archivo soporte")
+    archivo_soporte_file = fields.Binary(string="Archivo soporte")
+    archivo_soporte_filename = fields.Char(string="Nombre archivo soporte")
     transportista_id = fields.Many2one(
         "res.partner",
         string="Transportista",
@@ -137,6 +139,7 @@ class MxPedConsolidadoRemesa(models.Model):
             "res_model": self._name,
             "view_mode": "form",
             "res_id": self.id,
+            "view_id": self.env.ref("modulo_aduana_odoo.mx_ped_consolidado_remesa_view_form").id,
             "target": "new",
         }
 

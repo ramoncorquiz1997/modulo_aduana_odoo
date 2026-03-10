@@ -72,6 +72,8 @@ class MxPedDocumento(models.Model):
 
     # Usa ir.attachment para subir archivos
     attachment_id = fields.Many2one("ir.attachment", string="Archivo")
+    archivo_file = fields.Binary(string="Archivo")
+    archivo_filename = fields.Char(string="Nombre archivo")
 
     estatus = fields.Selection(
         [("pendiente", "Pendiente"), ("ok", "OK"), ("rechazado", "Rechazado")],
