@@ -288,7 +288,8 @@ class CrmLead(models.Model):
     )
     x_transportista_domicilio = fields.Char(
         string="Domicilio fiscal transportista",
-        related="x_transportista_id.contact_address",
+        compute="_compute_x_transportista_domicilio",
+        store=False,
         readonly=True,
     )
     x_transportista_calle = fields.Char(
@@ -514,6 +515,47 @@ class CrmLead(models.Model):
             rec.x_counterparty_partner_id = partner
             rec.x_counterparty_name_505 = text_name or (partner.name if partner else False)
             rec.x_counterparty_role_505 = role
+
+    @api.depends(
+        "x_transportista_id",
+        "x_transportista_id.x_street_name",
+        "x_transportista_id.x_street_number_ext",
+        "x_transportista_id.x_street_number_int",
+        "x_transportista_id.x_colonia",
+        "x_transportista_id.x_municipio",
+        "x_transportista_id.x_localidad",
+        "x_transportista_id.city",
+        "x_transportista_id.state_id.name",
+        "x_transportista_id.zip",
+        "x_transportista_id.country_id.name",
+    )
+    def _compute_x_transportista_domicilio(self):
+        for rec in self:
+            partner = rec.x_transportista_id
+            if not partner:
+                rec.x_transportista_domicilio = False
+                continue
+            street = " ".join(
+                filter(
+                    None,
+                    [
+                        partner.x_street_name,
+                        partner.x_street_number_ext,
+                    ],
+                )
+            ).strip()
+            if partner.x_street_number_int:
+                street = ("%s INT %s" % (street, partner.x_street_number_int)).strip()
+            pieces = [
+                street,
+                partner.x_colonia,
+                partner.x_localidad or partner.city,
+                partner.x_municipio,
+                partner.state_id.name if partner.state_id else False,
+                partner.zip,
+                partner.country_id.name if partner.country_id else False,
+            ]
+            rec.x_transportista_domicilio = ", ".join([p for p in pieces if p])
 
     def write(self, vals):
         vals = self._sync_medio_transporte_vals(vals)
