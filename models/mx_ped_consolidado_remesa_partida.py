@@ -25,7 +25,7 @@ class MxPedConsolidadoRemesaPartida(models.Model):
         "mx.ped.partida",
         string="Partida",
         required=True,
-        ondelete="restrict",
+        ondelete="cascade",
         domain="[('operacion_id', '=', operacion_id)]",
     )
     quantity = fields.Float(string="Cantidad asignada", digits=(16, 6), required=True, default=1.0)
