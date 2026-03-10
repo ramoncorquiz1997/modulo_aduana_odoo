@@ -340,6 +340,11 @@ class MxPedOperacion(models.Model):
         default=False,
         help="Muestra secciones tecnicas (510/557/514) para captura avanzada.",
     )
+    show_advanced_info = fields.Boolean(
+        string="Info avanzada",
+        default=False,
+        help="Muestra campos tecnicos y de control para auditoria y solucion de errores.",
+    )
     es_consolidado = fields.Boolean(
         string="Pedimento consolidado",
         help="Marca la operacion cuando el despacho se manejara mediante remesas.",
@@ -1017,13 +1022,27 @@ class MxPedOperacion(models.Model):
             },
         }
 
+    def _clear_partida_factura_flags(self):
+        self.ensure_one()
+        self.partida_ids.with_context(skip_auto_generated_refresh=True).write({
+            "factura_documento_error": False,
+            "factura_value_error": False,
+            "factura_validation_note": False,
+        })
+
     def _validate_partida_facturas_505(self):
         self.ensure_one()
         partidas = self.partida_ids
         if not partidas:
             return
+        self._clear_partida_factura_flags()
         missing = partidas.filtered(lambda p: not p.factura_documento_id)
         if missing:
+            self.write({"show_advanced_info": True, "show_advanced": True})
+            missing.with_context(skip_auto_generated_refresh=True).write({
+                "factura_documento_error": True,
+                "factura_validation_note": "Sin factura / CFDI asignado.",
+            })
             nums = ", ".join(str(n) for n in missing.mapped("numero_partida") if n)
             raise UserError(_("Existen partidas sin factura/CFDI asignado: %s") % (nums or len(missing)))
 
@@ -1035,11 +1054,21 @@ class MxPedOperacion(models.Model):
             doc_usd = doc.cfdi_valor_usd or 0.0
             doc_moneda = doc.cfdi_valor_moneda or 0.0
             if abs(total_usd - doc_usd) > 0.01:
+                self.write({"show_advanced_info": True, "show_advanced": True})
+                linked.with_context(skip_auto_generated_refresh=True).write({
+                    "factura_value_error": True,
+                    "factura_validation_note": "El Valor USD de las partidas no cuadra con el 505 de la factura.",
+                })
                 raise UserError(
                     _("La suma de Valor USD de las partidas ligadas a %s no cuadra con el valor USD del 505. Partidas=%.2f Documento=%.2f")
                     % (doc.display_name or doc.folio or doc.id, total_usd, doc_usd)
                 )
             if abs(total_comercial - doc_moneda) > 0.01:
+                self.write({"show_advanced_info": True, "show_advanced": True})
+                linked.with_context(skip_auto_generated_refresh=True).write({
+                    "factura_value_error": True,
+                    "factura_validation_note": "El Valor Comercial de las partidas no cuadra con el 505 de la factura.",
+                })
                 raise UserError(
                     _("La suma de Valor Comercial de las partidas ligadas a %s no cuadra con el valor en moneda del 505. Partidas=%.2f Documento=%.2f")
                     % (doc.display_name or doc.folio or doc.id, total_comercial, doc_moneda)

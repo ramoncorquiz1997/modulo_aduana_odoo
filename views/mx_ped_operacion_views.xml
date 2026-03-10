@@ -29,6 +29,7 @@
       <field name="arch" type="xml">
         <form string="Pedimento">
           <header>
+            <field name="show_advanced_info" widget="boolean_toggle"/>
             <button name="action_asignar_numero_pedimento" type="object" string="Asignar N\u00fam. Pedimento" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
             <button name="action_preparar_estructura" type="object" string="Preparar estructura" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
             <button name="action_simular_estructura" type="object" string="Simular estructura" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
@@ -71,7 +72,6 @@
                        domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
                 <field name="layout_id" required="1"/>
                 <field name="currency_id"/>
-                <field name="show_advanced"/>
               </group>
               <group string="Aduana y Agente">
                 <field name="aduana_seccion_despacho_id"/>
@@ -143,7 +143,7 @@
                         string="Asignacion masiva de factura"
                         class="btn-secondary"/>
                 <field name="partida_ids" context="{'default_operacion_id': id}">
-                  <list editable="bottom">
+                  <list editable="bottom" decoration-danger="factura_documento_error or factura_value_error">
                     <field name="numero_partida"/>
                     <field name="fraccion_id"/>
                     <field name="nico_id"/>
@@ -156,6 +156,7 @@
                     <field name="precio_unitario"/>
                     <field name="value_mxn" readonly="1"/>
                     <field name="factura_documento_id"/>
+                    <field name="factura_validation_note" optional="hide"/>
                     <field name="descripcion"/>
                     <field name="unidad_tarifa"/>
                     <field name="cantidad_tarifa"/>
@@ -193,6 +194,16 @@
                         <field name="precio_unitario"/>
                         <field name="value_mxn" readonly="1"/>
                         <field name="factura_documento_id"/>
+                        <field name="factura_validation_note" readonly="1"
+                               invisible="not factura_validation_note"/>
+                      </group>
+                    </group>
+                    <group class="mx-advanced-panel" invisible="not parent.show_advanced_info">
+                      <group string="Control factura 505">
+                        <field name="remesa_context_id" readonly="1"/>
+                        <field name="eligible_documento_ids" widget="many2many_tags" readonly="1"/>
+                        <field name="factura_documento_error" readonly="1"/>
+                        <field name="factura_value_error" readonly="1"/>
                       </group>
                     </group>
                     <group string="Regulatorio">
@@ -342,7 +353,7 @@
                   </form>
                 </field>
               </page>
-              <page string="Contribuciones 510" invisible="not show_advanced">
+              <page string="Contribuciones 510" invisible="not show_advanced_info">
                 <field name="contribucion_global_ids" context="{'default_operacion_id': id}">
                   <list editable="bottom">
                     <field name="tipo_contribucion"/>
@@ -354,7 +365,7 @@
                   </list>
                 </field>
               </page>
-              <page string="Contribuciones 557" invisible="not show_advanced">
+              <page string="Contribuciones 557" invisible="not show_advanced_info">
                 <field name="partida_contribucion_ids" context="{'default_operacion_id': id}">
                   <list editable="bottom">
                     <field name="partida_id"/>
@@ -383,7 +394,7 @@
                   </list>
                 </field>
               </page>
-              <page string="Docs virtuales 514" invisible="not show_advanced">
+              <page string="Docs virtuales 514" invisible="not show_advanced_info">
                 <field name="documento_ids" context="{'default_operacion_id': id, 'default_registro_codigo': '514'}">
                   <list editable="bottom">
                     <field name="registro_codigo"/>
@@ -489,7 +500,7 @@
                   </group>
                 </group>
               </page>
-              <page string="Trazabilidad reglas">
+              <page string="Trazabilidad reglas" invisible="not show_advanced_info">
                 <group>
                   <field name="estructura_escenario" readonly="1"/>
                   <field name="rulepack_id" readonly="1" options="{'no_create': True}"/>
@@ -498,9 +509,10 @@
                   <field name="rule_trace_json" readonly="1"/>
                 </group>
               </page>
-              <page string="Configuracion tecnica">
+              <page string="Configuracion tecnica" invisible="not show_advanced_info">
                 <group>
                   <group>
+                    <field name="show_advanced"/>
                     <field name="strict_mode_policy"/>
                     <field name="strict_mode_effective" readonly="1"/>
                   </group>

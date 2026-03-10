@@ -124,7 +124,7 @@
                        domain="[('operacion_id', '=', operacion_id)]"/>
               </group>
             </group>
-            <group string="Snapshot 505">
+            <group string="Snapshot 505" class="mx-advanced-panel" invisible="not show_advanced_info">
               <group>
                 <field name="cfdi_termino_facturacion"/>
                 <field name="cfdi_moneda_id"/>

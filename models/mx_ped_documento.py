@@ -102,6 +102,11 @@ class MxPedDocumento(models.Model):
         readonly=True,
         store=True,
     )
+    show_advanced_info = fields.Boolean(
+        related="operacion_id.show_advanced_info",
+        readonly=True,
+        store=False,
+    )
 
     # Usa ir.attachment para subir archivos
     attachment_id = fields.Many2one("ir.attachment", string="Archivo")

@@ -39,6 +39,20 @@ class MxPedPartida(models.Model):
         domain="[('id', 'in', eligible_documento_ids)]",
         ondelete="set null",
     )
+    factura_documento_error = fields.Boolean(
+        string="Error factura",
+        default=False,
+        copy=False,
+    )
+    factura_value_error = fields.Boolean(
+        string="Error valores factura",
+        default=False,
+        copy=False,
+    )
+    factura_validation_note = fields.Char(
+        string="Nota validacion factura",
+        copy=False,
+    )
     display_name = fields.Char(
         string="Nombre",
         compute="_compute_display_name",
