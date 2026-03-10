@@ -6,7 +6,7 @@
     "depends": ["crm", "mail", "base", "contacts","account"],
     "data": [
         "data/aduana_layout_registro_tipo_data.xml",
-        "data/mx_ped_tipo_movimiento_data.xmlh",
+        "data/mx_ped_tipo_movimiento_data.xml",
         "data/mx_ped_rulepack_data.xml",
         "security/aduana_groups.xml",
         "security/ir.model.access.csv",
