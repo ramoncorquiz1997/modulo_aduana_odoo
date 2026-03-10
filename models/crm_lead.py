@@ -2082,7 +2082,16 @@ class CrmLeadOperacionLine(models.Model):
             if not vals.get("factura_documento_id"):
                 default_doc = rec._get_default_factura_documento()
                 if default_doc:
-                    rec.write({"factura_documento_id": default_doc.id})
+                    rec.with_context(skip_auto_generated_refresh=True).write({"factura_documento_id": default_doc.id})
+            suggestion_vals = {}
+            if rec.factura_documento_id:
+                saldo_usd, saldo_moneda = rec._get_factura_remaining_values(rec.factura_documento_id)
+                if not vals.get("value_usd") and saldo_usd > 0.0:
+                    suggestion_vals["value_usd"] = saldo_usd
+                if not vals.get("precio_unitario") and rec.quantity and saldo_moneda > 0.0:
+                    suggestion_vals["precio_unitario"] = saldo_moneda / rec.quantity
+            if suggestion_vals:
+                rec.with_context(skip_auto_generated_refresh=True).write(suggestion_vals)
         if not self.env.context.get("skip_auto_generated_refresh"):
             records._refresh_related_operaciones(records.mapped("lead_id").ids)
         return records
@@ -2145,6 +2154,29 @@ class CrmLeadOperacionLine(models.Model):
             return previous.factura_documento_id
         return docs.filtered(lambda d: d.es_documento_principal)[:1]
 
+    def _get_factura_remaining_values(self, documento):
+        self.ensure_one()
+        if not documento or not self.lead_id:
+            return 0.0, 0.0
+        sibling_lines = self.lead_id.x_operacion_line_ids.filtered(
+            lambda l: l.id != self.id and l.factura_documento_id == documento
+        )
+        used_usd = sum(sibling_lines.mapped("value_usd"))
+        used_moneda = sum(sibling_lines.mapped("valor_comercial"))
+        saldo_usd = max((documento.cfdi_valor_usd or 0.0) - used_usd, 0.0)
+        saldo_moneda = max((documento.cfdi_valor_moneda or 0.0) - used_moneda, 0.0)
+        return saldo_usd, saldo_moneda
+
+    def _apply_factura_remaining_suggestion(self):
+        for rec in self:
+            if not rec.factura_documento_id:
+                continue
+            saldo_usd, saldo_moneda = rec._get_factura_remaining_values(rec.factura_documento_id)
+            if saldo_usd > 0.0 and not rec.value_usd:
+                rec.value_usd = saldo_usd
+            if saldo_moneda > 0.0 and rec.quantity and not rec.precio_unitario:
+                rec.precio_unitario = saldo_moneda / rec.quantity
+
     @api.depends(
         "fraccion_id",
         "fraccion_id.tasa_ids",
@@ -2205,7 +2237,7 @@ class CrmLeadOperacionLine(models.Model):
         for rec in self:
             rec.nico = rec.nico_id.code if rec.nico_id else (rec.fraccion_id.nico if rec.fraccion_id else False)
 
-    @api.onchange("lead_id", "numero_partida", "factura_documento_id")
+    @api.onchange("lead_id", "numero_partida", "factura_documento_id", "quantity")
     def _onchange_factura_documento_id(self):
         domain = [("id", "=", 0)]
         for rec in self:
@@ -2217,6 +2249,7 @@ class CrmLeadOperacionLine(models.Model):
                 default_doc = rec._get_default_factura_documento()
                 if default_doc:
                     rec.factura_documento_id = default_doc
+            rec._apply_factura_remaining_suggestion()
         return {"domain": {"factura_documento_id": domain}}
 
     def action_load_regulatory_defaults(self):
@@ -2306,6 +2339,35 @@ class CrmLeadDocumento(models.Model):
         compute="_compute_linked_partida_metrics",
         store=False,
     )
+    diferencia_valor_usd = fields.Monetary(
+        string="Diferencia USD",
+        currency_field="company_currency_id",
+        compute="_compute_linked_partida_metrics",
+        store=False,
+    )
+    diferencia_valor_moneda = fields.Monetary(
+        string="Diferencia",
+        currency_field="cfdi_moneda_id",
+        compute="_compute_linked_partida_metrics",
+        store=False,
+    )
+    saldo_valor_usd = fields.Monetary(
+        string="Saldo USD",
+        currency_field="company_currency_id",
+        compute="_compute_linked_partida_metrics",
+        store=False,
+    )
+    saldo_valor_moneda = fields.Monetary(
+        string="Saldo",
+        currency_field="cfdi_moneda_id",
+        compute="_compute_linked_partida_metrics",
+        store=False,
+    )
+    has_difference = fields.Boolean(
+        string="Con diferencia",
+        compute="_compute_linked_partida_metrics",
+        store=False,
+    )
     tipo = fields.Selection(
         [
             ("factura", "Factura"),
@@ -2348,12 +2410,27 @@ class CrmLeadDocumento(models.Model):
             tipo = dict(self._fields["tipo"].selection).get(rec.tipo, rec.tipo or "Documento")
             rec.display_name = " | ".join([p for p in [tipo, rec.folio] if p]) or tipo
 
-    @api.depends("line_ids", "line_ids.value_usd", "line_ids.valor_comercial")
+    @api.depends(
+        "line_ids",
+        "line_ids.value_usd",
+        "line_ids.valor_comercial",
+        "cfdi_valor_usd",
+        "cfdi_valor_moneda",
+    )
     def _compute_linked_partida_metrics(self):
         for rec in self:
+            linked_usd = sum(rec.line_ids.mapped("value_usd"))
+            linked_moneda = sum(rec.line_ids.mapped("valor_comercial"))
+            diff_usd = (rec.cfdi_valor_usd or 0.0) - linked_usd
+            diff_moneda = (rec.cfdi_valor_moneda or 0.0) - linked_moneda
             rec.linked_partida_count = len(rec.line_ids)
-            rec.linked_valor_usd = sum(rec.line_ids.mapped("value_usd"))
-            rec.linked_valor_moneda = sum(rec.line_ids.mapped("valor_comercial"))
+            rec.linked_valor_usd = linked_usd
+            rec.linked_valor_moneda = linked_moneda
+            rec.diferencia_valor_usd = diff_usd
+            rec.diferencia_valor_moneda = diff_moneda
+            rec.saldo_valor_usd = max(diff_usd, 0.0)
+            rec.saldo_valor_moneda = max(diff_moneda, 0.0)
+            rec.has_difference = abs(diff_usd) > 0.01 or abs(diff_moneda) > 0.01
 
     def action_open_full_form(self):
         self.ensure_one()
@@ -2407,9 +2484,6 @@ class CrmLeadDocumento(models.Model):
     def _sync_automatic_fields(self):
         for rec in self:
             vals = rec._prepare_snapshot_vals_from_lead() if rec.lead_id else {}
-            if rec.line_ids:
-                vals["cfdi_valor_usd"] = sum(rec.line_ids.mapped("value_usd"))
-                vals["cfdi_valor_moneda"] = sum(rec.line_ids.mapped("valor_comercial"))
             if vals:
                 super(CrmLeadDocumento, rec).write(vals)
 

@@ -291,7 +291,7 @@
 
             <group string="Facturas / CFDI / Documentos comerciales">
               <field name="x_documento_505_ids" context="{'default_lead_id': id, 'default_tipo': 'factura'}">
-                <list editable="bottom" delete="0">
+                <list editable="bottom" delete="0" decoration-danger="has_difference">
                   <field name="sequence" optional="hide"/>
                   <field name="tipo"/>
                   <field name="folio"/>
@@ -299,6 +299,7 @@
                   <field name="es_documento_principal"/>
                   <field name="cfdi_valor_usd"/>
                   <field name="cfdi_valor_moneda"/>
+                  <field name="diferencia_valor_moneda"/>
                   <field name="estatus"/>
                   <button name="action_open_full_form" type="object" string="Abrir" class="btn-link"/>
                 </list>
@@ -318,10 +319,14 @@
                       <field name="linked_partida_count" readonly="1"/>
                       <field name="linked_valor_usd" readonly="1"/>
                       <field name="linked_valor_moneda" readonly="1"/>
+                      <field name="saldo_valor_usd" readonly="1"/>
+                      <field name="saldo_valor_moneda" readonly="1"/>
+                      <field name="diferencia_valor_usd" readonly="1"/>
+                      <field name="diferencia_valor_moneda" readonly="1"/>
                       <field name="cfdi_termino_facturacion" readonly="1"/>
-                      <field name="cfdi_moneda_id" readonly="1"/>
-                      <field name="cfdi_valor_usd" readonly="1"/>
-                      <field name="cfdi_valor_moneda" readonly="1"/>
+                      <field name="cfdi_moneda_id"/>
+                      <field name="cfdi_valor_usd"/>
+                      <field name="cfdi_valor_moneda"/>
                       <field name="cfdi_pais_id" readonly="1"/>
                       <field name="cfdi_estado_id" readonly="1"/>
                       <field name="cfdi_id_fiscal" readonly="1"/>
