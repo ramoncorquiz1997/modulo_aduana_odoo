@@ -141,14 +141,11 @@
             <notebook>
               <page string="Partidas">
                 <group>
-                  <div class="o_form_label">La asignacion manual se hace directo en la columna o campo `Factura / CFDI` de cada partida. Usa la asignacion masiva solo cuando varias partidas compartan la misma factura.</div>
+                  <div class="o_form_label">Las partidas y sus facturas se capturan en el CRM. Aqui solo se revisa el resultado tecnico.</div>
+                  <field name="crm_factura_resumen" readonly="1"/>
                 </group>
-                <button name="action_open_partida_factura_wizard"
-                        type="object"
-                        string="Asignacion masiva de factura"
-                        class="btn-secondary"/>
-                <field name="partida_ids" context="{'default_operacion_id': id}">
-                  <list editable="bottom" open_form_view="1" decoration-danger="factura_documento_error or factura_value_error">
+                <field name="partida_ids" context="{'default_operacion_id': id}" readonly="1">
+                  <list open_form_view="1" decoration-danger="factura_documento_error or factura_value_error">
                     <field name="numero_partida"/>
                     <field name="factura_documento_id"/>
                     <field name="fraccion_id"/>
@@ -360,6 +357,7 @@
               </page>
               <page string="Facturas / COVEs / Documentos">
                 <field name="documento_ids"
+                       readonly="1"
                        domain="[('remesa_id', '=', False)]"
                        context="{'default_operacion_id': id, 'default_estatus': 'pendiente', 'default_tipo': 'factura', 'default_aplica_partida_especifica': False, 'default_remesa_id': False}">
                   <list>

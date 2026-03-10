@@ -512,6 +512,12 @@ class MxPedOperacion(models.Model):
         store=True,
         readonly=True,
     )
+    crm_factura_resumen = fields.Text(
+        string="Resumen factura-partidas",
+        compute="_compute_crm_factura_resumen",
+        store=False,
+        readonly=True,
+    )
 
     @api.depends("partida_ids")
     def _compute_partida_count(self):
@@ -522,6 +528,32 @@ class MxPedOperacion(models.Model):
     def _compute_remesa_count(self):
         for rec in self:
             rec.remesa_count = len(rec.remesa_ids)
+
+    @api.depends(
+        "partida_ids.factura_documento_id",
+        "partida_ids.numero_partida",
+        "partida_ids.value_usd",
+        "documento_ids.folio",
+        "documento_ids.es_documento_principal",
+    )
+    def _compute_crm_factura_resumen(self):
+        for rec in self:
+            summary = []
+            docs = rec.partida_ids.mapped("factura_documento_id")
+            for doc in docs.sorted(lambda d: (d.es_documento_principal is not True, d.id)):
+                linked = rec.partida_ids.filtered(lambda p: p.factura_documento_id == doc)
+                if not linked:
+                    continue
+                partida_nums = ", ".join(str(n) for n in linked.mapped("numero_partida") if n)
+                summary.append(
+                    "%s -> Partidas %s | Valor Total USD: %.2f"
+                    % (
+                        doc.display_name or doc.folio or _("Sin folio"),
+                        partida_nums or "-",
+                        sum(linked.mapped("value_usd")),
+                    )
+                )
+            rec.crm_factura_resumen = "\n".join(summary) if summary else False
 
     @api.depends("es_consolidado", "fecha_cierre", "remesa_ids.estado")
     def _compute_consolidado_estado(self):

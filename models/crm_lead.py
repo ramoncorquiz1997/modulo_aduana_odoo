@@ -486,6 +486,31 @@ class CrmLead(models.Model):
         string="Fechas declarables",
         copy=True,
     )
+    x_documento_505_ids = fields.One2many(
+        "crm.lead.documento",
+        "lead_id",
+        string="Facturas / CFDI / Documentos 505",
+        copy=True,
+    )
+    x_ped_preflight_state = fields.Selection(
+        [
+            ("listo", "Listo para pedimento"),
+            ("incompleto", "Incompleto"),
+        ],
+        string="Pre-vuelo pedimento",
+        compute="_compute_x_ped_preflight",
+        store=False,
+    )
+    x_ped_preflight_message = fields.Text(
+        string="Detalle pre-vuelo pedimento",
+        compute="_compute_x_ped_preflight",
+        store=False,
+    )
+    x_ped_factura_resumen = fields.Text(
+        string="Resumen facturas-partidas",
+        compute="_compute_x_ped_preflight",
+        store=False,
+    )
 
     @api.onchange("x_agente_aduanal_id")
     def _onchange_x_agente_aduanal_id(self):
@@ -556,6 +581,212 @@ class CrmLead(models.Model):
                 partner.country_id.name if partner.country_id else False,
             ]
             rec.x_transportista_domicilio = ", ".join([p for p in pieces if p])
+
+    def _prepare_default_505_document_vals(self):
+        self.ensure_one()
+        partner = self.x_counterparty_partner_id
+        return {
+            "lead_id": self.id,
+            "tipo": "factura",
+            "folio": self.x_cfdi_numero or self.x_cfdi_uuid or self.x_proveedor_invoice_number or self.name,
+            "fecha": self.x_cfdi_fecha or self.x_cfdi_fecha_emision or False,
+            "cfdi_termino_facturacion": self.x_incoterm or self.x_cfdi_termino_facturacion or False,
+            "cfdi_moneda_id": self.x_cfdi_moneda_id.id or self.x_currency_id.id or False,
+            "cfdi_valor_usd": self.x_cfdi_valor_usd or 0.0,
+            "cfdi_valor_moneda": self.x_cfdi_valor_moneda or self.x_valor_factura or 0.0,
+            "cfdi_pais_id": self.x_cfdi_pais_id.id if self.x_cfdi_pais_id else (partner.country_id.id if partner and partner.country_id else False),
+            "cfdi_estado_id": self.x_cfdi_estado_id.id if self.x_cfdi_estado_id else (partner.state_id.id if partner and partner.state_id else False),
+            "cfdi_id_fiscal": self.x_cfdi_id_fiscal or (partner.vat if partner else False),
+            "counterparty_name_505": self.x_counterparty_name_505 or (partner.name if partner else False),
+            "counterparty_street_505": (partner.x_street_name or partner.street) if partner else False,
+            "counterparty_num_int_505": partner.x_street_number_int if partner else False,
+            "counterparty_num_ext_505": partner.x_street_number_ext if partner else False,
+            "counterparty_zip_505": partner.zip if partner else False,
+            "counterparty_city_505": (partner.x_municipio or partner.city) if partner else False,
+            "es_documento_principal": True,
+            "archivo_file": self.x_factura_pdf_file or self.x_factura_xml_file or False,
+            "archivo_filename": self.x_factura_pdf_filename or self.x_factura_xml_filename or False,
+            "estatus": "pendiente",
+        }
+
+    def _ensure_default_505_document(self):
+        self.ensure_one()
+        docs = self.x_documento_505_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+        if docs:
+            return docs[:1]
+        has_legacy_cfdi = any([
+            self.x_cfdi_numero,
+            self.x_cfdi_uuid,
+            self.x_cfdi_valor_usd,
+            self.x_cfdi_valor_moneda,
+            self.x_factura_pdf_file,
+            self.x_factura_xml_file,
+        ])
+        if not has_legacy_cfdi:
+            return self.env["crm.lead.documento"]
+        return self.env["crm.lead.documento"].create(self._prepare_default_505_document_vals())
+
+    @api.depends(
+        "x_operacion_line_ids",
+        "x_operacion_line_ids.factura_documento_id",
+        "x_operacion_line_ids.numero_partida",
+        "x_operacion_line_ids.value_usd",
+        "x_operacion_line_ids.valor_comercial",
+        "x_documento_505_ids",
+        "x_documento_505_ids.cfdi_valor_usd",
+        "x_documento_505_ids.cfdi_valor_moneda",
+        "x_documento_505_ids.folio",
+    )
+    def _compute_x_ped_preflight(self):
+        for rec in self:
+            docs = rec.x_documento_505_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+            lines = rec.x_operacion_line_ids.exists().sorted(lambda l: (l.numero_partida or 0, l.sequence or 0, l.id))
+            issues = []
+            summary = []
+            if not docs and lines:
+                issues.append(_("Falta capturar al menos una factura / CFDI 505 en el CRM."))
+            missing = lines.filtered(lambda l: not l.factura_documento_id)
+            if missing:
+                nums = ", ".join(str(n) for n in missing.mapped("numero_partida") if n)
+                issues.append(_("Hay partidas sin factura asignada: %s") % (nums or len(missing)))
+            for doc in docs:
+                linked = lines.filtered(lambda l: l.factura_documento_id == doc)
+                if not linked:
+                    continue
+                total_usd = sum(linked.mapped("value_usd"))
+                total_comercial = sum(linked.mapped("valor_comercial"))
+                partida_nums = ", ".join(str(n) for n in linked.mapped("numero_partida") if n)
+                summary.append(
+                    "%s -> Partidas %s | Valor Total USD: %.2f"
+                    % (doc.display_name or doc.folio or _("Sin folio"), partida_nums or "-", total_usd)
+                )
+                if abs(total_usd - (doc.cfdi_valor_usd or 0.0)) > 0.01:
+                    issues.append(
+                        _("La suma USD de las partidas ligadas a %s no cuadra con su 505.")
+                        % (doc.display_name or doc.folio or doc.id,)
+                    )
+                if abs(total_comercial - (doc.cfdi_valor_moneda or 0.0)) > 0.01:
+                    issues.append(
+                        _("La suma de valor comercial de las partidas ligadas a %s no cuadra con su 505.")
+                        % (doc.display_name or doc.folio or doc.id,)
+                    )
+            rec.x_ped_factura_resumen = "\n".join(summary) if summary else False
+            if issues:
+                rec.x_ped_preflight_state = "incompleto"
+                rec.x_ped_preflight_message = "\n".join(issues)
+            else:
+                rec.x_ped_preflight_state = "listo"
+                rec.x_ped_preflight_message = _("Listo para Pedimento")
+
+    def _validate_pedimento_preflight(self):
+        self.ensure_one()
+        self._compute_x_ped_preflight()
+        if self.x_ped_preflight_state != "listo":
+            raise UserError(self.x_ped_preflight_message or _("El lead esta incompleto para generar el pedimento."))
+
+    def _prepare_pedimento_header_vals(self):
+        self.ensure_one()
+        currency = self.x_currency_id or self.env.company.currency_id
+        name = self.x_num_pedimento or self.x_folio_operacion or self.name or _("Operación")
+        return {
+            "lead_id": self.id,
+            "name": name,
+            "tipo_operacion": self.x_tipo_operacion,
+            "regimen": self.x_regimen,
+            "incoterm": self.x_incoterm,
+            "aduana_seccion_despacho_id": self.x_aduana_seccion_despacho_id.id or False,
+            "aduana_clave": self.x_aduana or "",
+            "aduana_seccion_entrada_salida_id": self.x_aduana_seccion_entrada_salida_id.id or False,
+            "acuse_validacion": self.x_acuse_validacion or "",
+            "agente_aduanal_id": self.x_agente_aduanal_id.id or False,
+            "patente": self.x_agente_aduanal_id.x_patente_aduanal or self.x_patente_agente or "",
+            "avc_transportista_id": self.x_transportista_id.id or False,
+            "curp_agente": self.x_curp_agente or "",
+            "clave_pedimento_id": self.x_clave_pedimento_id.id or False,
+            "currency_id": currency.id,
+            "pedimento_numero": self.x_num_pedimento or "",
+            "fecha_pago": self.x_fecha_pago_pedimento,
+            "fecha_liberacion": self.x_fecha_liberacion,
+            "semaforo": self.x_semaforo,
+            "observaciones": self.x_incidente_text or "",
+        }
+
+    def _sync_lead_documents_to_operacion(self, operacion):
+        self.ensure_one()
+        docs = self.x_documento_505_ids
+        if not docs:
+            docs = self._ensure_default_505_document()
+        operacion.documento_ids.filtered(lambda d: not d.remesa_id).unlink()
+        doc_map = {}
+        for doc in docs.sorted(lambda d: (d.sequence or 0, d.id)):
+            new_doc = self.env["mx.ped.documento"].create({
+                "operacion_id": operacion.id,
+                "tipo": doc.tipo,
+                "folio": doc.folio,
+                "fecha": doc.fecha,
+                "cfdi_termino_facturacion": doc.cfdi_termino_facturacion,
+                "cfdi_moneda_id": doc.cfdi_moneda_id.id or False,
+                "cfdi_valor_usd": doc.cfdi_valor_usd,
+                "cfdi_valor_moneda": doc.cfdi_valor_moneda,
+                "cfdi_pais_id": doc.cfdi_pais_id.id or False,
+                "cfdi_estado_id": doc.cfdi_estado_id.id or False,
+                "cfdi_id_fiscal": doc.cfdi_id_fiscal,
+                "counterparty_name_505": doc.counterparty_name_505,
+                "counterparty_street_505": doc.counterparty_street_505,
+                "counterparty_num_int_505": doc.counterparty_num_int_505,
+                "counterparty_num_ext_505": doc.counterparty_num_ext_505,
+                "counterparty_zip_505": doc.counterparty_zip_505,
+                "counterparty_city_505": doc.counterparty_city_505,
+                "es_documento_principal": doc.es_documento_principal,
+                "archivo_file": doc.archivo_file,
+                "archivo_filename": doc.archivo_filename,
+                "estatus": doc.estatus,
+                "notas": doc.notas,
+            })
+            doc_map[doc.id] = new_doc.id
+        return doc_map
+
+    def _sync_lead_lines_to_operacion(self, operacion, doc_map):
+        self.ensure_one()
+        operacion.partida_ids.unlink()
+        lines = self.x_operacion_line_ids.exists().sorted(lambda l: (l.numero_partida or 999999, l.sequence or 0, l.id))
+        if not lines:
+            lines = self.env["crm.lead.operacion.line"].create({
+                "lead_id": self.id,
+                "numero_partida": 1,
+                "name": self.name or _("Partida"),
+            })
+        for idx, line in enumerate(lines, start=1):
+            self.env["mx.ped.partida"].with_context(skip_auto_generated_refresh=True).create({
+                "operacion_id": operacion.id,
+                "numero_partida": line.numero_partida or idx,
+                "fraccion_id": line.fraccion_id.id or False,
+                "fraccion_arancelaria": line.fraccion_arancelaria,
+                "nico_id": line.nico_id.id or False,
+                "nico": line.nico,
+                "descripcion": line.name,
+                "uom_id": line.uom_id.id or False,
+                "quantity": line.quantity,
+                "packages_line": line.packages_line,
+                "gross_weight_line": line.gross_weight_line,
+                "net_weight_line": line.net_weight_line,
+                "value_usd": line.value_usd,
+                "precio_unitario": line.precio_unitario,
+                "valor_comercial": line.valor_comercial,
+                "valor_aduana": line.valor_aduana,
+                "factura_documento_id": doc_map.get(line.factura_documento_id.id) if line.factura_documento_id else False,
+                "nom_ids": [(6, 0, line.nom_ids.ids)],
+                "permiso_ids": [(6, 0, line.permiso_ids.ids)],
+                "rrna_ids": [(6, 0, line.rrna_ids.ids)],
+                "labeling_required": line.labeling_required,
+                "nom_compliance_status": line.nom_compliance_status,
+                "docs_reference": line.docs_reference,
+                "notes_regulatorias": line.notes_regulatorias,
+                "igi_estimado": line.igi_estimado,
+                "iva_estimado": line.iva_estimado,
+                "dta_estimado": line.dta_estimado,
+                "prv_estimado": line.prv_estimado,
+            })
 
     def write(self, vals):
         vals = self._sync_medio_transporte_vals(vals)
@@ -1602,81 +1833,17 @@ class CrmLead(models.Model):
         }
 
     def action_crear_pedimento(self):
-        """
-        Crea una cabecera (mx.ped.operacion) desde el lead copiando datos base.
-        El lead sigue siendo el EXPEDIENTE; el pedimento vive en su modelo.
-        """
+        """Crea o actualiza el pedimento espejo desde el CRM."""
         self.ensure_one()
-
-        currency = self.x_currency_id or self.env.company.currency_id
-
-        # nombre humano del pedimento (si no hay numero aún)
-        name = self.x_num_pedimento or self.x_folio_operacion or self.name or _("Operación")
-
-        op = self.env["mx.ped.operacion"].with_context(skip_auto_generated_refresh=True).create({
-            "lead_id": self.id,
-            "name": name,
-
-            "tipo_operacion": self.x_tipo_operacion,
-            "regimen": self.x_regimen,
-            "incoterm": self.x_incoterm,
-
-            "aduana_seccion_despacho_id": self.x_aduana_seccion_despacho_id.id or False,
-            "aduana_clave": (self.x_aduana or ""),
-            "aduana_seccion_entrada_salida_id": self.x_aduana_seccion_entrada_salida_id.id or False,
-            "acuse_validacion": (self.x_acuse_validacion or ""),
-            "agente_aduanal_id": self.x_agente_aduanal_id.id or False,
-            "patente": (self.x_agente_aduanal_id.x_patente_aduanal or self.x_patente_agente or ""),
-            "avc_transportista_id": self.x_transportista_id.id or False,
-            "curp_agente": (self.x_curp_agente or ""),
-            "clave_pedimento_id": self.x_clave_pedimento_id.id or False,
-
-            "currency_id": currency.id,
-
-            "pedimento_numero": (self.x_num_pedimento or ""),
-            "fecha_pago": self.x_fecha_pago_pedimento,
-            "fecha_liberacion": self.x_fecha_liberacion,
-            "semaforo": self.x_semaforo,
-            "observaciones": (self.x_incidente_text or ""),
-        })
-
-        lineas = self.x_operacion_line_ids
-        if not lineas:
-            lineas = self.env["crm.lead.operacion.line"].create({
-                "lead_id": self.id,
-                "numero_partida": 1,
-                "name": self.name or _("Partida"),
-            })
-
-        for idx, line in enumerate(lineas.sorted(lambda l: (l.numero_partida or 999999, l.sequence or 0, l.id)), start=1):
-            self.env["mx.ped.partida"].with_context(skip_auto_generated_refresh=True).create({
-                "operacion_id": op.id,
-                "numero_partida": line.numero_partida or idx,
-                "fraccion_id": line.fraccion_id.id or False,
-                "fraccion_arancelaria": line.fraccion_arancelaria,
-                "uom_id": line.uom_id.id or False,
-                "quantity": line.quantity,
-                "packages_line": line.packages_line,
-                "gross_weight_line": line.gross_weight_line,
-                "net_weight_line": line.net_weight_line,
-                "value_usd": line.value_usd,
-                "precio_unitario": line.precio_unitario,
-                "nico": line.nico,
-                "descripcion": line.name,
-                "nom_ids": [(6, 0, line.nom_ids.ids)],
-                "permiso_ids": [(6, 0, line.permiso_ids.ids)],
-                "rrna_ids": [(6, 0, line.rrna_ids.ids)],
-                "labeling_required": line.labeling_required,
-                "nom_compliance_status": line.nom_compliance_status,
-                "docs_reference": line.docs_reference,
-                "notes_regulatorias": line.notes_regulatorias,
-                "igi_estimado": line.igi_estimado,
-                "iva_estimado": line.iva_estimado,
-                "dta_estimado": line.dta_estimado,
-                "prv_estimado": line.prv_estimado,
-            })
-
-        # Genera registros desde la operacion/lead al momento de crear pedimento.
+        self._validate_pedimento_preflight()
+        op = self.x_last_ped_operacion_id
+        header_vals = self._prepare_pedimento_header_vals()
+        if op:
+            op.with_context(skip_auto_generated_refresh=True).write(header_vals)
+        else:
+            op = self.env["mx.ped.operacion"].with_context(skip_auto_generated_refresh=True).create(header_vals)
+        doc_map = self._sync_lead_documents_to_operacion(op)
+        self._sync_lead_lines_to_operacion(op, doc_map)
         op.action_cargar_desde_lead()
 
         return {
@@ -1686,6 +1853,20 @@ class CrmLead(models.Model):
             "view_mode": "form",
             "res_id": op.id,
             "target": "current",
+        }
+
+    def action_open_lead_partida_factura_wizard(self):
+        self.ensure_one()
+        wizard = self.env["crm.lead.partida.factura.wizard"].create({
+            "lead_id": self.id,
+            "line_ids": [(6, 0, self.x_operacion_line_ids.ids)],
+        })
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "crm.lead.partida.factura.wizard",
+            "view_mode": "form",
+            "res_id": wizard.id,
+            "target": "new",
         }
 
     @api.model_create_multi
@@ -1769,6 +1950,25 @@ class CrmLeadOperacionLine(models.Model):
         compute="_compute_value_mxn",
         store=True,
     )
+    valor_comercial = fields.Monetary(
+        string="Valor comercial",
+        currency_field="currency_id",
+        compute="_compute_valor_comercial",
+        store=True,
+    )
+    valor_aduana = fields.Monetary(
+        string="Valor aduana",
+        currency_field="currency_id",
+    )
+    factura_documento_id = fields.Many2one(
+        "crm.lead.documento",
+        string="Factura / CFDI",
+        ondelete="set null",
+        domain="[('lead_id', '=', lead_id)]",
+    )
+    factura_documento_error = fields.Boolean(string="Error factura", default=False, copy=False)
+    factura_value_error = fields.Boolean(string="Error valores factura", default=False, copy=False)
+    factura_validation_note = fields.Char(string="Nota validacion factura", copy=False)
     nom_ids = fields.Many2many(
         "mx.nom",
         "crm_lead_operacion_line_nom_rel",
@@ -1851,6 +2051,11 @@ class CrmLeadOperacionLine(models.Model):
             last = self.search([("lead_id", "=", lead_id)], order="numero_partida desc, id desc", limit=1)
             vals["numero_partida"] = max(last.numero_partida or 0, 0) + 1
         records = super().create(vals_list)
+        for rec, vals in zip(records, vals_list):
+            if not vals.get("factura_documento_id"):
+                default_doc = rec._get_default_factura_documento()
+                if default_doc:
+                    rec.write({"factura_documento_id": default_doc.id})
         if not self.env.context.get("skip_auto_generated_refresh"):
             records._refresh_related_operaciones(records.mapped("lead_id").ids)
         return records
@@ -1883,6 +2088,37 @@ class CrmLeadOperacionLine(models.Model):
         for rec in self:
             tc = rec.lead_id.x_tipo_cambio or 0.0
             rec.value_mxn = (rec.value_usd or 0.0) * tc
+
+    @api.depends("quantity", "precio_unitario", "value_mxn")
+    def _compute_valor_comercial(self):
+        for rec in self:
+            if rec.quantity and rec.precio_unitario:
+                rec.valor_comercial = rec.quantity * rec.precio_unitario
+            else:
+                rec.valor_comercial = rec.value_mxn
+
+    def _get_eligible_factura_documentos(self):
+        self.ensure_one()
+        docs = self.lead_id.x_documento_505_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+        if not docs:
+            docs = self.lead_id._ensure_default_505_document()
+        return docs
+
+    def _get_default_factura_documento(self):
+        self.ensure_one()
+        docs = self._get_eligible_factura_documentos()
+        if len(docs) == 1:
+            return docs[0]
+        previous = self.lead_id.x_operacion_line_ids.filtered(
+            lambda l: l.id != self.id and (
+                (l.numero_partida or 0) < (self.numero_partida or 999999999)
+                or (not self.numero_partida and l.id < self.id)
+            )
+        ).sorted(lambda l: (l.numero_partida or 0, l.sequence or 0, l.id))
+        previous = previous[-1:] if previous else self.env["crm.lead.operacion.line"]
+        if previous and previous.factura_documento_id and previous.factura_documento_id in docs:
+            return previous.factura_documento_id
+        return docs.filtered(lambda d: d.es_documento_principal)[:1]
 
     @api.depends(
         "fraccion_id",
@@ -1944,6 +2180,20 @@ class CrmLeadOperacionLine(models.Model):
         for rec in self:
             rec.nico = rec.nico_id.code if rec.nico_id else (rec.fraccion_id.nico if rec.fraccion_id else False)
 
+    @api.onchange("lead_id", "numero_partida", "factura_documento_id")
+    def _onchange_factura_documento_id(self):
+        domain = [("id", "=", 0)]
+        for rec in self:
+            docs = rec._get_eligible_factura_documentos() if rec.lead_id else self.env["crm.lead.documento"]
+            domain = [("id", "in", docs.ids)] if docs else [("id", "=", 0)]
+            if rec.factura_documento_id and rec.factura_documento_id not in docs:
+                rec.factura_documento_id = False
+            if not rec.factura_documento_id:
+                default_doc = rec._get_default_factura_documento()
+                if default_doc:
+                    rec.factura_documento_id = default_doc
+        return {"domain": {"factura_documento_id": domain}}
+
     def action_load_regulatory_defaults(self):
         for rec in self:
             fraccion = rec.fraccion_id
@@ -1965,12 +2215,17 @@ class CrmLeadOperacionLine(models.Model):
             f"RRNA: {rrna or 'N/A'}"
         )
 
+    @api.constrains("factura_documento_id", "lead_id")
+    def _check_factura_documento_integrity(self):
+        for rec in self:
+            if rec.factura_documento_id and rec.factura_documento_id.lead_id != rec.lead_id:
+                raise ValidationError(_("La factura / CFDI asignada debe pertenecer al mismo lead."))
+
     def _refresh_related_operaciones(self, lead_ids):
         if not lead_ids:
             return
-        ops = self.env["mx.ped.operacion"].search([("lead_id", "in", list(set(lead_ids)))])
-        if ops:
-            ops._auto_refresh_generated_registros()
+        leads = self.env["crm.lead"].browse(list(set(lead_ids)))
+        leads._compute_x_ped_preflight()
 
     def write(self, vals):
         records = self.exists()
@@ -1991,6 +2246,156 @@ class CrmLeadOperacionLine(models.Model):
         if not self.env.context.get("skip_auto_generated_refresh"):
             records._refresh_related_operaciones(lead_ids)
         return res
+
+
+class CrmLeadDocumento(models.Model):
+    _name = "crm.lead.documento"
+    _description = "CRM Lead - Documento comercial 505"
+    _order = "sequence, id"
+    _rec_name = "display_name"
+
+    lead_id = fields.Many2one("crm.lead", required=True, ondelete="cascade", index=True)
+    sequence = fields.Integer(default=10)
+    tipo = fields.Selection(
+        [
+            ("factura", "Factura"),
+            ("packing", "Packing List"),
+            ("bl_awb", "BL/AWB"),
+            ("cove", "COVE"),
+            ("edocument", "e-Document"),
+            ("coo", "Certificado de Origen"),
+            ("otro", "Otro"),
+        ],
+        default="factura",
+        required=True,
+    )
+    es_documento_principal = fields.Boolean(string="Documento principal", default=False)
+    folio = fields.Char(string="Folio")
+    fecha = fields.Datetime(string="Fecha")
+    cfdi_termino_facturacion = fields.Char(string="Termino facturacion 505")
+    cfdi_moneda_id = fields.Many2one("res.currency", string="Moneda documento 505")
+    cfdi_valor_usd = fields.Monetary(string="Valor USD 505", currency_field="company_currency_id")
+    cfdi_valor_moneda = fields.Monetary(string="Valor moneda documento 505", currency_field="cfdi_moneda_id")
+    cfdi_pais_id = fields.Many2one("res.country", string="Pais documento 505")
+    cfdi_estado_id = fields.Many2one("res.country.state", string="Entidad documento 505")
+    cfdi_id_fiscal = fields.Char(string="Identificacion fiscal 505")
+    counterparty_name_505 = fields.Char(string="Proveedor / comprador 505")
+    counterparty_street_505 = fields.Char(string="Calle 505")
+    counterparty_num_int_505 = fields.Char(string="Numero interior 505")
+    counterparty_num_ext_505 = fields.Char(string="Numero exterior 505")
+    counterparty_zip_505 = fields.Char(string="Codigo postal 505")
+    counterparty_city_505 = fields.Char(string="Municipio / ciudad 505")
+    archivo_file = fields.Binary(string="Archivo")
+    archivo_filename = fields.Char(string="Nombre archivo")
+    estatus = fields.Selection([("pendiente", "Pendiente"), ("ok", "OK"), ("rechazado", "Rechazado")], default="pendiente")
+    notas = fields.Text()
+    company_currency_id = fields.Many2one("res.currency", related="lead_id.company_id.currency_id", readonly=True, store=True)
+    display_name = fields.Char(compute="_compute_display_name", store=False)
+
+    @api.depends("tipo", "folio")
+    def _compute_display_name(self):
+        for rec in self:
+            tipo = dict(self._fields["tipo"].selection).get(rec.tipo, rec.tipo or "Documento")
+            rec.display_name = " | ".join([p for p in [tipo, rec.folio] if p]) or tipo
+
+    def _prepare_snapshot_vals_from_lead(self):
+        self.ensure_one()
+        lead = self.lead_id
+        partner = lead.x_counterparty_partner_id
+        vals = {}
+        if not self.fecha:
+            vals["fecha"] = lead.x_cfdi_fecha or lead.x_cfdi_fecha_emision or False
+        if not self.folio:
+            vals["folio"] = lead.x_cfdi_numero or lead.x_cfdi_uuid or False
+        if not self.cfdi_termino_facturacion:
+            vals["cfdi_termino_facturacion"] = lead.x_incoterm or lead.x_cfdi_termino_facturacion or False
+        if not self.cfdi_moneda_id:
+            vals["cfdi_moneda_id"] = lead.x_cfdi_moneda_id.id or lead.x_currency_id.id or False
+        if not self.cfdi_valor_usd:
+            vals["cfdi_valor_usd"] = lead.x_cfdi_valor_usd or 0.0
+        if not self.cfdi_valor_moneda:
+            vals["cfdi_valor_moneda"] = lead.x_cfdi_valor_moneda or lead.x_valor_factura or 0.0
+        if not self.cfdi_pais_id:
+            vals["cfdi_pais_id"] = lead.x_cfdi_pais_id.id if lead.x_cfdi_pais_id else (partner.country_id.id if partner and partner.country_id else False)
+        if not self.cfdi_estado_id:
+            vals["cfdi_estado_id"] = lead.x_cfdi_estado_id.id if lead.x_cfdi_estado_id else (partner.state_id.id if partner and partner.state_id else False)
+        if not self.cfdi_id_fiscal:
+            vals["cfdi_id_fiscal"] = lead.x_cfdi_id_fiscal or (partner.vat if partner else False)
+        if not self.counterparty_name_505:
+            vals["counterparty_name_505"] = lead.x_counterparty_name_505 or (partner.name if partner else False)
+        if partner:
+            vals.setdefault("counterparty_street_505", partner.x_street_name or partner.street or False)
+            vals.setdefault("counterparty_num_int_505", partner.x_street_number_int or False)
+            vals.setdefault("counterparty_num_ext_505", partner.x_street_number_ext or False)
+            vals.setdefault("counterparty_zip_505", partner.zip or False)
+            vals.setdefault("counterparty_city_505", partner.x_municipio or partner.city or False)
+        return vals
+
+    @api.onchange("lead_id")
+    def _onchange_fill_snapshot(self):
+        for rec in self:
+            vals = rec._prepare_snapshot_vals_from_lead() if rec.lead_id else {}
+            for key, value in vals.items():
+                rec[key] = value
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        for rec in records:
+            vals = rec._prepare_snapshot_vals_from_lead()
+            if vals:
+                super(CrmLeadDocumento, rec).write(vals)
+        leads = records.mapped("lead_id")
+        if leads:
+            leads._compute_x_ped_preflight()
+        return records
+
+    @api.constrains("lead_id", "es_documento_principal")
+    def _check_single_principal(self):
+        for rec in self.filtered("es_documento_principal"):
+            duplicate = self.search_count([
+                ("id", "!=", rec.id),
+                ("lead_id", "=", rec.lead_id.id),
+                ("es_documento_principal", "=", True),
+            ])
+            if duplicate:
+                raise ValidationError(_("Solo puede existir un documento principal por lead."))
+
+    def write(self, vals):
+        res = super().write(vals)
+        leads = self.mapped("lead_id")
+        if leads:
+            leads._compute_x_ped_preflight()
+        return res
+
+    def unlink(self):
+        leads = self.mapped("lead_id")
+        res = super().unlink()
+        if leads:
+            leads._compute_x_ped_preflight()
+        return res
+
+
+class CrmLeadPartidaFacturaWizard(models.TransientModel):
+    _name = "crm.lead.partida.factura.wizard"
+    _description = "Asignacion masiva de factura a partidas CRM"
+
+    lead_id = fields.Many2one("crm.lead", required=True, readonly=True)
+    line_ids = fields.Many2many("crm.lead.operacion.line", string="Partidas", required=True)
+    factura_documento_id = fields.Many2one(
+        "crm.lead.documento",
+        string="Factura / CFDI",
+        domain="[('lead_id', '=', lead_id)]",
+    )
+
+    def action_apply(self):
+        self.ensure_one()
+        if not self.factura_documento_id:
+            raise ValidationError(_("Selecciona la factura / CFDI que quieres asignar."))
+        if any(line.lead_id != self.lead_id for line in self.line_ids):
+            raise ValidationError(_("Todas las partidas deben pertenecer al mismo lead."))
+        self.line_ids.write({"factura_documento_id": self.factura_documento_id.id})
+        return {"type": "ir.actions.act_window_close"}
 
 
 class CrmLeadFecha506(models.Model):
@@ -2027,9 +2432,7 @@ class CrmLeadFecha506(models.Model):
         leads = self.mapped("lead_id")
         if not leads:
             return
-        ops = self.env["mx.ped.operacion"].search([("lead_id", "in", leads.ids)])
-        if ops:
-            ops._auto_refresh_generated_registros()
+        leads._compute_x_ped_preflight()
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -2048,7 +2451,5 @@ class CrmLeadFecha506(models.Model):
         leads = self.mapped("lead_id")
         res = super().unlink()
         if not self.env.context.get("skip_auto_generated_refresh") and leads:
-            ops = self.env["mx.ped.operacion"].search([("lead_id", "in", leads.ids)])
-            if ops:
-                ops._auto_refresh_generated_registros()
+            leads._compute_x_ped_preflight()
         return res

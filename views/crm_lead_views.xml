@@ -46,7 +46,7 @@
 
         <!-- BOTÓN EN HEADER -->
         <xpath expr="//header" position="inside">
-          <button name="action_crear_pedimento" type="object" string="Crear pedimento" class="btn-secondary"/>
+          <button name="action_crear_pedimento" type="object" string="Crear / Actualizar pedimento" class="btn-secondary"/>
         </xpath>
 
         <xpath expr="//notebook" position="inside">
@@ -231,6 +231,12 @@
               </group>
               <group string="Portal">
                 <field name="x_visible_portal"/>
+                <field name="x_ped_preflight_state"
+                       widget="badge"
+                       readonly="1"
+                       decoration-success="x_ped_preflight_state == 'listo'"
+                       decoration-danger="x_ped_preflight_state == 'incompleto'"/>
+                <field name="x_ped_preflight_message" readonly="1"/>
               </group>
             </group>
 
@@ -281,6 +287,50 @@
                 <field name="x_cfdi_estado_id"/>
                 <field name="x_cfdi_id_fiscal"/>
               </group>
+            </group>
+
+            <group string="Facturas / CFDI / Documentos 505">
+              <field name="x_documento_505_ids" context="{'default_lead_id': id, 'default_tipo': 'factura'}">
+                <list editable="bottom">
+                  <field name="sequence" optional="hide"/>
+                  <field name="tipo"/>
+                  <field name="folio"/>
+                  <field name="fecha"/>
+                  <field name="es_documento_principal"/>
+                  <field name="cfdi_valor_usd"/>
+                  <field name="cfdi_valor_moneda"/>
+                  <field name="estatus"/>
+                </list>
+                <form string="Documento 505">
+                  <group>
+                    <group string="Captura basica">
+                      <field name="tipo"/>
+                      <field name="folio"/>
+                      <field name="fecha"/>
+                      <field name="es_documento_principal"/>
+                      <field name="archivo_file" filename="archivo_filename"/>
+                      <field name="archivo_filename" invisible="1"/>
+                      <field name="estatus"/>
+                      <field name="notas"/>
+                    </group>
+                    <group string="Datos 505">
+                      <field name="cfdi_termino_facturacion"/>
+                      <field name="cfdi_moneda_id"/>
+                      <field name="cfdi_valor_usd"/>
+                      <field name="cfdi_valor_moneda"/>
+                      <field name="cfdi_pais_id"/>
+                      <field name="cfdi_estado_id"/>
+                      <field name="cfdi_id_fiscal"/>
+                      <field name="counterparty_name_505"/>
+                      <field name="counterparty_street_505"/>
+                      <field name="counterparty_num_int_505"/>
+                      <field name="counterparty_num_ext_505"/>
+                      <field name="counterparty_zip_505"/>
+                      <field name="counterparty_city_505"/>
+                    </group>
+                  </group>
+                </form>
+              </field>
             </group>
           </page>
 
@@ -341,56 +391,44 @@
 
           <page string="Mercancias / Partidas" name="mi_modulo_partidas_import"
                 invisible="x_tipo_operacion != 'importacion'">
+            <group>
+              <field name="x_ped_factura_resumen" readonly="1"/>
+            </group>
+            <button name="action_open_lead_partida_factura_wizard"
+                    type="object"
+                    string="Asignacion masiva de factura"
+                    class="btn-secondary"/>
             <field name="x_operacion_line_ids" context="{'default_lead_id': id}">
-              <list editable="bottom">
+              <list editable="bottom" open_form_view="1" decoration-danger="factura_documento_error or factura_value_error">
                 <field name="numero_partida"/>
-                <field name="sequence" optional="hide"/>
-                <field name="name"/>
+                <field name="factura_documento_id"/>
                 <field name="fraccion_id"/>
-                <field name="nico_id"/>
                 <field name="quantity"/>
-                <field name="uom_id"/>
-                <field name="packages_line"/>
-                <field name="gross_weight_line"/>
-                <field name="net_weight_line"/>
                 <field name="value_usd"/>
-                <field name="precio_unitario"/>
-                <field name="value_mxn" readonly="1"/>
-                <field name="nom_ids" widget="many2many_tags"/>
-                <field name="permiso_ids" widget="many2many_tags"/>
-                <field name="rrna_ids" widget="many2many_tags"/>
-                <field name="labeling_required" readonly="1"/>
-                <field name="nom_compliance_status"/>
-                <field name="docs_reference"/>
-                <field name="notes_regulatorias"/>
-                <field name="igi_estimado"/>
-                <field name="iva_estimado"/>
-                <field name="dta_estimado"/>
-                <field name="prv_estimado"/>
-                <button name="action_load_regulatory_defaults"
-                        type="object"
-                        string="Defaults"
-                        class="btn-link"/>
               </list>
               <form string="Partida">
                 <group>
-                  <group string="Mercancia">
+                  <group string="Captura basica">
                     <field name="numero_partida"/>
-                    <field name="sequence" invisible="1"/>
+                    <field name="factura_documento_id"/>
                     <field name="name"/>
                     <field name="fraccion_id"/>
-                    <field name="nico_id"/>
-                  </group>
-                  <group string="Cantidades y valor">
                     <field name="quantity"/>
-                    <field name="uom_id"/>
-                    <field name="packages_line"/>
-                    <field name="gross_weight_line"/>
-                    <field name="net_weight_line"/>
                     <field name="value_usd"/>
-                    <field name="precio_unitario"/>
-                    <field name="value_mxn" readonly="1"/>
+                    <field name="factura_validation_note" readonly="1" invisible="not factura_validation_note"/>
                   </group>
+                </group>
+                <group string="Comercial y mercancia">
+                  <field name="sequence" invisible="1"/>
+                  <field name="nico_id"/>
+                  <field name="uom_id"/>
+                  <field name="packages_line"/>
+                  <field name="gross_weight_line"/>
+                  <field name="net_weight_line"/>
+                  <field name="precio_unitario"/>
+                  <field name="value_mxn" readonly="1"/>
+                  <field name="valor_comercial" readonly="1"/>
+                  <field name="valor_aduana"/>
                 </group>
                 <group string="Regulatorio">
                   <field name="nom_ids" widget="many2many_tags"/>
@@ -406,6 +444,10 @@
                   <field name="iva_estimado"/>
                   <field name="dta_estimado"/>
                   <field name="prv_estimado"/>
+                </group>
+                <group string="Control 505">
+                  <field name="factura_documento_error" readonly="1"/>
+                  <field name="factura_value_error" readonly="1"/>
                 </group>
               </form>
             </field>
@@ -496,7 +538,7 @@
           <page string="Pedimentos" name="mi_modulo_pedimentos_rel">
             <group>
               <group string="Acciones">
-                <button name="action_crear_pedimento" type="object" string="Crear pedimento desde este lead" class="btn-primary"/>
+                <button name="action_crear_pedimento" type="object" string="Crear / Actualizar pedimento desde este lead" class="btn-primary"/>
               </group>
             </group>
 
@@ -521,9 +563,6 @@
               </list>
 
               <form string="Pedimento">
-                <header>
-                  <button name="action_cargar_desde_lead" type="object" string="Cargar desde Lead" class="btn-secondary"/>
-                </header>
                 <sheet>
                   <div class="oe_title">
                     <h1>
@@ -532,8 +571,13 @@
                   </div>
 
                   <group>
-                    <group string="Clasificación">
+                    <group string="Resumen ejecutivo">
                       <field name="lead_id" readonly="1"/>
+                      <field name="crm_factura_resumen" readonly="1"/>
+                      <field name="show_advanced_info"/>
+                    </group>
+
+                    <group string="Validacion tecnica" invisible="not show_advanced_info">
                       <field name="tipo_operacion"/>
                       <field name="regimen"/>
                       <field name="incoterm"/>
@@ -544,18 +588,10 @@
                              domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
                       <field name="layout_id" required="1"/>
                       <field name="currency_id"/>
-                    </group>
-
-                    <group string="Resultado">
                       <field name="pedimento_numero"/>
                       <field name="fecha_pago"/>
                       <field name="semaforo"/>
                       <field name="fecha_liberacion"/>
-                    </group>
-                  </group>
-
-                  <group>
-                    <group string="Observaciones">
                       <field name="observaciones" placeholder="Notas internas del pedimento..."/>
                     </group>
                   </group>
@@ -567,6 +603,26 @@
 
         </xpath>
 
+      </field>
+    </record>
+
+    <record id="crm_lead_partida_factura_wizard_view_form" model="ir.ui.view">
+      <field name="name">crm.lead.partida.factura.wizard.form</field>
+      <field name="model">crm.lead.partida.factura.wizard</field>
+      <field name="arch" type="xml">
+        <form string="Asignacion masiva de factura">
+          <sheet>
+            <group>
+              <field name="lead_id" readonly="1"/>
+              <field name="factura_documento_id"/>
+              <field name="line_ids" widget="many2many_tags"/>
+            </group>
+          </sheet>
+          <footer>
+            <button name="action_apply" type="object" string="Aplicar" class="btn-primary"/>
+            <button string="Cancelar" special="cancel" class="btn-secondary"/>
+          </footer>
+        </form>
       </field>
     </record>
 

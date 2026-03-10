@@ -6,6 +6,10 @@ access_mx_ped_partida_factura_wizard,mx.ped.partida.factura.wizard,model_mx_ped_
 access_mx_ped_partida_factura_wizard_user,mx.ped.partida.factura.wizard.user,model_mx_ped_partida_factura_wizard,base.group_user,1,1,1,1
 access_mx_ped_partida,mx.ped.partida,model_mx_ped_partida,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_crm_lead_operacion_line,crm.lead.operacion.line,model_crm_lead_operacion_line,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_crm_lead_documento,crm.lead.documento,model_crm_lead_documento,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_crm_lead_documento_user,crm.lead.documento.user,model_crm_lead_documento,base.group_user,1,1,1,1
+access_crm_lead_partida_factura_wizard,crm.lead.partida.factura.wizard,model_crm_lead_partida_factura_wizard,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_crm_lead_partida_factura_wizard_user,crm.lead.partida.factura.wizard.user,model_crm_lead_partida_factura_wizard,base.group_user,1,1,1,1
 access_crm_lead_fecha_506,crm.lead.fecha.506,model_crm_lead_fecha_506,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_documento,mx.ped.documento,model_mx_ped_documento,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_evento,mx.ped.evento,model_mx_ped_evento,modulo_aduana_odoo.group_aduana_user,1,1,1,1
