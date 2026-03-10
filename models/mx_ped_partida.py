@@ -5,6 +5,7 @@ from odoo.exceptions import ValidationError
 class MxPedPartida(models.Model):
     _name = "mx.ped.partida"
     _description = "Pedimento - Partida"
+    _rec_name = "display_name"
     _order = "numero_partida asc, id asc"
 
     company_id = fields.Many2one(
@@ -13,6 +14,11 @@ class MxPedPartida(models.Model):
 
     operacion_id = fields.Many2one(
         "mx.ped.operacion", required=True, ondelete="cascade", index=True
+    )
+    display_name = fields.Char(
+        string="Nombre",
+        compute="_compute_display_name",
+        store=False,
     )
 
     numero_partida = fields.Integer()
@@ -155,6 +161,21 @@ class MxPedPartida(models.Model):
                 rec.fraccion_id.requires_labeling_default
                 or any(rec.nom_ids.mapped("requires_labeling"))
             )
+
+    @api.depends("numero_partida", "fraccion_arancelaria", "fraccion_id.code", "descripcion")
+    def _compute_display_name(self):
+        for rec in self:
+            partida = "Partida %s" % (rec.numero_partida or rec.id or "")
+            fraccion = rec.fraccion_arancelaria or rec.fraccion_id.code or ""
+            descripcion = " ".join((rec.descripcion or "").split())
+            if len(descripcion) > 50:
+                descripcion = descripcion[:47] + "..."
+            pieces = [partida]
+            if fraccion:
+                pieces.append(fraccion)
+            if descripcion:
+                pieces.append(descripcion)
+            rec.display_name = " | ".join(pieces)
 
     @api.depends("value_usd", "operacion_id.lead_id.x_tipo_cambio")
     def _compute_value_mxn(self):
