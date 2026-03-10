@@ -1,5 +1,5 @@
 {
-    "name": "Aduana - Operaciones y Pedimentos",
+    "name": "Aduanex",
     "version": "18.0.1.7.1",
     "category": "CRM",
     "summary": "Gestión de operaciones aduanales y pedimentos desde CRM",
