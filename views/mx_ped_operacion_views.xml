@@ -233,6 +233,7 @@
                   <form string="Remesa consolidada">
                     <group>
                       <group string="General">
+                        <field name="name" readonly="1"/>
                         <field name="sequence"/>
                         <field name="folio"/>
                         <field name="fecha_remesa"/>
@@ -248,6 +249,13 @@
                       </group>
                     </group>
                     <group>
+                      <group string="Resumen remesa">
+                        <field name="partida_count" readonly="1"/>
+                        <field name="total_quantity" readonly="1"/>
+                        <field name="total_value_usd" readonly="1"/>
+                      </group>
+                    </group>
+                    <group>
                       <group string="Cruce">
                         <field name="transportista_id"/>
                         <field name="chofer_id"/>
@@ -260,6 +268,56 @@
                         <field name="observaciones"/>
                       </group>
                     </group>
+                    <notebook>
+                      <page string="Partidas asignadas">
+                        <field name="partida_rel_ids" context="{'default_remesa_id': id, 'default_operacion_id': operacion_id}">
+                          <list editable="bottom">
+                            <field name="sequence"/>
+                            <field name="partida_id"/>
+                            <field name="quantity"/>
+                            <field name="value_usd"/>
+                            <field name="notes"/>
+                          </list>
+                          <form string="Asignacion partida-remesa">
+                            <group>
+                              <field name="sequence"/>
+                              <field name="partida_id"/>
+                              <field name="quantity"/>
+                              <field name="value_usd"/>
+                              <field name="notes"/>
+                            </group>
+                          </form>
+                        </field>
+                      </page>
+                      <page string="Documentos remesa">
+                        <field name="documento_ids" context="{'default_operacion_id': operacion_id, 'default_remesa_id': id}">
+                          <list editable="bottom">
+                            <field name="registro_codigo"/>
+                            <field name="tipo"/>
+                            <field name="folio"/>
+                            <field name="partida_id"/>
+                            <field name="fecha"/>
+                            <field name="estatus"/>
+                          </list>
+                          <form string="Documento remesa">
+                            <group>
+                              <group>
+                                <field name="registro_codigo"/>
+                                <field name="tipo"/>
+                                <field name="folio"/>
+                                <field name="fecha"/>
+                                <field name="partida_id"/>
+                              </group>
+                              <group>
+                                <field name="attachment_id"/>
+                                <field name="estatus"/>
+                                <field name="notas"/>
+                              </group>
+                            </group>
+                          </form>
+                        </field>
+                      </page>
+                    </notebook>
                   </form>
                 </field>
               </page>

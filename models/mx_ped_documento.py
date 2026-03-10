@@ -1,4 +1,5 @@
-from odoo import fields, models
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class MxPedDocumento(models.Model):
@@ -11,6 +12,12 @@ class MxPedDocumento(models.Model):
 
     operacion_id = fields.Many2one(
         "mx.ped.operacion", required=True, ondelete="cascade", index=True
+    )
+    remesa_id = fields.Many2one(
+        "mx.ped.consolidado.remesa",
+        string="Remesa consolidada",
+        ondelete="set null",
+        index=True,
     )
 
     partida_id = fields.Many2one("mx.ped.partida", ondelete="set null")
@@ -68,3 +75,11 @@ class MxPedDocumento(models.Model):
     )
 
     notas = fields.Text()
+
+    @api.constrains("remesa_id", "operacion_id", "partida_id")
+    def _check_remesa_integrity(self):
+        for rec in self:
+            if rec.remesa_id and rec.remesa_id.operacion_id != rec.operacion_id:
+                raise ValidationError("La remesa del documento debe pertenecer a la misma operacion.")
+            if rec.partida_id and rec.partida_id.operacion_id != rec.operacion_id:
+                raise ValidationError("La partida del documento debe pertenecer a la misma operacion.")

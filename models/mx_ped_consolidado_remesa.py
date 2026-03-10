@@ -78,6 +78,32 @@ class MxPedConsolidadoRemesa(models.Model):
     acuse_valor = fields.Char(string="Acuse de valor")
     acuse_presentacion = fields.Char(string="Acuse presentacion")
     observaciones = fields.Text(string="Observaciones")
+    partida_rel_ids = fields.One2many(
+        "mx.ped.consolidado.remesa.partida",
+        "remesa_id",
+        string="Partidas asignadas",
+        copy=True,
+    )
+    documento_ids = fields.One2many(
+        "mx.ped.documento",
+        "remesa_id",
+        string="Documentos remesa",
+        copy=True,
+    )
+    partida_count = fields.Integer(
+        string="Partidas asignadas",
+        compute="_compute_totals",
+    )
+    total_quantity = fields.Float(
+        string="Cantidad asignada",
+        digits=(16, 6),
+        compute="_compute_totals",
+    )
+    total_value_usd = fields.Float(
+        string="Valor USD asignado",
+        digits=(16, 2),
+        compute="_compute_totals",
+    )
 
     _sql_constraints = [
         (
@@ -96,6 +122,13 @@ class MxPedConsolidadoRemesa(models.Model):
                 rec.name = "%s / Remesa %s" % (rec.operacion_id.name or _("Operacion"), rec.sequence or 0)
             else:
                 rec.name = _("Remesa")
+
+    @api.depends("partida_rel_ids.quantity", "partida_rel_ids.value_usd")
+    def _compute_totals(self):
+        for rec in self:
+            rec.partida_count = len(rec.partida_rel_ids)
+            rec.total_quantity = sum(rec.partida_rel_ids.mapped("quantity"))
+            rec.total_value_usd = sum(rec.partida_rel_ids.mapped("value_usd"))
 
     @api.constrains("operacion_id")
     def _check_operacion_consolidada(self):
