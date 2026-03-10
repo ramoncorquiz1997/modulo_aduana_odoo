@@ -21,6 +21,11 @@ class MxPedDocumento(models.Model):
     )
 
     partida_id = fields.Many2one("mx.ped.partida", ondelete="set null")
+    aplica_partida_especifica = fields.Boolean(
+        string="Aplica a una partida especifica",
+        default=False,
+        help="Marca esta opcion solo cuando el documento corresponda a una partida concreta dentro de la remesa.",
+    )
 
     tipo = fields.Selection(
         [
@@ -76,6 +81,18 @@ class MxPedDocumento(models.Model):
 
     notas = fields.Text()
 
+    @api.onchange("aplica_partida_especifica")
+    def _onchange_aplica_partida_especifica(self):
+        for rec in self:
+            if not rec.aplica_partida_especifica:
+                rec.partida_id = False
+
+    @api.onchange("partida_id")
+    def _onchange_partida_id(self):
+        for rec in self:
+            if rec.partida_id:
+                rec.aplica_partida_especifica = True
+
     @api.constrains("remesa_id", "operacion_id", "partida_id")
     def _check_remesa_integrity(self):
         for rec in self:
@@ -83,3 +100,5 @@ class MxPedDocumento(models.Model):
                 raise ValidationError("La remesa del documento debe pertenecer a la misma operacion.")
             if rec.partida_id and rec.partida_id.operacion_id != rec.operacion_id:
                 raise ValidationError("La partida del documento debe pertenecer a la misma operacion.")
+            if not rec.aplica_partida_especifica and rec.partida_id:
+                raise ValidationError("Si el documento tiene partida, marca que aplica a una partida especifica.")

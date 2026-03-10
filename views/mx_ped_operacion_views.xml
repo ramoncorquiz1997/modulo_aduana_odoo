@@ -270,7 +270,7 @@
                       </group>
                     </group>
                     <notebook>
-                      <page string="Partidas asignadas">
+                      <page string="Partidas de la remesa">
                         <field name="partida_rel_ids" context="{'default_remesa_id': id, 'default_operacion_id': operacion_id}">
                           <list editable="bottom">
                             <field name="sequence"/>
@@ -290,28 +290,36 @@
                           </form>
                         </field>
                       </page>
-                      <page string="Documentos remesa">
-                        <field name="documento_ids" context="{'default_operacion_id': operacion_id, 'default_remesa_id': id, 'default_registro_codigo': '514', 'default_estatus': 'pendiente', 'default_tipo': 'otro'}">
+                      <page string="Soportes de la remesa">
+                        <field name="documento_ids" context="{'default_operacion_id': operacion_id, 'default_remesa_id': id, 'default_registro_codigo': '514', 'default_estatus': 'pendiente', 'default_tipo': 'otro', 'default_aplica_partida_especifica': False}">
                           <list editable="bottom">
                             <field name="tipo"/>
                             <field name="folio"/>
-                            <field name="partida_id"/>
                             <field name="fecha"/>
+                            <field name="aplica_partida_especifica"/>
+                            <field name="partida_id" optional="hide"/>
                             <field name="estatus"/>
                           </list>
-                          <form string="Documento remesa">
+                          <form string="Soporte de remesa">
                             <group>
-                              <group>
+                              <group string="Datos del soporte">
                                 <field name="tipo"/>
                                 <field name="folio"/>
                                 <field name="fecha"/>
-                                <field name="partida_id"/>
-                              </group>
-                              <group>
                                 <field name="attachment_id"/>
                                 <field name="estatus"/>
                                 <field name="notas"/>
                               </group>
+                              <group string="Relacion con mercancia">
+                                <label string="Deja este soporte a nivel remesa salvo que aplique solo a una partida concreta." colspan="2"/>
+                                <field name="aplica_partida_especifica"/>
+                                <field name="partida_id"
+                                       invisible="not aplica_partida_especifica"
+                                       domain="[('operacion_id', '=', operacion_id)]"/>
+                              </group>
+                            </group>
+                            <group>
+                              <label string="Operacion y remesa ya se asignan automaticamente desde este formulario." colspan="2"/>
                             </group>
                             <group invisible="1">
                               <field name="company_id"/>
