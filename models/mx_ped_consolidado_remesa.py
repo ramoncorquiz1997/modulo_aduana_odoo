@@ -130,6 +130,16 @@ class MxPedConsolidadoRemesa(models.Model):
             rec.total_quantity = sum(rec.partida_rel_ids.mapped("quantity"))
             rec.total_value_usd = sum(rec.partida_rel_ids.mapped("value_usd"))
 
+    def action_open_full_form(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": self._name,
+            "view_mode": "form",
+            "res_id": self.id,
+            "target": "current",
+        }
+
     @api.constrains("operacion_id")
     def _check_operacion_consolidada(self):
         for rec in self:

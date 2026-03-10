@@ -229,6 +229,7 @@
                     <field name="gafete_id"/>
                     <field name="acuse_valor" optional="hide"/>
                     <field name="acuse_presentacion" optional="hide"/>
+                    <button name="action_open_full_form" type="object" string="Abrir" class="btn-link"/>
                   </list>
                   <form string="Remesa consolidada">
                     <group>
