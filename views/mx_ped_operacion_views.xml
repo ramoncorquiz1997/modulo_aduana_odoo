@@ -291,9 +291,8 @@
                         </field>
                       </page>
                       <page string="Documentos remesa">
-                        <field name="documento_ids" context="{'default_operacion_id': operacion_id, 'default_remesa_id': id}">
+                        <field name="documento_ids" context="{'default_operacion_id': operacion_id, 'default_remesa_id': id, 'default_registro_codigo': '514', 'default_estatus': 'pendiente', 'default_tipo': 'otro'}">
                           <list editable="bottom">
-                            <field name="registro_codigo"/>
                             <field name="tipo"/>
                             <field name="folio"/>
                             <field name="partida_id"/>
@@ -303,7 +302,6 @@
                           <form string="Documento remesa">
                             <group>
                               <group>
-                                <field name="registro_codigo"/>
                                 <field name="tipo"/>
                                 <field name="folio"/>
                                 <field name="fecha"/>
@@ -314,6 +312,14 @@
                                 <field name="estatus"/>
                                 <field name="notas"/>
                               </group>
+                            </group>
+                            <group invisible="1">
+                              <field name="company_id"/>
+                              <field name="operacion_id"/>
+                              <field name="remesa_id"/>
+                              <field name="registro_codigo"/>
+                              <field name="forma_pago_id"/>
+                              <field name="forma_pago_code"/>
                             </group>
                           </form>
                         </field>
