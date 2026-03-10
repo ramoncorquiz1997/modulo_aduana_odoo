@@ -216,7 +216,7 @@
                   <field name="consolidado_estado" readonly="1"/>
                 </group>
                 <field name="remesa_ids" context="{'default_operacion_id': id}">
-                  <list editable="bottom">
+                  <list editable="bottom" delete="0">
                     <field name="sequence"/>
                     <field name="folio"/>
                     <field name="fecha_remesa"/>
@@ -229,6 +229,7 @@
                     <field name="gafete_id"/>
                     <field name="acuse_valor" optional="hide"/>
                     <field name="acuse_presentacion" optional="hide"/>
+                    <button name="action_archive" type="object" string="Ocultar" class="btn-link"/>
                     <button name="action_open_full_form" type="object" string="Abrir" class="btn-link"/>
                   </list>
                   <form string="Remesa consolidada">
