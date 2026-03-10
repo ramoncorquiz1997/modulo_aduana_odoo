@@ -7,6 +7,7 @@ class MxPedConsolidadoRemesa(models.Model):
     _description = "Pedimento consolidado - Remesa"
     _order = "operacion_id, sequence, id"
 
+    active = fields.Boolean(default=True)
     company_id = fields.Many2one(
         "res.company",
         required=True,
@@ -141,9 +142,9 @@ class MxPedConsolidadoRemesa(models.Model):
             "target": "new",
         }
 
-    def action_delete_and_close(self):
+    def action_archive_and_close(self):
         self.ensure_one()
-        self.unlink()
+        self.active = False
         return {"type": "ir.actions.act_window_close"}
 
     @api.constrains("operacion_id")

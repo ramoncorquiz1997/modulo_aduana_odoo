@@ -8,11 +8,11 @@
       <field name="arch" type="xml">
         <form string="Remesa consolidada" delete="0">
           <header>
-            <button name="action_delete_and_close"
+            <button name="action_archive_and_close"
                     type="object"
                     string="Eliminar remesa"
                     class="btn-secondary"
-                    confirm="Esta accion eliminara la remesa actual. Deseas continuar?"/>
+                    confirm="Esta accion ocultara la remesa actual de la operacion. Deseas continuar?"/>
           </header>
           <sheet>
             <group col="2">
@@ -90,6 +90,7 @@
             </notebook>
 
             <group invisible="1">
+              <field name="active"/>
               <field name="company_id"/>
               <field name="attachment_id"/>
             </group>

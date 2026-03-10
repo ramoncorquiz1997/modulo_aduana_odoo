@@ -426,6 +426,7 @@ class MxPedOperacion(models.Model):
         "mx.ped.consolidado.remesa",
         "operacion_id",
         string="Remesas",
+        domain=[("active", "=", True)],
         copy=True,
     )
 
