@@ -15,12 +15,13 @@ class MxPedPartidaFacturaWizard(models.TransientModel):
     factura_documento_id = fields.Many2one(
         "mx.ped.documento",
         string="Factura / CFDI",
-        required=True,
         domain="[('operacion_id', '=', operacion_id)]",
     )
 
     def action_apply(self):
         self.ensure_one()
+        if not self.factura_documento_id:
+            raise ValidationError(_("Selecciona la factura / CFDI que quieres asignar."))
         if any(p.operacion_id != self.operacion_id for p in self.partida_ids):
             raise ValidationError(_("Todas las partidas deben pertenecer a la misma operacion."))
         self.partida_ids.write({"factura_documento_id": self.factura_documento_id.id})

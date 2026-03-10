@@ -12,6 +12,9 @@
               <field name="factura_documento_id"/>
               <field name="partida_ids" widget="many2many_tags"/>
             </group>
+            <group>
+              <div class="o_form_label">Selecciona una sola factura y el sistema la aplicara a todas las partidas listadas aqui.</div>
+            </group>
           </sheet>
           <footer>
             <button name="action_apply" type="object" string="Aplicar" class="btn-primary"/>

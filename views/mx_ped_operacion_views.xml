@@ -140,12 +140,15 @@
 
             <notebook>
               <page string="Partidas">
+                <group>
+                  <div class="o_form_label">La asignacion manual se hace directo en la columna o campo `Factura / CFDI` de cada partida. Usa la asignacion masiva solo cuando varias partidas compartan la misma factura.</div>
+                </group>
                 <button name="action_open_partida_factura_wizard"
                         type="object"
                         string="Asignacion masiva de factura"
                         class="btn-secondary"/>
                 <field name="partida_ids" context="{'default_operacion_id': id}">
-                  <list editable="bottom" decoration-danger="factura_documento_error or factura_value_error">
+                  <list editable="bottom" open_form_view="1" decoration-danger="factura_documento_error or factura_value_error">
                     <field name="numero_partida"/>
                     <field name="factura_documento_id"/>
                     <field name="fraccion_id"/>
