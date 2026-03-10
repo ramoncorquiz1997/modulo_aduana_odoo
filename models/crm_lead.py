@@ -609,12 +609,9 @@ class CrmLead(models.Model):
             "estatus": "pendiente",
         }
 
-    def _ensure_default_505_document(self):
+    def _has_legacy_cfdi_capture(self):
         self.ensure_one()
-        docs = self.x_documento_505_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
-        if docs:
-            return docs[:1]
-        has_legacy_cfdi = any([
+        return any([
             self.x_cfdi_numero,
             self.x_cfdi_uuid,
             self.x_cfdi_valor_usd,
@@ -622,7 +619,13 @@ class CrmLead(models.Model):
             self.x_factura_pdf_file,
             self.x_factura_xml_file,
         ])
-        if not has_legacy_cfdi:
+
+    def _ensure_default_505_document(self):
+        self.ensure_one()
+        docs = self.x_documento_505_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+        if docs:
+            return docs[:1]
+        if not self._has_legacy_cfdi_capture():
             return self.env["crm.lead.documento"]
         return self.env["crm.lead.documento"].create(self._prepare_default_505_document_vals())
 
@@ -643,9 +646,28 @@ class CrmLead(models.Model):
             lines = rec.x_operacion_line_ids.exists().sorted(lambda l: (l.numero_partida or 0, l.sequence or 0, l.id))
             issues = []
             summary = []
-            if not docs and lines:
-                issues.append(_("Falta capturar al menos una factura / CFDI 505 en el CRM."))
+            using_legacy_single_doc = not docs and rec._has_legacy_cfdi_capture()
+            if not docs and lines and not using_legacy_single_doc:
+                issues.append(_("Falta capturar al menos una factura / CFDI en el CRM o completar la factura general del lead."))
             missing = lines.filtered(lambda l: not l.factura_documento_id)
+            if using_legacy_single_doc:
+                total_usd = sum(lines.mapped("value_usd"))
+                total_comercial = sum(lines.mapped("valor_comercial"))
+                partida_nums = ", ".join(str(n) for n in lines.mapped("numero_partida") if n)
+                summary.append(
+                    "%s -> Partidas %s | Valor Total USD: %.2f"
+                    % (
+                        rec.x_cfdi_numero or rec.x_cfdi_uuid or _("Factura principal"),
+                        partida_nums or "-",
+                        total_usd,
+                    )
+                )
+                if rec.x_cfdi_valor_usd and abs(total_usd - (rec.x_cfdi_valor_usd or 0.0)) > 0.01:
+                    issues.append(_("La suma USD de las partidas no cuadra con la factura general del lead."))
+                if rec.x_cfdi_valor_moneda and abs(total_comercial - (rec.x_cfdi_valor_moneda or 0.0)) > 0.01:
+                    issues.append(_("La suma del valor comercial de las partidas no cuadra con la factura general del lead."))
+            if using_legacy_single_doc:
+                missing = self.env["crm.lead.operacion.line"]
             if missing:
                 nums = ", ".join(str(n) for n in missing.mapped("numero_partida") if n)
                 issues.append(_("Hay partidas sin factura asignada: %s") % (nums or len(missing)))
@@ -774,7 +796,11 @@ class CrmLead(models.Model):
                 "precio_unitario": line.precio_unitario,
                 "valor_comercial": line.valor_comercial,
                 "valor_aduana": line.valor_aduana,
-                "factura_documento_id": doc_map.get(line.factura_documento_id.id) if line.factura_documento_id else False,
+                "factura_documento_id": (
+                    doc_map.get(line.factura_documento_id.id)
+                    if line.factura_documento_id
+                    else (next(iter(doc_map.values())) if len(doc_map) == 1 else False)
+                ),
                 "nom_ids": [(6, 0, line.nom_ids.ids)],
                 "permiso_ids": [(6, 0, line.permiso_ids.ids)],
                 "rrna_ids": [(6, 0, line.rrna_ids.ids)],
@@ -2100,8 +2126,6 @@ class CrmLeadOperacionLine(models.Model):
     def _get_eligible_factura_documentos(self):
         self.ensure_one()
         docs = self.lead_id.x_documento_505_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
-        if not docs:
-            docs = self.lead_id._ensure_default_505_document()
         return docs
 
     def _get_default_factura_documento(self):

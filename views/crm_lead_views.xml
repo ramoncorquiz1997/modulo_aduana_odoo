@@ -250,9 +250,9 @@
                 <field name="x_doc_factura_pdf_ok" readonly="1"/>
                 <field name="x_doc_factura_xml_ok" readonly="1"/>
                 <field name="x_doc_cfdi_ok" readonly="1"/>
-                <field name="x_counterparty_role_505" string="Tipo de contraparte" readonly="1"/>
+                <field name="x_counterparty_role_505" string="Tipo de contraparte comercial" readonly="1"/>
                 <field name="x_counterparty_partner_id" string="Contraparte comercial" readonly="1"/>
-                <field name="x_counterparty_name_505" string="Nombre de contraparte" readonly="1"/>
+                <field name="x_counterparty_name_505" string="Nombre comercial" readonly="1"/>
               </group>
             </group>
 
@@ -289,9 +289,9 @@
               </group>
             </group>
 
-            <group string="Facturas / CFDI / Documentos 505">
+            <group string="Facturas / CFDI / Documentos comerciales">
               <field name="x_documento_505_ids" context="{'default_lead_id': id, 'default_tipo': 'factura'}">
-                <list editable="bottom">
+                <list editable="bottom" delete="0" open_form_view="1">
                   <field name="sequence" optional="hide"/>
                   <field name="tipo"/>
                   <field name="folio"/>
@@ -301,7 +301,7 @@
                   <field name="cfdi_valor_moneda"/>
                   <field name="estatus"/>
                 </list>
-                <form string="Documento 505">
+                <form string="Documento comercial">
                   <group>
                     <group string="Captura basica">
                       <field name="tipo"/>
@@ -313,7 +313,7 @@
                       <field name="estatus"/>
                       <field name="notas"/>
                     </group>
-                    <group string="Datos 505">
+                    <group string="Datos comerciales">
                       <field name="cfdi_termino_facturacion"/>
                       <field name="cfdi_moneda_id"/>
                       <field name="cfdi_valor_usd"/>
@@ -445,7 +445,7 @@
                   <field name="dta_estimado"/>
                   <field name="prv_estimado"/>
                 </group>
-                <group string="Control 505">
+                <group string="Control factura">
                   <field name="factura_documento_error" readonly="1"/>
                   <field name="factura_value_error" readonly="1"/>
                 </group>
