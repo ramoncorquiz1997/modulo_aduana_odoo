@@ -771,7 +771,7 @@ class CrmLead(models.Model):
 
     def _sync_lead_lines_to_operacion(self, operacion, doc_map):
         self.ensure_one()
-        operacion.partida_ids.unlink()
+        operacion.partida_ids.with_context(skip_auto_generated_refresh=True).unlink()
         lines = self.x_operacion_line_ids.exists().sorted(lambda l: (l.numero_partida or 999999, l.sequence or 0, l.id))
         if not lines:
             lines = self.env["crm.lead.operacion.line"].create({

@@ -5,6 +5,7 @@ import json
 import re
 import unicodedata
 from collections import Counter
+from datetime import date, datetime
 import xml.etree.ElementTree as ET
 
 import requests
@@ -3450,6 +3451,14 @@ class MxPedOperacion(models.Model):
             return self._record_value_for_field(documento, source)
         return self._field_value_for_layout(campo, partida=False)
 
+    @staticmethod
+    def _json_safe_layout_value(value):
+        if isinstance(value, datetime):
+            return fields.Datetime.to_string(value)
+        if isinstance(value, date):
+            return fields.Date.to_string(value)
+        return value
+
     def _build_505_valores(self, layout_reg, documento):
         self.ensure_one()
         valores = {}
@@ -3458,7 +3467,7 @@ class MxPedOperacion(models.Model):
             if val in (None, "", False) and campo.default:
                 val = campo.default
             if val not in (None, "", False):
-                valores[campo.nombre] = val
+                valores[campo.nombre] = self._json_safe_layout_value(val)
         return valores
 
     @staticmethod
