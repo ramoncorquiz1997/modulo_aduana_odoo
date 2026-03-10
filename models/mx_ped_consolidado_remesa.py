@@ -137,7 +137,7 @@ class MxPedConsolidadoRemesa(models.Model):
             "res_model": self._name,
             "view_mode": "form",
             "res_id": self.id,
-            "target": "current",
+            "target": "new",
         }
 
     @api.constrains("operacion_id")
