@@ -105,6 +105,7 @@
       <field name="arch" type="xml">
         <form string="Documento de remesa">
           <sheet>
+            <field name="show_advanced_info" invisible="1"/>
             <group col="2">
               <group string="Datos del documento">
                 <field name="tipo"/>

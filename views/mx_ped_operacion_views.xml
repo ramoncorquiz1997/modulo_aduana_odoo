@@ -29,7 +29,6 @@
       <field name="arch" type="xml">
         <form string="Pedimento">
           <header>
-            <field name="show_advanced_info" widget="boolean_toggle"/>
             <button name="action_asignar_numero_pedimento" type="object" string="Asignar N\u00fam. Pedimento" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
             <button name="action_preparar_estructura" type="object" string="Preparar estructura" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
             <button name="action_simular_estructura" type="object" string="Simular estructura" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
@@ -53,52 +52,55 @@
 
             <group col="2">
               <group string="Operación">
+                <field name="show_advanced_info" widget="boolean_toggle"/>
                 <field name="show_acuse_ui" invisible="1"/>
                 <field name="show_formas_pago_ui" invisible="1"/>
                 <field name="lead_id"/>
                 <field name="tipo_operacion"/>
-                <field name="tipo_movimiento"/>
-                <field name="es_rectificacion" invisible="tipo_movimiento != '1'"/>
-                <field name="formas_pago_claves" invisible="not show_formas_pago_ui"/>
                 <field name="regimen"/>
                 <field name="es_consolidado"/>
-                <field name="consolidado_estado" readonly="1"/>
-                <field name="fecha_apertura" invisible="not es_consolidado"/>
-                <field name="fecha_cierre" invisible="not es_consolidado"/>
-                <field name="periodicidad_cierre" invisible="not es_consolidado"/>
+                <field name="consolidado_estado" readonly="1" invisible="not show_advanced_info"/>
+                <field name="fecha_apertura" invisible="not (es_consolidado and show_advanced_info)"/>
+                <field name="fecha_cierre" invisible="not (es_consolidado and show_advanced_info)"/>
+                <field name="periodicidad_cierre" invisible="not (es_consolidado and show_advanced_info)"/>
                 <field name="incoterm"/>
                 <field name="fecha_operacion"/>
+                <field name="tipo_movimiento" invisible="not show_advanced_info"/>
+                <field name="es_rectificacion" invisible="not (show_advanced_info and tipo_movimiento == '1')"/>
+                <field name="formas_pago_claves" invisible="not (show_advanced_info and show_formas_pago_ui)"/>
                 <field name="clave_pedimento_id"
                        domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>
                 <field name="layout_id" required="1"/>
-                <field name="currency_id"/>
+                <field name="currency_id" invisible="not show_advanced_info"/>
               </group>
               <group string="Aduana y Agente">
                 <field name="aduana_seccion_despacho_id"/>
-                <field name="aduana_clave"/>
-                <field name="aduana_seccion_entrada_salida_id"/>
                 <field name="agente_aduanal_id" domain="[('x_contact_role','=','agente_aduanal')]"/>
                 <field name="patente" readonly="1"/>
-                <field name="curp_agente"/>
-                <field name="acuse_validacion" invisible="not show_acuse_ui"/>
+                <field name="aduana_clave" invisible="not show_advanced_info"/>
+                <field name="aduana_seccion_entrada_salida_id" invisible="not show_advanced_info"/>
+                <field name="curp_agente" invisible="not show_advanced_info"/>
+                <field name="acuse_validacion" invisible="not (show_advanced_info and show_acuse_ui)"/>
                 <field name="company_id" invisible="1"/>
-                <field name="ws_ambiente"/>
-                <field name="ws_credencial_id"/>
-                <field name="avc_modalidad_cruce_id"/>
-                <field name="avc_tipo_documento_id"/>
+                <field name="ws_ambiente" invisible="not show_advanced_info"/>
+                <field name="ws_credencial_id" invisible="not show_advanced_info"/>
+                <field name="avc_modalidad_cruce_id" invisible="not show_advanced_info"/>
+                <field name="avc_tipo_documento_id" invisible="not show_advanced_info"/>
                 <field name="avc_transportista_id"
+                       invisible="not show_advanced_info"
                        context="{'default_x_contact_role': 'transportista', 'default_company_type': 'company'}"/>
                 <field name="avc_chofer_id"
+                       invisible="not show_advanced_info"
                        context="{'default_x_contact_role': 'chofer', 'default_parent_id': avc_transportista_id, 'default_function': 'Chofer', 'default_company_type': 'person'}"/>
-                <field name="avc_gafete_id"/>
-                <field name="avc_tag" invisible="avc_modalidad_cruce_id != '1'"/>
-                <field name="avc_numero_gafete" invisible="avc_modalidad_cruce_id != '2'"/>
-                <field name="avc_fast_id"/>
-                <field name="avc_datos_adicionales"/>
+                <field name="avc_gafete_id" invisible="not show_advanced_info"/>
+                <field name="avc_tag" invisible="not (show_advanced_info and avc_modalidad_cruce_id == '1')"/>
+                <field name="avc_numero_gafete" invisible="not (show_advanced_info and avc_modalidad_cruce_id == '2')"/>
+                <field name="avc_fast_id" invisible="not show_advanced_info"/>
+                <field name="avc_datos_adicionales" invisible="not show_advanced_info"/>
               </group>
             </group>
 
-            <group col="2">
+            <group col="2" invisible="not show_advanced_info">
               <group string="Participantes">
                 <field name="cliente_id" readonly="1"/>
                 <field name="importador_id" readonly="1"/>
@@ -118,7 +120,7 @@
                 <field name="avc_estatus" readonly="1"/>
               </group>
             </group>
-            <group col="2" string="Resumen fiscal automático">
+            <group col="2" string="Resumen fiscal automático" invisible="not show_advanced_info">
               <group>
                 <field name="partida_count" readonly="1"/>
                 <field name="total_packages_line" readonly="1"/>
@@ -145,68 +147,43 @@
                 <field name="partida_ids" context="{'default_operacion_id': id}">
                   <list editable="bottom" decoration-danger="factura_documento_error or factura_value_error">
                     <field name="numero_partida"/>
-                    <field name="fraccion_id"/>
-                    <field name="nico_id"/>
-                    <field name="quantity"/>
-                    <field name="uom_id"/>
-                    <field name="packages_line"/>
-                    <field name="gross_weight_line"/>
-                    <field name="net_weight_line"/>
-                    <field name="value_usd"/>
-                    <field name="precio_unitario"/>
-                    <field name="value_mxn" readonly="1"/>
                     <field name="factura_documento_id"/>
-                    <field name="factura_validation_note" optional="hide"/>
-                    <field name="descripcion"/>
-                    <field name="unidad_tarifa"/>
-                    <field name="cantidad_tarifa"/>
-                    <field name="valor_aduana"/>
-                    <field name="igi_rate" readonly="1"/>
-                    <field name="iva_rate" readonly="1"/>
-                    <field name="nom_ids" widget="many2many_tags"/>
-                    <field name="permiso_ids" widget="many2many_tags"/>
-                    <field name="rrna_ids" widget="many2many_tags"/>
-                    <field name="labeling_required" readonly="1"/>
-                    <field name="nom_compliance_status"/>
-                    <field name="docs_reference"/>
-                    <field name="notes_regulatorias"/>
-                    <field name="forma_pago_sugerida_id"/>
-                    <field name="igi_estimado"/>
-                    <field name="iva_estimado"/>
-                    <field name="dta_estimado"/>
-                    <field name="prv_estimado"/>
+                    <field name="fraccion_id"/>
+                    <field name="quantity"/>
+                    <field name="value_usd"/>
                   </list>
                   <form string="Partida pedimento">
                     <group>
-                      <group string="Mercancia">
+                      <group string="Captura basica">
+                        <field name="factura_documento_id"/>
                         <field name="numero_partida"/>
                         <field name="fraccion_id"/>
-                        <field name="nico_id"/>
-                        <field name="descripcion"/>
-                      </group>
-                      <group string="Cantidades y valor">
                         <field name="quantity"/>
-                        <field name="uom_id"/>
-                        <field name="packages_line"/>
-                        <field name="gross_weight_line"/>
-                        <field name="net_weight_line"/>
                         <field name="value_usd"/>
-                        <field name="precio_unitario"/>
-                        <field name="value_mxn" readonly="1"/>
-                        <field name="factura_documento_id"/>
                         <field name="factura_validation_note" readonly="1"
                                invisible="not factura_validation_note"/>
                       </group>
                     </group>
                     <group class="mx-advanced-panel" invisible="not parent.show_advanced_info">
                       <group string="Control factura 505">
-                        <field name="remesa_context_id" readonly="1"/>
-                        <field name="eligible_documento_ids" widget="many2many_tags" readonly="1"/>
                         <field name="factura_documento_error" readonly="1"/>
                         <field name="factura_value_error" readonly="1"/>
                       </group>
                     </group>
-                    <group string="Regulatorio">
+                    <group string="Comercial y mercancia" invisible="not parent.show_advanced_info">
+                      <field name="descripcion"/>
+                      <field name="nico_id"/>
+                      <field name="uom_id"/>
+                      <field name="packages_line"/>
+                      <field name="gross_weight_line"/>
+                      <field name="net_weight_line"/>
+                      <field name="precio_unitario"/>
+                      <field name="value_mxn" readonly="1"/>
+                      <field name="unidad_tarifa"/>
+                      <field name="cantidad_tarifa"/>
+                      <field name="valor_aduana"/>
+                    </group>
+                    <group string="Regulatorio" invisible="not parent.show_advanced_info">
                       <field name="nom_ids" widget="many2many_tags"/>
                       <field name="permiso_ids" widget="many2many_tags"/>
                       <field name="rrna_ids" widget="many2many_tags"/>
@@ -216,7 +193,7 @@
                       <field name="notes_regulatorias"/>
                       <field name="forma_pago_sugerida_id"/>
                     </group>
-                    <group string="Impuestos estimados">
+                    <group string="Impuestos estimados" invisible="not parent.show_advanced_info">
                       <field name="igi_rate" readonly="1"/>
                       <field name="iva_rate" readonly="1"/>
                       <field name="igi_estimado"/>

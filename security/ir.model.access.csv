@@ -3,6 +3,7 @@ access_mx_ped_operacion,mx.ped.operacion,model_mx_ped_operacion,modulo_aduana_od
 access_mx_ped_consolidado_remesa,mx.ped.consolidado.remesa,model_mx_ped_consolidado_remesa,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_consolidado_remesa_partida,mx.ped.consolidado.remesa.partida,model_mx_ped_consolidado_remesa_partida,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_partida_factura_wizard,mx.ped.partida.factura.wizard,model_mx_ped_partida_factura_wizard,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_ped_partida_factura_wizard_user,mx.ped.partida.factura.wizard.user,model_mx_ped_partida_factura_wizard,base.group_user,1,1,1,1
 access_mx_ped_partida,mx.ped.partida,model_mx_ped_partida,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_crm_lead_operacion_line,crm.lead.operacion.line,model_crm_lead_operacion_line,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_crm_lead_fecha_506,crm.lead.fecha.506,model_crm_lead_fecha_506,modulo_aduana_odoo.group_aduana_user,1,1,1,1

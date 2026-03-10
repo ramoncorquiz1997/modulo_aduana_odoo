@@ -21,22 +21,9 @@ class MxPedPartida(models.Model):
         string="Asignaciones remesa",
         readonly=True,
     )
-    remesa_context_id = fields.Many2one(
-        "mx.ped.consolidado.remesa",
-        string="Remesa contexto",
-        compute="_compute_factura_context",
-        store=False,
-    )
-    eligible_documento_ids = fields.Many2many(
-        "mx.ped.documento",
-        string="Documentos elegibles",
-        compute="_compute_factura_context",
-        store=False,
-    )
     factura_documento_id = fields.Many2one(
         "mx.ped.documento",
         string="Factura / CFDI",
-        domain="[('id', 'in', eligible_documento_ids)]",
         ondelete="set null",
     )
     factura_documento_error = fields.Boolean(
@@ -215,26 +202,25 @@ class MxPedPartida(models.Model):
                 pieces.append(descripcion)
             rec.display_name = " | ".join(pieces)
 
-    @api.depends(
-        "operacion_id",
-        "operacion_id.documento_ids",
-        "operacion_id.documento_ids.remesa_id",
-        "remesa_assignment_ids.remesa_id",
-    )
-    def _compute_factura_context(self):
-        for rec in self:
-            remesas = rec.remesa_assignment_ids.mapped("remesa_id")
-            rec.remesa_context_id = remesas[0] if len(remesas) == 1 else False
-            docs = rec.operacion_id.documento_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
-            if rec.remesa_context_id:
-                docs = docs.filtered(lambda d: d.remesa_id == rec.remesa_context_id)
-            elif remesas:
-                docs = docs.filtered(lambda d: not d.remesa_id)
-            rec.eligible_documento_ids = docs
+    def _get_remesa_context(self):
+        self.ensure_one()
+        remesas = self.remesa_assignment_ids.mapped("remesa_id")
+        return remesas[0] if len(remesas) == 1 else self.env["mx.ped.consolidado.remesa"]
+
+    def _get_eligible_factura_documentos(self):
+        self.ensure_one()
+        docs = self.operacion_id.documento_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+        remesas = self.remesa_assignment_ids.mapped("remesa_id")
+        remesa_context = remesas[0] if len(remesas) == 1 else self.env["mx.ped.consolidado.remesa"]
+        if remesa_context:
+            docs = docs.filtered(lambda d: d.remesa_id == remesa_context)
+        elif remesas:
+            docs = docs.filtered(lambda d: not d.remesa_id)
+        return docs
 
     def _get_default_factura_documento(self):
         self.ensure_one()
-        docs = self.eligible_documento_ids
+        docs = self._get_eligible_factura_documentos()
         if len(docs) == 1:
             return docs[0]
         previous = self.operacion_id.partida_ids.filtered(
@@ -272,13 +258,19 @@ class MxPedPartida(models.Model):
     def name_get(self):
         return [(rec.id, rec.display_name or ("Partida %s" % (rec.numero_partida or rec.id))) for rec in self]
 
-    @api.onchange("operacion_id", "numero_partida")
+    @api.onchange("operacion_id", "numero_partida", "remesa_assignment_ids", "factura_documento_id")
     def _onchange_factura_documento_id(self):
+        domain = [("id", "=", 0)]
         for rec in self:
+            docs = rec._get_eligible_factura_documentos() if rec.operacion_id else self.env["mx.ped.documento"]
+            domain = [("id", "in", docs.ids)] if docs else [("id", "=", 0)]
+            if rec.factura_documento_id and rec.factura_documento_id not in docs:
+                rec.factura_documento_id = False
             if not rec.factura_documento_id:
                 default_doc = rec._get_default_factura_documento()
                 if default_doc:
                     rec.factura_documento_id = default_doc
+        return {"domain": {"factura_documento_id": domain}}
 
     def _get_applicable_tasa(self):
         self.ensure_one()

@@ -1011,15 +1011,17 @@ class MxPedOperacion(models.Model):
 
     def action_open_partida_factura_wizard(self):
         self.ensure_one()
+        wizard = self.env["mx.ped.partida.factura.wizard"].create({
+            "operacion_id": self.id,
+            "partida_ids": [(6, 0, self.partida_ids.ids)],
+        })
         return {
             "type": "ir.actions.act_window",
             "res_model": "mx.ped.partida.factura.wizard",
             "view_mode": "form",
+            "view_id": self.env.ref("modulo_aduana_odoo.mx_ped_partida_factura_wizard_view_form").id,
+            "res_id": wizard.id,
             "target": "new",
-            "context": {
-                "default_operacion_id": self.id,
-                "default_partida_ids": [(6, 0, self.partida_ids.ids)],
-            },
         }
 
     def _clear_partida_factura_flags(self):
