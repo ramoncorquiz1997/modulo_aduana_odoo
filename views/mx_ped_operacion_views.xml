@@ -311,7 +311,7 @@
                                 <field name="notas"/>
                               </group>
                               <group string="Relacion con mercancia">
-                                <label string="Deja este soporte a nivel remesa salvo que aplique solo a una partida concreta." colspan="2"/>
+                                <div class="o_form_label">Deja este soporte a nivel remesa salvo que aplique solo a una partida concreta.</div>
                                 <field name="aplica_partida_especifica"/>
                                 <field name="partida_id"
                                        invisible="not aplica_partida_especifica"
@@ -319,7 +319,7 @@
                               </group>
                             </group>
                             <group>
-                              <label string="Operacion y remesa ya se asignan automaticamente desde este formulario." colspan="2"/>
+                              <div class="o_form_label">Operacion y remesa ya se asignan automaticamente desde este formulario.</div>
                             </group>
                             <group invisible="1">
                               <field name="company_id"/>
