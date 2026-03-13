@@ -4117,7 +4117,9 @@ class MxPedOperacion(models.Model):
                 continue
 
             if code == "507":
-                id_lines = self.identificador_pedimento_ids.sorted(lambda l: (l.sequence or 0, l.id))
+                id_lines = self.identificador_pedimento_ids.filtered(
+                    lambda l: l.identificador_id or ((l.code or "").strip())
+                ).sorted(lambda l: (l.sequence or 0, l.id))
                 if not id_lines:
                     continue
                 for secuencia, ident_line in enumerate(id_lines, start=1):
