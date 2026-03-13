@@ -1493,7 +1493,11 @@ class MxPedOperacion(models.Model):
                 if line:
                     line.with_context(skip_auto_generated_refresh=True).write({
                         "contribucion_id": contribucion.id,
-                        "forma_pago_id": partida.forma_pago_sugerida_id.id if partida.forma_pago_sugerida_id else False,
+                        "forma_pago_id": (
+                            partida.forma_pago_sugerida_id.id
+                            if partida.forma_pago_sugerida_id
+                            else (line.forma_pago_id.id if line.forma_pago_id else False)
+                        ),
                         "importe": amount,
                         "base": partida.value_mxn or 0.0,
                         "tasa": rate,
