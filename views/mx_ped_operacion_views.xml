@@ -335,7 +335,8 @@
               <page string="Contribuciones">
                 <field name="contribucion_global_ids" context="{'default_operacion_id': id}">
                   <list editable="bottom">
-                    <field name="tipo_contribucion"/>
+                    <field name="contribucion_id"/>
+                    <field name="contribucion_code" readonly="1" optional="hide"/>
                     <field name="tasa"/>
                     <field name="base"/>
                     <field name="importe"/>
@@ -348,7 +349,8 @@
                 <field name="partida_contribucion_ids" context="{'default_operacion_id': id}">
                   <list editable="bottom">
                     <field name="partida_id"/>
-                    <field name="tipo_contribucion"/>
+                    <field name="contribucion_id"/>
+                    <field name="contribucion_code" readonly="1" optional="hide"/>
                     <field name="tasa"/>
                     <field name="base"/>
                     <field name="importe"/>

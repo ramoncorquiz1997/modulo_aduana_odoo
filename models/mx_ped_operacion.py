@@ -1435,10 +1435,14 @@ class MxPedOperacion(models.Model):
             for tax_code, amount, rate in candidates:
                 if not partida.forma_pago_sugerida_id:
                     continue
+                contribucion = self._find_contribucion_catalog(tax_code)
+                if not contribucion:
+                    continue
                 candidate_codes.add((tax_code or "").strip().upper())
                 line = existing_by_tipo.get(tax_code)
                 if line:
                     line.with_context(skip_auto_generated_refresh=True).write({
+                        "contribucion_id": contribucion.id,
                         "forma_pago_id": partida.forma_pago_sugerida_id.id,
                         "importe": amount,
                         "base": partida.value_mxn or 0.0,
@@ -1448,6 +1452,7 @@ class MxPedOperacion(models.Model):
                 contrib_model.with_context(skip_auto_generated_refresh=True).create({
                     "operacion_id": self.id,
                     "partida_id": partida.id,
+                    "contribucion_id": contribucion.id,
                     "tipo_contribucion": tax_code,
                     "tasa": rate,
                     "base": partida.value_mxn or 0.0,
@@ -1473,13 +1478,15 @@ class MxPedOperacion(models.Model):
             lambda l: ((l.partida_id.numero_partida or 0) if l.partida_id else 0, l.sequence or 0, l.id)
         ):
             tipo = (line.tipo_contribucion or "").strip().upper()
-            if not tipo:
+            contrib_id = line.contribucion_id.id if getattr(line, "contribucion_id", False) else False
+            if not tipo and not contrib_id:
                 continue
             tasa = float(line.tasa or 0.0)
             forma_pago_id = line.forma_pago_id.id if line.forma_pago_id else False
-            key = (tipo, tasa, forma_pago_id)
+            key = (contrib_id or tipo, tasa, forma_pago_id)
             if key not in grouped:
                 grouped[key] = {
+                    "contribucion_id": contrib_id,
                     "tipo_contribucion": tipo,
                     "tasa": tasa,
                     "base": 0.0,
@@ -1496,7 +1503,7 @@ class MxPedOperacion(models.Model):
         stale_existing = self.env["mx.ped.contribucion.global"]
         for rec in self.contribucion_global_ids:
             key = (
-                (rec.tipo_contribucion or "").strip().upper(),
+                rec.contribucion_id.id if getattr(rec, "contribucion_id", False) else (rec.tipo_contribucion or "").strip().upper(),
                 float(rec.tasa or 0.0),
                 rec.forma_pago_id.id if rec.forma_pago_id else False,
             )
@@ -1508,12 +1515,13 @@ class MxPedOperacion(models.Model):
         used = self.env["mx.ped.contribucion.global"]
         for item in grouped.values():
             key = (
-                item["tipo_contribucion"],
+                item.get("contribucion_id") or item["tipo_contribucion"],
                 float(item["tasa"] or 0.0),
                 item["forma_pago_id"],
             )
             line = existing_by_key.get(key)
             vals = {
+                "contribucion_id": item.get("contribucion_id"),
                 "tipo_contribucion": item["tipo_contribucion"],
                 "tasa": item["tasa"],
                 "base": item["base"],
@@ -1539,8 +1547,26 @@ class MxPedOperacion(models.Model):
             return ""
         return re.sub(r"[^A-Z0-9/]+", "", txt)
 
+    def _find_contribucion_catalog(self, raw_value):
+        token = self._norm_contrib_key(raw_value)
+        if not token:
+            return self.env["aduana.catalogo.contribucion"]
+
+        catalog = self.env["aduana.catalogo.contribucion"].search([("active", "=", True)])
+        for rec in catalog:
+            candidates = {
+                self._norm_contrib_key(rec.abbreviation),
+                self._norm_contrib_key(rec.contribucion),
+                self._norm_contrib_key(str(rec.code)),
+            }
+            if token in candidates:
+                return rec
+        return self.env["aduana.catalogo.contribucion"]
+
     def _resolve_ap12_contrib_code(self, tipo_contribucion):
         """Resuelve la clave Ap.12 desde el tipo capturado en 557 (IGI/IVA/DTA/PRV...)."""
+        if hasattr(tipo_contribucion, "contribucion_id") and tipo_contribucion.contribucion_id:
+            return tipo_contribucion.contribucion_id.code
         token = self._norm_contrib_key(tipo_contribucion)
         if not token:
             return False

@@ -41,7 +41,25 @@ class MxPedContribucionGlobal(models.Model):
 
     operacion_id = fields.Many2one("mx.ped.operacion", required=True, ondelete="cascade", index=True)
     sequence = fields.Integer(default=10)
-    tipo_contribucion = fields.Char(required=True)
+    contribucion_id = fields.Many2one(
+        "aduana.catalogo.contribucion",
+        string="Tipo contribucion",
+        required=True,
+        domain="[('active','=',True)]",
+        ondelete="restrict",
+    )
+    tipo_contribucion = fields.Char(
+        string="Abreviacion contribucion",
+        related="contribucion_id.abbreviation",
+        store=True,
+        readonly=True,
+    )
+    contribucion_code = fields.Integer(
+        string="Clave contribucion",
+        related="contribucion_id.code",
+        store=True,
+        readonly=True,
+    )
     tasa = fields.Float()
     base = fields.Monetary(currency_field="currency_id")
     importe = fields.Monetary(currency_field="currency_id")
@@ -61,12 +79,45 @@ class MxPedContribucionGlobal(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            self._sync_contribucion_catalog_fields(vals)
         records = super().create(vals_list)
         if not self.env.context.get("skip_auto_generated_refresh"):
             records.mapped("operacion_id")._auto_refresh_generated_registros()
         return records
 
+    @api.model
+    def _match_contribucion_catalog(self, raw_value):
+        token = (raw_value or "").strip()
+        if not token:
+            return self.env["aduana.catalogo.contribucion"]
+        catalog = self.env["aduana.catalogo.contribucion"].search([("active", "=", True)])
+        token_up = token.upper()
+        exact = catalog.filtered(
+            lambda r: (r.abbreviation or "").strip().upper() == token_up
+            or (r.contribucion or "").strip().upper() == token_up
+            or str(r.code) == token
+        )
+        return exact[:1]
+
+    @api.model
+    def _sync_contribucion_catalog_fields(self, vals):
+        contrib_id = vals.get("contribucion_id")
+        tipo = vals.get("tipo_contribucion")
+        if contrib_id:
+            contrib = self.env["aduana.catalogo.contribucion"].browse(contrib_id)
+            vals["tipo_contribucion"] = contrib.abbreviation or contrib.contribucion or False
+            return vals
+        if tipo:
+            contrib = self._match_contribucion_catalog(tipo)
+            if contrib:
+                vals["contribucion_id"] = contrib.id
+                vals["tipo_contribucion"] = contrib.abbreviation or contrib.contribucion or False
+        return vals
+
     def write(self, vals):
+        vals = dict(vals)
+        self._sync_contribucion_catalog_fields(vals)
         res = super().write(vals)
         if not self.env.context.get("skip_auto_generated_refresh"):
             self.mapped("operacion_id")._auto_refresh_generated_registros()
@@ -88,7 +139,25 @@ class MxPedPartidaContribucion(models.Model):
     operacion_id = fields.Many2one("mx.ped.operacion", required=True, ondelete="cascade", index=True)
     partida_id = fields.Many2one("mx.ped.partida", required=True, ondelete="cascade", index=True)
     sequence = fields.Integer(default=10)
-    tipo_contribucion = fields.Char(required=True)
+    contribucion_id = fields.Many2one(
+        "aduana.catalogo.contribucion",
+        string="Tipo contribucion",
+        required=True,
+        domain="[('active','=',True)]",
+        ondelete="restrict",
+    )
+    tipo_contribucion = fields.Char(
+        string="Abreviacion contribucion",
+        related="contribucion_id.abbreviation",
+        store=True,
+        readonly=True,
+    )
+    contribucion_code = fields.Integer(
+        string="Clave contribucion",
+        related="contribucion_id.code",
+        store=True,
+        readonly=True,
+    )
     tasa = fields.Float()
     base = fields.Monetary(currency_field="currency_id")
     importe = fields.Monetary(currency_field="currency_id")
@@ -112,20 +181,53 @@ class MxPedPartidaContribucion(models.Model):
             if rec.partida_id:
                 rec.operacion_id = rec.partida_id.operacion_id
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            self._sync_contribucion_catalog_fields(vals)
+        records = super().create(vals_list)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            records.mapped("operacion_id")._auto_refresh_generated_registros()
+        return records
+
+    @api.model
+    def _match_contribucion_catalog(self, raw_value):
+        token = (raw_value or "").strip()
+        if not token:
+            return self.env["aduana.catalogo.contribucion"]
+        catalog = self.env["aduana.catalogo.contribucion"].search([("active", "=", True)])
+        token_up = token.upper()
+        exact = catalog.filtered(
+            lambda r: (r.abbreviation or "").strip().upper() == token_up
+            or (r.contribucion or "").strip().upper() == token_up
+            or str(r.code) == token
+        )
+        return exact[:1]
+
+    @api.model
+    def _sync_contribucion_catalog_fields(self, vals):
+        contrib_id = vals.get("contribucion_id")
+        tipo = vals.get("tipo_contribucion")
+        if contrib_id:
+            contrib = self.env["aduana.catalogo.contribucion"].browse(contrib_id)
+            vals["tipo_contribucion"] = contrib.abbreviation or contrib.contribucion or False
+            return vals
+        if tipo:
+            contrib = self._match_contribucion_catalog(tipo)
+            if contrib:
+                vals["contribucion_id"] = contrib.id
+                vals["tipo_contribucion"] = contrib.abbreviation or contrib.contribucion or False
+        return vals
+
     @api.constrains("operacion_id", "partida_id")
     def _check_operacion_partida_match(self):
         for rec in self:
             if rec.partida_id and rec.operacion_id and rec.partida_id.operacion_id != rec.operacion_id:
                 raise ValidationError("La partida seleccionada no corresponde a la operacion.")
 
-    @api.model_create_multi
-    def create(self, vals_list):
-        records = super().create(vals_list)
-        if not self.env.context.get("skip_auto_generated_refresh"):
-            records.mapped("operacion_id")._auto_refresh_generated_registros()
-        return records
-
     def write(self, vals):
+        vals = dict(vals)
+        self._sync_contribucion_catalog_fields(vals)
         res = super().write(vals)
         if not self.env.context.get("skip_auto_generated_refresh"):
             self.mapped("operacion_id")._auto_refresh_generated_registros()
