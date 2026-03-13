@@ -332,7 +332,7 @@
                   </form>
                 </field>
               </page>
-              <page string="Contribuciones 510" invisible="not show_advanced_info">
+              <page string="Contribuciones">
                 <field name="contribucion_global_ids" context="{'default_operacion_id': id}">
                   <list editable="bottom">
                     <field name="tipo_contribucion"/>
@@ -344,7 +344,7 @@
                   </list>
                 </field>
               </page>
-              <page string="Contribuciones 557" invisible="not show_advanced_info">
+              <page string="Cargos adicionales">
                 <field name="partida_contribucion_ids" context="{'default_operacion_id': id}">
                   <list editable="bottom">
                     <field name="partida_id"/>
