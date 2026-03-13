@@ -1551,6 +1551,23 @@ class MxPedOperacion(models.Model):
             return self.env["aduana.catalogo.contribucion"]
 
         catalog = self.env["aduana.catalogo.contribucion"].search([("active", "=", True)])
+        fallback_map = {
+            "DTA": 1,
+            "IVA": 3,
+            "ISAN": 4,
+            "IGI": 6,
+            "IGE": 6,
+            "REC": 7,
+            "PRV": 15,
+            "IEPS": 22,
+        }
+
+        fallback_code = fallback_map.get(token)
+        if fallback_code:
+            by_code = catalog.filtered(lambda rec: rec.code == fallback_code)[:1]
+            if by_code:
+                return by_code
+
         for rec in catalog:
             candidates = {
                 self._norm_contrib_key(rec.abbreviation),
@@ -1750,6 +1767,7 @@ class MxPedOperacion(models.Model):
             if value in (None, "", False):
                 norm = self._norm_layout_token(campo.nombre)
                 value = _pick_by_name(norm, default=value)
+            value = self._json_safe_layout_value(value)
             if value not in (None, "", False):
                 values[campo.nombre] = value
         return values
@@ -4217,6 +4235,7 @@ class MxPedOperacion(models.Model):
                     if val is None or val == "" or val is False:
                         if campo.default:
                             val = campo.default
+                    val = self._json_safe_layout_value(val)
                     if val not in (None, "", False):
                         valores[campo.nombre] = val
 
