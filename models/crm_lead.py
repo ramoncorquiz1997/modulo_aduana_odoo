@@ -1871,6 +1871,7 @@ class CrmLead(models.Model):
             op = self.env["mx.ped.operacion"].with_context(skip_auto_generated_refresh=True).create(header_vals)
         doc_map = self._sync_lead_documents_to_operacion(op)
         self._sync_lead_lines_to_operacion(op, doc_map)
+        op.with_context(skip_auto_generated_refresh=True).action_generar_contribuciones_557()
         op.action_cargar_desde_lead()
 
         return {
