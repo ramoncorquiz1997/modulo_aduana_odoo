@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import re
+
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
@@ -67,8 +69,15 @@ class MxPedOperacionCuentaAduanera(models.Model):
     def _check_numero_contrato(self):
         for rec in self:
             txt = (rec.numero_contrato or "").strip()
-            if txt and not txt.isdigit():
-                raise ValidationError("Numero contrato debe ser numerico.")
+            if txt and (len(txt) != 17 or not txt.isdigit()):
+                raise ValidationError("Numero contrato debe tener exactamente 17 caracteres numericos.")
+
+    @api.constrains("folio_constancia")
+    def _check_folio_constancia(self):
+        for rec in self:
+            txt = (rec.folio_constancia or "").strip()
+            if txt and not re.fullmatch(r"[A-Za-z0-9]{1,17}", txt):
+                raise ValidationError("Folio constancia debe tener entre 1 y 17 caracteres alfanumericos.")
 
     @api.model_create_multi
     def create(self, vals_list):

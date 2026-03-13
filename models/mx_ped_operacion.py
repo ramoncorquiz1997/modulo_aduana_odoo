@@ -1612,11 +1612,16 @@ class MxPedOperacion(models.Model):
             return False
         return target in self._get_declared_formas_pago_codes()
 
+    def _get_508_validation_reference_date(self):
+        self.ensure_one()
+        return self.fecha_pago or self.fecha_operacion or fields.Date.context_today(self)
+
     def _validate_508_cuenta_aduanera_rules(self):
         """Valida condicion base de 508 contra formas de pago y calidad de datos."""
         self.ensure_one()
         has_fp4 = self._has_forma_pago_code("4")
         has_508 = bool(self.cuenta_aduanera_ids)
+        validation_ref_date = self._get_508_validation_reference_date()
 
         if has_fp4 and not has_508:
             raise ValidationError(_("Existe forma de pago 4, pero no hay lineas de cuenta aduanera (508)."))
@@ -1627,10 +1632,28 @@ class MxPedOperacion(models.Model):
         for line in self.cuenta_aduanera_ids:
             contrato = (line.numero_contrato or "").strip()
             folio = (line.folio_constancia or "").strip()
-            if not contrato or set(contrato) == {"0"}:
+            if not contrato or len(contrato) != 17 or not contrato.isdigit() or set(contrato) == {"0"}:
                 raise ValidationError(_("508: numero de contrato invalido en la linea %s.") % (line.sequence or line.id))
-            if not folio or set(folio) == {"0"}:
+            if not folio or len(folio) > 17 or not folio.isalnum() or set(folio) == {"0"}:
                 raise ValidationError(_("508: folio de constancia invalido en la linea %s.") % (line.sequence or line.id))
+            if line.fecha_constancia and validation_ref_date and line.fecha_constancia > validation_ref_date:
+                raise ValidationError(
+                    _("508: la fecha de constancia no puede ser posterior a la fecha de validacion/referencia del pedimento en la linea %s.")
+                    % (line.sequence or line.id)
+                )
+            if has_fp4:
+                missing = []
+                if not line.valor_unitario_titulo:
+                    missing.append(_("valor unitario del titulo"))
+                if not line.cantidad_um:
+                    missing.append(_("cantidad en unidades de medida"))
+                if not line.titulos_asignados:
+                    missing.append(_("titulos asignados"))
+                if missing:
+                    raise ValidationError(
+                        _("508: con forma de pago 4 son obligatorios %s en la linea %s.")
+                        % (", ".join(missing), (line.sequence or line.id))
+                    )
             if (
                 line.valor_unitario_titulo
                 and line.titulos_asignados
