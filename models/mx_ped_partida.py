@@ -15,6 +15,22 @@ class MxPedPartida(models.Model):
     operacion_id = fields.Many2one(
         "mx.ped.operacion", required=True, ondelete="cascade", index=True
     )
+    source_lead_line_id = fields.Many2one(
+        "crm.lead.operacion.line",
+        string="Partida origen (Lead)",
+        ondelete="set null",
+        index=True,
+        readonly=True,
+        copy=False,
+    )
+    source_lead_documento_id = fields.Many2one(
+        "crm.lead.documento",
+        string="Factura origen (Lead)",
+        ondelete="set null",
+        index=True,
+        readonly=True,
+        copy=False,
+    )
     remesa_assignment_ids = fields.One2many(
         "mx.ped.consolidado.remesa.partida",
         "partida_id",

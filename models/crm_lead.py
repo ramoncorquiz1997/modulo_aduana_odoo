@@ -744,6 +744,7 @@ class CrmLead(models.Model):
         for doc in docs.sorted(lambda d: (d.sequence or 0, d.id)):
             new_doc = self.env["mx.ped.documento"].create({
                 "operacion_id": operacion.id,
+                "source_lead_documento_id": doc.id,
                 "tipo": doc.tipo,
                 "folio": doc.folio,
                 "fecha": doc.fecha,
@@ -782,6 +783,8 @@ class CrmLead(models.Model):
         for idx, line in enumerate(lines, start=1):
             self.env["mx.ped.partida"].with_context(skip_auto_generated_refresh=True).create({
                 "operacion_id": operacion.id,
+                "source_lead_line_id": line.id,
+                "source_lead_documento_id": line.factura_documento_id.id or False,
                 "numero_partida": line.numero_partida or idx,
                 "fraccion_id": line.fraccion_id.id or False,
                 "fraccion_arancelaria": line.fraccion_arancelaria,

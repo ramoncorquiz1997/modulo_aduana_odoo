@@ -14,6 +14,14 @@ class MxPedDocumento(models.Model):
     operacion_id = fields.Many2one(
         "mx.ped.operacion", required=True, ondelete="cascade", index=True
     )
+    source_lead_documento_id = fields.Many2one(
+        "crm.lead.documento",
+        string="Documento origen (Lead)",
+        ondelete="set null",
+        index=True,
+        readonly=True,
+        copy=False,
+    )
     remesa_id = fields.Many2one(
         "mx.ped.consolidado.remesa",
         string="Remesa consolidada",
