@@ -2794,7 +2794,30 @@ class MxPedOperacion(models.Model):
                 txt = txt.zfill(2)
 
         if campo.tipo == "N":
-            txt = "".join(ch for ch in txt if ch.isdigit())
+            decimals = None
+            if campo.formato and "," in campo.formato:
+                try:
+                    _, decimal_part = str(campo.formato).split(",", 1)
+                    decimals = int(decimal_part)
+                except Exception:
+                    decimals = None
+
+            if decimals is not None:
+                try:
+                    numeric = float(val)
+                except Exception:
+                    numeric = None
+                if numeric is not None:
+                    if campo.layout_export_format == "pipe":
+                        txt = f"{numeric:.{decimals}f}".rstrip("0").rstrip(".")
+                    else:
+                        txt = f"{numeric:.{decimals}f}".replace(".", "")
+                        if campo.longitud:
+                            txt = txt.zfill(campo.longitud)
+                else:
+                    txt = txt.replace(",", "")
+            else:
+                txt = "".join(ch for ch in txt if ch.isdigit())
         # Normaliza paises a clave corta cuando el campo es de pais y longitud pequena.
         # Evita errores tipo "excede longitud 3" por valores como "MEXICO".
         source_norm = (source_name or "").strip().lower()
