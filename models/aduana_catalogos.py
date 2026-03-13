@@ -171,6 +171,7 @@ class AduanaCatalogoContribucion(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Aduana - Catalogo Contribuciones (Apendice 12)"
     _order = "code"
+    _rec_name = "contribucion"
 
     code = fields.Integer(string="Clave", required=True, index=True)
     contribucion = fields.Char(string="Contribucion", required=True)
@@ -185,3 +186,15 @@ class AduanaCatalogoContribucion(models.Model):
             "La clave de contribucion ya existe.",
         ),
     ]
+
+    def name_get(self):
+        result = []
+        for rec in self:
+            parts = [str(rec.code or "").strip()]
+            if rec.abbreviation:
+                parts.append((rec.abbreviation or "").strip())
+            if rec.contribucion:
+                parts.append((rec.contribucion or "").strip())
+            label = " - ".join(part for part in parts if part)
+            result.append((rec.id, label or str(rec.id)))
+        return result
