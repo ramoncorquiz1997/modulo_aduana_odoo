@@ -3409,6 +3409,66 @@ class MxPedOperacion(models.Model):
         campo_name = self._norm_layout_token(campo.nombre)
         source_norm = self._norm_layout_token(source_name)
         token = f"{campo_name} {source_norm}".strip()
+        document_field_map = {
+            "fecha": documento.fecha or self.lead_id.x_cfdi_fecha or False,
+            "folio": documento.folio or False,
+            "cfdi_termino_facturacion": documento.cfdi_termino_facturacion or self.lead_id.x_incoterm or False,
+            "x_incoterm": documento.cfdi_termino_facturacion or self.lead_id.x_incoterm or False,
+            "cfdi_moneda_id": (
+                documento.cfdi_moneda_id.code
+                if documento.cfdi_moneda_id and hasattr(documento.cfdi_moneda_id, "code")
+                else (documento.cfdi_moneda_id.name if documento.cfdi_moneda_id else False)
+            ),
+            "x_cfdi_moneda_id": (
+                documento.cfdi_moneda_id.code
+                if documento.cfdi_moneda_id and hasattr(documento.cfdi_moneda_id, "code")
+                else (documento.cfdi_moneda_id.name if documento.cfdi_moneda_id else False)
+            ),
+            "cfdi_valor_usd": documento.cfdi_valor_usd or False,
+            "x_cfdi_valor_usd": documento.cfdi_valor_usd or False,
+            "cfdi_valor_moneda": documento.cfdi_valor_moneda or False,
+            "x_cfdi_valor_moneda": documento.cfdi_valor_moneda or False,
+            "cfdi_pais_id": (
+                documento.cfdi_pais_id.code
+                if documento.cfdi_pais_id and hasattr(documento.cfdi_pais_id, "code")
+                else (documento.cfdi_pais_id.name if documento.cfdi_pais_id else False)
+            ),
+            "x_cfdi_pais_id": (
+                documento.cfdi_pais_id.code
+                if documento.cfdi_pais_id and hasattr(documento.cfdi_pais_id, "code")
+                else (documento.cfdi_pais_id.name if documento.cfdi_pais_id else False)
+            ),
+            "cfdi_estado_id": (
+                documento.cfdi_estado_id.code
+                if documento.cfdi_estado_id and hasattr(documento.cfdi_estado_id, "code")
+                else (documento.cfdi_estado_id.name if documento.cfdi_estado_id else False)
+            ),
+            "x_cfdi_estado_id": (
+                documento.cfdi_estado_id.code
+                if documento.cfdi_estado_id and hasattr(documento.cfdi_estado_id, "code")
+                else (documento.cfdi_estado_id.name if documento.cfdi_estado_id else False)
+            ),
+            "cfdi_id_fiscal": documento.cfdi_id_fiscal or False,
+            "x_cfdi_id_fiscal": documento.cfdi_id_fiscal or False,
+            "counterparty_name_505": documento.counterparty_name_505 or False,
+            "name": documento.counterparty_name_505 or False,
+            "counterparty_street_505": documento.counterparty_street_505 or False,
+            "x_street_name": documento.counterparty_street_505 or False,
+            "street": documento.counterparty_street_505 or False,
+            "counterparty_num_int_505": documento.counterparty_num_int_505 or False,
+            "x_street_number_int": documento.counterparty_num_int_505 or False,
+            "counterparty_num_ext_505": documento.counterparty_num_ext_505 or False,
+            "x_street_number_ext": documento.counterparty_num_ext_505 or False,
+            "counterparty_zip_505": documento.counterparty_zip_505 or False,
+            "zip": documento.counterparty_zip_505 or False,
+            "counterparty_city_505": documento.counterparty_city_505 or False,
+            "city": documento.counterparty_city_505 or False,
+            "x_municipio": documento.counterparty_city_505 or False,
+            "vat": documento.cfdi_id_fiscal or False,
+        }
+
+        if source_name and source_name in document_field_map:
+            return document_field_map[source_name]
 
         if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro"):
             return "505"
@@ -3449,6 +3509,10 @@ class MxPedOperacion(models.Model):
         source = source_name or campo.nombre
         if source in documento._fields:
             return self._record_value_for_field(documento, source)
+        if campo.source_model in ("contraparte", "proveedor", "comprador"):
+            if source_name in document_field_map:
+                return document_field_map[source_name]
+            return False
         return self._field_value_for_layout(campo, partida=False)
 
     @staticmethod
