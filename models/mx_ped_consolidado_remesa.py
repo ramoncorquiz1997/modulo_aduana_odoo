@@ -142,6 +142,19 @@ class MxPedConsolidadoRemesa(models.Model):
             rec.total_quantity = sum(rec.partida_rel_ids.mapped("quantity"))
             rec.total_value_usd = sum(rec.partida_rel_ids.mapped("value_usd"))
 
+    def _get_single_factura_documento(self):
+        self.ensure_one()
+        docs = self.factura_documento_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+        return docs[:1] if len(docs) == 1 else self.env["mx.ped.documento"]
+
+    def _autofill_documento_fuente_from_factura(self):
+        for rec in self:
+            if rec.tipo_documento_fuente != "cfdi" or (rec.cfdi_uuid or "").strip():
+                continue
+            doc = rec._get_single_factura_documento()
+            if doc and (doc.folio or "").strip():
+                rec.cfdi_uuid = (doc.folio or "").strip()
+
     @api.depends("operacion_id.documento_ids", "operacion_id.documento_ids.tipo", "operacion_id.documento_ids.remesa_id")
     def _compute_factura_documento_ids(self):
         for rec in self:
@@ -169,6 +182,11 @@ class MxPedConsolidadoRemesa(models.Model):
             to_unset = available_docs.filtered(lambda d: d.remesa_id == rec and d not in selected_docs)
             if to_unset:
                 to_unset.write({"remesa_id": False})
+            rec._autofill_documento_fuente_from_factura()
+
+    @api.onchange("factura_documento_ids", "tipo_documento_fuente")
+    def _onchange_factura_documento_ids_fill_uuid(self):
+        self._autofill_documento_fuente_from_factura()
 
     def action_open_full_form(self):
         self.ensure_one()
