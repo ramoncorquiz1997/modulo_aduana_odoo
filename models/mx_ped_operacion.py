@@ -2851,8 +2851,11 @@ class MxPedOperacion(models.Model):
         from .pedimento_proforma_v2 import generar_proforma
         pdf_bytes = generar_proforma(txt_data, agente)
 
+        pedimento_ref = re.sub(r"[^A-Za-z0-9_-]+", "", (self.pedimento_numero or self.name or "").strip())
+        pdf_name = "proforma_%s.pdf" % (pedimento_ref or self.id)
+
         attachment = self.env["ir.attachment"].create({
-            "name": self._build_txt_filename().replace(".txt", ".pdf"),
+            "name": pdf_name,
             "type": "binary",
             "datas": base64.b64encode(pdf_bytes),
             "mimetype": "application/pdf",
