@@ -34,6 +34,11 @@ class MxPedFraccion(models.Model):
 
     um_id = fields.Many2one("mx.ped.um", string="Unidad de medida")
     tasa_ids = fields.One2many("mx.ped.fraccion.tasa", "fraccion_id", string="Tasas")
+    contribucion_extra_ids = fields.One2many(
+        "mx.ped.fraccion.contribucion",
+        "fraccion_id",
+        string="Contribuciones extra",
+    )
     nico_ids = fields.One2many("mx.nico", "fraccion_id", string="NICOs")
     nom_default_ids = fields.Many2many(
         "mx.nom",
@@ -194,5 +199,51 @@ class MxPedFraccionTasa(models.Model):
             "mx_ped_fraccion_tasa_uniq",
             "unique(fraccion_id, tipo_operacion, territorio)",
             "Ya existe una tasa para esa Fraccion / Tipo operacion / Territorio.",
+        ),
+    ]
+
+
+class MxPedFraccionContribucion(models.Model):
+    _name = "mx.ped.fraccion.contribucion"
+    _description = "Contribuciones extra por fraccion"
+    _order = "fraccion_id, tipo_operacion, territorio, contribucion_id"
+
+    fraccion_id = fields.Many2one("mx.ped.fraccion", required=True, ondelete="cascade", index=True)
+    contribucion_id = fields.Many2one(
+        "aduana.catalogo.contribucion",
+        string="Contribucion",
+        required=True,
+        domain="[('active','=',True)]",
+        ondelete="restrict",
+    )
+    tipo_operacion = fields.Selection(
+        [("importacion", "Importacion"), ("exportacion", "Exportacion")],
+        required=True,
+    )
+    territorio = fields.Selection(
+        [
+            ("general", "General"),
+            ("frontera", "Frontera"),
+            ("franja", "Franja"),
+            ("region", "Region"),
+        ],
+        required=True,
+        default="general",
+    )
+    modo_calculo = fields.Selection(
+        [("porcentaje", "Porcentaje"), ("cuota_fija", "Cuota fija")],
+        string="Modo de calculo",
+        required=True,
+        default="porcentaje",
+    )
+    tasa = fields.Float(string="Tasa / cuota", digits=(16, 6), required=True, default=0.0)
+    note = fields.Char(string="Nota")
+    active = fields.Boolean(default=True)
+
+    _sql_constraints = [
+        (
+            "mx_ped_fraccion_contribucion_uniq",
+            "unique(fraccion_id, contribucion_id, tipo_operacion, territorio)",
+            "Ya existe una regla de contribucion para esa fraccion, contribucion, operacion y territorio.",
         ),
     ]

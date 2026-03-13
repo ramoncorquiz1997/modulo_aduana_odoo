@@ -304,6 +304,10 @@ class MxPedFraccionTasa(models.Model):
     _name = 'mx.ped.fraccion.tasa'
     _inherit = ['mx.ped.fraccion.tasa', 'aduana.audit.mixin']
 
+class MxPedFraccionContribucion(models.Model):
+    _name = 'mx.ped.fraccion.contribucion'
+    _inherit = ['mx.ped.fraccion.contribucion', 'aduana.audit.mixin']
+
 class MxPedUm(models.Model):
     _name = 'mx.ped.um'
     _inherit = ['mx.ped.um', 'aduana.audit.mixin']

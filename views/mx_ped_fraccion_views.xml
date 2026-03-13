@@ -159,6 +159,31 @@
                                 </list>
                             </field>
                         </page>
+                        <page string="Contribuciones extra">
+                            <field name="contribucion_extra_ids" context="{'default_fraccion_id': id}">
+                                <list editable="bottom">
+                                    <field name="contribucion_id"/>
+                                    <field name="tipo_operacion"/>
+                                    <field name="territorio"/>
+                                    <field name="modo_calculo"/>
+                                    <field name="tasa"/>
+                                    <field name="note"/>
+                                    <field name="active" optional="hide"/>
+                                </list>
+                                <form string="Contribucion extra por fraccion">
+                                    <group>
+                                        <field name="fraccion_id" invisible="1"/>
+                                        <field name="contribucion_id"/>
+                                        <field name="tipo_operacion"/>
+                                        <field name="territorio"/>
+                                        <field name="modo_calculo"/>
+                                        <field name="tasa"/>
+                                        <field name="note"/>
+                                        <field name="active"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
                         <page string="Regulatorio">
                             <group>
                                 <group>

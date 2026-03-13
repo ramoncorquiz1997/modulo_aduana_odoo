@@ -1405,7 +1405,8 @@ class MxPedOperacion(models.Model):
         icp = self.env["ir.config_parameter"].sudo()
         dta_rate = float(icp.get_param("mx_ped.dta_rate", "0.0") or 0.0)
         prv_rate = float(icp.get_param("mx_ped.prv_rate", "0.0") or 0.0)
-        managed_codes = {"IGI", "IVA", "DTA", "PRV"}
+        managed_codes = {"IGI", "IVA", "DTA", "PRV", "IEPS"}
+        managed_contrib_codes = {1, 3, 6, 15, 22}
         for partida in self.partida_ids:
             tipo = "importacion" if self.tipo_operacion != "exportacion" else "exportacion"
             tasa = False
@@ -1422,7 +1423,45 @@ class MxPedOperacion(models.Model):
                 ("DTA", partida.dta_estimado or 0.0, dta_rate),
                 ("PRV", partida.prv_estimado or 0.0, prv_rate),
             ]
-            candidates = [c for c in candidates if c[1] > 0]
+            if tasa and float(tasa.ieps or 0.0) > 0.0:
+                ieps_amount = (partida.value_mxn or 0.0) * (float(tasa.ieps or 0.0) / 100.0)
+                if ieps_amount > 0.0:
+                    candidates.append(("IEPS", ieps_amount, tasa.ieps))
+
+            if partida.fraccion_id:
+                extra_rules = partida.fraccion_id.contribucion_extra_ids.filtered(
+                    lambda r: r.active and r.tipo_operacion == tipo and r.territorio == "general"
+                )[:]
+                if not extra_rules:
+                    extra_rules = partida.fraccion_id.contribucion_extra_ids.filtered(
+                        lambda r: r.active and r.tipo_operacion == tipo
+                    )[:]
+                for rule in extra_rules:
+                    contrib_code = int(rule.contribucion_id.code or 0)
+                    if contrib_code in managed_contrib_codes:
+                        continue
+                    base_amount = partida.value_mxn or 0.0
+                    amount = (
+                        base_amount * ((rule.tasa or 0.0) / 100.0)
+                        if rule.modo_calculo == "porcentaje"
+                        else (rule.tasa or 0.0)
+                    )
+                    if amount <= 0:
+                        continue
+                    tax_code = rule.contribucion_id.abbreviation or rule.contribucion_id.contribucion or str(rule.contribucion_id.code)
+                    rate_value = rule.tasa or 0.0
+                    candidates.append((tax_code, amount, rate_value, rule.contribucion_id.id))
+
+            normalized_candidates = []
+            for item in candidates:
+                if len(item) == 3:
+                    tax_code, amount, rate = item
+                    contribucion = self._find_contribucion_catalog(tax_code)
+                    contrib_id = contribucion.id if contribucion else False
+                else:
+                    tax_code, amount, rate, contrib_id = item
+                if amount > 0:
+                    normalized_candidates.append((tax_code, amount, rate, contrib_id))
 
             existing_lines = partida.contribucion_ids.filtered(lambda c: c.operacion_id == self)
             existing_by_tipo = {}
@@ -1445,8 +1484,8 @@ class MxPedOperacion(models.Model):
                     existing_by_tipo[token] = line
             candidate_codes = set()
 
-            for tax_code, amount, rate in candidates:
-                contribucion = self._find_contribucion_catalog(tax_code)
+            for tax_code, amount, rate, contrib_id in normalized_candidates:
+                contribucion = self.env["aduana.catalogo.contribucion"].browse(contrib_id) if contrib_id else self._find_contribucion_catalog(tax_code)
                 if not contribucion:
                     continue
                 candidate_codes.add(self._norm_contrib_key(tax_code))
@@ -1476,6 +1515,7 @@ class MxPedOperacion(models.Model):
                 lambda l: (
                     self._norm_contrib_key(l.tipo_contribucion) in managed_codes
                     or any(piece in managed_codes for piece in self._norm_contrib_key(l.tipo_contribucion).split("/") if piece)
+                    or (l.contribucion_id and int(l.contribucion_id.code or 0) not in {0} and l.contribucion_id.code not in managed_contrib_codes)
                 ) and (
                     self._norm_contrib_key(l.tipo_contribucion) not in candidate_codes
                     and not any(piece in candidate_codes for piece in self._norm_contrib_key(l.tipo_contribucion).split("/") if piece)
