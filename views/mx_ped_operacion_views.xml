@@ -287,28 +287,42 @@
                           </form>
                         </field>
                       </page>
-                      <page string="Soportes de la remesa">
-                        <field name="documento_ids" context="{'default_operacion_id': operacion_id, 'default_remesa_id': id, 'default_registro_codigo': '514', 'default_estatus': 'pendiente', 'default_tipo': 'otro', 'default_aplica_partida_especifica': False}">
-                          <list editable="bottom">
+                      <page string="Documentos de esta remesa">
+                        <group>
+                          <div class="o_form_label">Las facturas 505 se capturan en el expediente principal. Aqui solo las asignas a esta remesa.</div>
+                          <field name="factura_documento_disponible_ids" invisible="1"/>
+                          <field name="factura_documento_ids"
+                                 widget="many2many_tags"
+                                 domain="[('id', 'in', factura_documento_disponible_ids)]"
+                                 options="{'no_create': True, 'no_create_edit': True}"/>
+                        </group>
+                        <group>
+                          <div class="o_form_label">Documentos actualmente ligados a esta remesa.</div>
+                        </group>
+                        <field name="documento_ids">
+                          <list>
                             <field name="tipo"/>
                             <field name="folio"/>
                             <field name="fecha"/>
+                            <field name="es_documento_principal" optional="hide"/>
                             <field name="aplica_partida_especifica"/>
                             <field name="partida_id" optional="hide"/>
                             <field name="estatus"/>
+                            <button name="action_open_full_form" type="object" string="Abrir" class="btn-link"/>
                           </list>
-                          <form string="Soporte de remesa">
+                          <form string="Documento de remesa">
                             <group>
                               <group string="Datos del soporte">
                                 <field name="tipo"/>
                                 <field name="folio"/>
                                 <field name="fecha"/>
-                                <field name="attachment_id"/>
+                                <field name="archivo_file" filename="archivo_filename"/>
+                                <field name="archivo_filename" invisible="1"/>
                                 <field name="estatus"/>
                                 <field name="notas"/>
                               </group>
                               <group string="Relacion con mercancia">
-                                <div class="o_form_label">Deja este soporte a nivel remesa salvo que aplique solo a una partida concreta.</div>
+                                <div class="o_form_label">Las facturas 505 se capturan en el expediente principal. Aqui solo revisas documentos ya ligados a la remesa.</div>
                                 <field name="aplica_partida_especifica"/>
                                 <field name="partida_id"
                                        invisible="not aplica_partida_especifica"
@@ -325,6 +339,7 @@
                               <field name="registro_codigo"/>
                               <field name="forma_pago_id"/>
                               <field name="forma_pago_code"/>
+                              <field name="attachment_id"/>
                             </group>
                           </form>
                         </field>

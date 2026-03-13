@@ -73,8 +73,19 @@
                   </form>
                 </field>
               </page>
-              <page string="Documentos y archivos">
-                <field name="documento_ids" context="{'default_operacion_id': operacion_id, 'default_remesa_id': id, 'default_registro_codigo': '514', 'default_estatus': 'pendiente', 'default_tipo': 'otro', 'default_aplica_partida_especifica': False}">
+              <page string="Documentos de esta remesa">
+                <group>
+                  <div class="o_form_label">Las facturas 505 se capturan en el expediente principal. Aqui solo las asignas a esta remesa.</div>
+                  <field name="factura_documento_disponible_ids" invisible="1"/>
+                  <field name="factura_documento_ids"
+                         widget="many2many_tags"
+                         domain="[('id', 'in', factura_documento_disponible_ids)]"
+                         options="{'no_create': True, 'no_create_edit': True}"/>
+                </group>
+                <group>
+                  <div class="o_form_label">Documentos actualmente ligados a esta remesa.</div>
+                </group>
+                <field name="documento_ids">
                   <list>
                     <field name="tipo"/>
                     <field name="folio"/>

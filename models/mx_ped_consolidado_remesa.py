@@ -91,6 +91,17 @@ class MxPedConsolidadoRemesa(models.Model):
         string="Documentos remesa",
         copy=True,
     )
+    factura_documento_ids = fields.Many2many(
+        "mx.ped.documento",
+        string="Facturas comerciales de esta remesa",
+        compute="_compute_factura_documento_ids",
+        inverse="_inverse_factura_documento_ids",
+    )
+    factura_documento_disponible_ids = fields.Many2many(
+        "mx.ped.documento",
+        string="Facturas comerciales disponibles",
+        compute="_compute_factura_documento_disponible_ids",
+    )
     partida_count = fields.Integer(
         string="Partidas asignadas",
         compute="_compute_totals",
@@ -130,6 +141,34 @@ class MxPedConsolidadoRemesa(models.Model):
             rec.partida_count = len(rec.partida_rel_ids)
             rec.total_quantity = sum(rec.partida_rel_ids.mapped("quantity"))
             rec.total_value_usd = sum(rec.partida_rel_ids.mapped("value_usd"))
+
+    @api.depends("operacion_id.documento_ids", "operacion_id.documento_ids.tipo", "operacion_id.documento_ids.remesa_id")
+    def _compute_factura_documento_ids(self):
+        for rec in self:
+            docs = rec.operacion_id.documento_ids.filtered(
+                lambda d: d.tipo in ("factura", "cove", "otro") and d.remesa_id == rec
+            )
+            rec.factura_documento_ids = docs
+
+    @api.depends("operacion_id.documento_ids", "operacion_id.documento_ids.tipo", "operacion_id.documento_ids.remesa_id")
+    def _compute_factura_documento_disponible_ids(self):
+        for rec in self:
+            docs = rec.operacion_id.documento_ids.filtered(
+                lambda d: d.tipo in ("factura", "cove", "otro") and (not d.remesa_id or d.remesa_id == rec)
+            )
+            rec.factura_documento_disponible_ids = docs
+
+    def _inverse_factura_documento_ids(self):
+        for rec in self:
+            available_docs = rec.operacion_id.documento_ids.filtered(
+                lambda d: d.tipo in ("factura", "cove", "otro") and (not d.remesa_id or d.remesa_id == rec)
+            )
+            selected_docs = rec.factura_documento_ids.filtered(lambda d: d in available_docs)
+            if selected_docs:
+                selected_docs.write({"remesa_id": rec.id})
+            to_unset = available_docs.filtered(lambda d: d.remesa_id == rec and d not in selected_docs)
+            if to_unset:
+                to_unset.write({"remesa_id": False})
 
     def action_open_full_form(self):
         self.ensure_one()
