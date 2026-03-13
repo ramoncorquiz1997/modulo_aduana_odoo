@@ -1425,19 +1425,32 @@ class MxPedOperacion(models.Model):
             candidates = [c for c in candidates if c[1] > 0]
 
             existing_lines = partida.contribucion_ids.filtered(lambda c: c.operacion_id == self)
-            existing_by_tipo = {
-                (line.tipo_contribucion or "").strip().upper(): line
-                for line in existing_lines
-                if (line.tipo_contribucion or "").strip()
-            }
+            existing_by_tipo = {}
+            for line in existing_lines:
+                line_tokens = set()
+                raw_tipo = self._norm_contrib_key(line.tipo_contribucion)
+                if raw_tipo:
+                    line_tokens.add(raw_tipo)
+                    line_tokens |= {piece for piece in raw_tipo.split("/") if piece}
+                if getattr(line, "contribucion_id", False):
+                    abbr = self._norm_contrib_key(line.contribucion_id.abbreviation)
+                    if abbr:
+                        line_tokens.add(abbr)
+                        line_tokens |= {piece for piece in abbr.split("/") if piece}
+                    line_code = int(line.contribucion_id.code or 0)
+                    reverse_map = {1: "DTA", 3: "IVA", 4: "ISAN", 6: "IGI", 7: "REC", 15: "PRV", 22: "IEPS"}
+                    if line_code in reverse_map:
+                        line_tokens.add(reverse_map[line_code])
+                for token in line_tokens:
+                    existing_by_tipo[token] = line
             candidate_codes = set()
 
             for tax_code, amount, rate in candidates:
                 contribucion = self._find_contribucion_catalog(tax_code)
                 if not contribucion:
                     continue
-                candidate_codes.add((tax_code or "").strip().upper())
-                line = existing_by_tipo.get(tax_code)
+                candidate_codes.add(self._norm_contrib_key(tax_code))
+                line = existing_by_tipo.get(self._norm_contrib_key(tax_code))
                 if line:
                     line.with_context(skip_auto_generated_refresh=True).write({
                         "contribucion_id": contribucion.id,
@@ -1460,8 +1473,13 @@ class MxPedOperacion(models.Model):
 
             # Limpia solo las contribuciones autogestionadas que ya no aplican.
             stale_managed = existing_lines.filtered(
-                lambda l: (l.tipo_contribucion or "").strip().upper() in managed_codes
-                and (l.tipo_contribucion or "").strip().upper() not in candidate_codes
+                lambda l: (
+                    self._norm_contrib_key(l.tipo_contribucion) in managed_codes
+                    or any(piece in managed_codes for piece in self._norm_contrib_key(l.tipo_contribucion).split("/") if piece)
+                ) and (
+                    self._norm_contrib_key(l.tipo_contribucion) not in candidate_codes
+                    and not any(piece in candidate_codes for piece in self._norm_contrib_key(l.tipo_contribucion).split("/") if piece)
+                )
             )
             if stale_managed:
                 stale_managed.with_context(skip_auto_generated_refresh=True).unlink()
@@ -1728,16 +1746,16 @@ class MxPedOperacion(models.Model):
                 return _read_attr(source, "pedimento_numero") or default
             if "tipo" in norm_name and "tasa" in norm_name:
                 return _read_attr(source, "tipo_tasa") or default
+            if "importe" in norm_name or "monto" in norm_name:
+                return _read_attr(source, "importe") if _read_attr(source, "importe") not in (None, False) else default
+            if "base" in norm_name:
+                return _read_attr(source, "base") if _read_attr(source, "base") not in (None, False) else default
+            if "tasa" in norm_name:
+                return _read_attr(source, "tasa") if _read_attr(source, "tasa") not in (None, False) else default
             if "clave" in norm_name and ("contrib" in norm_name or "impuesto" in norm_name):
                 return _read_attr(source, "clave_contribucion") or _read_attr(source, "tipo_contribucion") or default
             if "contrib" in norm_name or "impuesto" in norm_name:
                 return _read_attr(source, "tipo_contribucion") or default
-            if "tasa" in norm_name:
-                return _read_attr(source, "tasa") if _read_attr(source, "tasa") not in (None, False) else default
-            if "base" in norm_name:
-                return _read_attr(source, "base") if _read_attr(source, "base") not in (None, False) else default
-            if "importe" in norm_name or "monto" in norm_name:
-                return _read_attr(source, "importe") if _read_attr(source, "importe") not in (None, False) else default
 
             # 557 / 514: numero de partida
             if norm_name in {"partida", "numero_partida", "num_partida", "partida_numero", "secuencia_partida", "partida_seq"}:
