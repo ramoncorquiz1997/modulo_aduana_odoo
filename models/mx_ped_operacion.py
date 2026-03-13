@@ -4,6 +4,7 @@ import io
 import json
 import re
 import unicodedata
+import zipfile
 from collections import Counter
 from datetime import date, datetime
 import xml.etree.ElementTree as ET
@@ -120,6 +121,16 @@ class MxPedOperacion(models.Model):
     es_rectificacion = fields.Boolean(
         string="Rectificacion",
         help="Usa esta marca cuando el movimiento 1 corresponda a rectificacion.",
+    )
+    modo_export_consolidado = fields.Selection(
+        [
+            ("pedimento_final", "Pedimento final"),
+            ("por_remesa", "Por remesa"),
+        ],
+        string="Modo export consolidado",
+        default="pedimento_final",
+        required=True,
+        help="Solo aplica cuando la operacion es un pedimento consolidado.",
     )
     formas_pago_claves = fields.Char(
         string="Formas de pago (claves)",
@@ -3043,6 +3054,148 @@ class MxPedOperacion(models.Model):
 
         return "".join(line[:max_pos])
 
+    def _build_export_lines_from_registros(self, registros):
+        self.ensure_one()
+        lines = []
+        for reg in registros:
+            layout_reg = self._get_layout_registro(reg.codigo)
+            partida_num = self._extract_partida_number(reg.valores)
+            lines.append(self._build_txt_line(layout_reg, reg.valores, partida_num=partida_num))
+        return lines
+
+    def _build_remesa_txt_member_name(self, remesa, suffix=".txt"):
+        self.ensure_one()
+        token = (remesa.folio or remesa.name or f"remesa_{remesa.sequence or remesa.id}").strip()
+        token = re.sub(r"[^A-Za-z0-9._-]+", "_", token).strip("._-") or f"remesa_{remesa.id}"
+        pedimento = re.sub(r"[^A-Za-z0-9._-]+", "_", str(self.pedimento_numero or self.name or self.id))
+        return f"{pedimento}_{token}{suffix}"
+
+    def _build_remesa_zip_name(self):
+        self.ensure_one()
+        base = re.sub(r"[^A-Za-z0-9._-]+", "_", str(self.pedimento_numero or self.name or self.id)).strip("._-")
+        return f"{base or 'pedimento'}_remesas.zip"
+
+    def _get_remesa_514_registros(self, remesa):
+        self.ensure_one()
+        layout_reg = self._get_layout_registro("514")
+        if not layout_reg:
+            return []
+        docs = remesa.documento_ids.filtered(lambda d: (d.registro_codigo or "").strip() == "514").sorted(
+            lambda d: (d.fecha or fields.Datetime.now(), d.id)
+        )
+        registros = []
+        for secuencia, doc in enumerate(docs, start=1):
+            payload = self._build_sync_payload_from_layout(layout_reg, doc, "514")
+            registros.append({
+                "codigo": "514",
+                "secuencia": secuencia,
+                "valores": payload,
+            })
+        return registros
+
+    def _remesa_partida_override_value(self, campo, remesa_rel, base_val):
+        self.ensure_one()
+        partida = remesa_rel.partida_id
+        source_name = (campo.source_field_id.name if getattr(campo, "source_field_id", False) else campo.source_field) or ""
+        token = self._norm_layout_token(f"{campo.nombre} {source_name}")
+        source_norm = self._norm_layout_token(source_name)
+        tipo_cambio = self.lead_id.x_tipo_cambio or 0.0
+
+        quantity_tokens = {
+            "quantity",
+            "cantidad",
+            "cantidadumt",
+            "cantidadumc",
+            "cantidadcomercial",
+            "cantidadtarifa",
+        }
+        value_usd_tokens = {
+            "valueusd",
+            "valorusd",
+            "valaduanausd",
+            "valoraduanausd",
+        }
+        value_mxn_tokens = {
+            "valuemxn",
+            "valormxn",
+        }
+
+        if source_norm in quantity_tokens or ("cantidad" in token and "precio" not in token):
+            return remesa_rel.quantity
+        if source_norm in value_usd_tokens or ("valor" in token and "usd" in token):
+            return remesa_rel.value_usd
+        if source_norm in value_mxn_tokens or ("valor" in token and "mxn" in token):
+            return (remesa_rel.value_usd or 0.0) * tipo_cambio
+
+        # TODO: 557 por remesa requiere recalculo/prorrateo especifico; queda fuera de esta primera version.
+        return base_val
+
+    def _build_remesa_partida_payload(self, layout_reg, remesa_rel):
+        self.ensure_one()
+        partida = remesa_rel.partida_id
+        valores = {}
+        for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
+            val = self._field_value_for_layout(campo, partida=partida)
+            val = self._remesa_partida_override_value(campo, remesa_rel, val)
+            if val in (None, "", False) and campo.default:
+                val = campo.default
+            val = self._json_safe_layout_value(val)
+            if val not in (None, "", False):
+                valores[campo.nombre] = val
+        return valores
+
+    def _get_remesa_partida_registros(self, remesa, codes):
+        self.ensure_one()
+        code_set = {str(code).zfill(3) for code in (codes or [])}
+        layout_regs = {
+            reg.codigo: reg
+            for reg in self.layout_id.registro_ids.filtered(lambda r: (r.codigo or "").strip() in code_set)
+        }
+        registros = []
+        ordered_rel = remesa.partida_rel_ids.sorted(
+            lambda rel: ((rel.partida_id.numero_partida or 0) if rel.partida_id else 0, rel.sequence or 0, rel.id)
+        )
+        for code in sorted(code_set):
+            layout_reg = layout_regs.get(code)
+            if not layout_reg:
+                continue
+            for secuencia, remesa_rel in enumerate(ordered_rel, start=1):
+                registros.append({
+                    "codigo": code,
+                    "secuencia": secuencia,
+                    "valores": self._build_remesa_partida_payload(layout_reg, remesa_rel),
+                })
+        return registros
+
+    def _build_remesa_export_registros(self, remesa):
+        self.ensure_one()
+        excluded_codes = {"514", "557", "551", "552", "553", "554", "555", "556", "558"}
+        base_regs = [
+            reg for reg in self.registro_ids.sorted(lambda r: (r.codigo, r.secuencia or 0))
+            if (reg.codigo or "").strip() not in excluded_codes
+        ]
+        remesa_regs = list(base_regs)
+        remesa_regs.extend(self._get_remesa_514_registros(remesa))
+        remesa_regs.extend(self._get_remesa_partida_registros(remesa, {"551", "552", "553", "554", "555", "556", "558"}))
+        remesa_regs.sort(key=lambda r: ((r["codigo"] if isinstance(r, dict) else r.codigo), (r["secuencia"] if isinstance(r, dict) else (r.secuencia or 0))))
+        return remesa_regs
+
+    def _build_remesa_txt_data(self, remesa):
+        self.ensure_one()
+        registros = self._build_remesa_export_registros(remesa)
+        lines = []
+        for reg in registros:
+            if isinstance(reg, dict):
+                layout_reg = self._get_layout_registro(reg["codigo"])
+                partida_num = self._extract_partida_number(reg["valores"])
+                lines.append(self._build_txt_line(layout_reg, reg["valores"], partida_num=partida_num))
+            else:
+                layout_reg = self._get_layout_registro(reg.codigo)
+                partida_num = self._extract_partida_number(reg.valores)
+                lines.append(self._build_txt_line(layout_reg, reg.valores, partida_num=partida_num))
+        sep = self.layout_id.record_separator or "\n"
+        return sep.join(lines)
+
     def action_export_txt(self):
         self.ensure_one()
         self._auto_refresh_generated_registros()
@@ -3056,6 +3209,31 @@ class MxPedOperacion(models.Model):
             raise UserError(_("No hay registros capturados para exportar."))
         self._validate_field_rules_on_registros()
         self._validate_registros_vs_estructura()
+
+        if self.es_consolidado and self.modo_export_consolidado == "por_remesa":
+            remesas = self.remesa_ids.filtered("active").sorted(lambda r: (r.sequence or 0, r.id))
+            if not remesas:
+                raise UserError(_("No hay remesas activas para exportar en modo por remesa."))
+
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+                for remesa in remesas:
+                    txt_data = self._build_remesa_txt_data(remesa)
+                    zip_file.writestr(self._build_remesa_txt_member_name(remesa), txt_data.encode("utf-8"))
+
+            attachment = self.env["ir.attachment"].create({
+                "name": self._build_remesa_zip_name(),
+                "type": "binary",
+                "datas": base64.b64encode(zip_buffer.getvalue()),
+                "mimetype": "application/zip",
+                "res_model": self._name,
+                "res_id": self.id,
+            })
+            return {
+                "type": "ir.actions.act_url",
+                "url": f"/web/content/{attachment.id}?download=true",
+                "target": "self",
+            }
 
         lines = []
         for reg in self.registro_ids.sorted(lambda r: (r.codigo, r.secuencia or 0)):

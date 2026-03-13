@@ -62,6 +62,7 @@
                 <field name="tipo_operacion"/>
                 <field name="regimen"/>
                 <field name="es_consolidado"/>
+                <field name="modo_export_consolidado" invisible="not es_consolidado"/>
                 <field name="consolidado_estado" readonly="1" invisible="not show_advanced_info"/>
                 <field name="fecha_apertura" invisible="not (es_consolidado and show_advanced_info)"/>
                 <field name="fecha_cierre" invisible="not (es_consolidado and show_advanced_info)"/>
