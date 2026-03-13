@@ -702,6 +702,7 @@ class MxPedOperacion(models.Model):
             "layout_id",
             "lead_id",
             "incoterm",
+            "send_505_contingency",
             "aduana_seccion_despacho_id",
             "aduana_clave",
             "aduana_seccion_entrada_salida_id",
@@ -2785,6 +2786,7 @@ class MxPedOperacion(models.Model):
 
     def action_export_txt(self):
         self.ensure_one()
+        self._auto_refresh_generated_registros()
         self._sync_registro_ids_from_tecnicos()
         self._validate_confirmacion_pago_formas()
         self._validate_partida_facturas_505()
@@ -2820,6 +2822,7 @@ class MxPedOperacion(models.Model):
 
     def action_export_xml(self):
         self.ensure_one()
+        self._auto_refresh_generated_registros()
         self._sync_registro_ids_from_tecnicos()
         self._validate_confirmacion_pago_formas()
         self._validate_partida_facturas_505()
