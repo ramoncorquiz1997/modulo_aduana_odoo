@@ -3406,8 +3406,8 @@ class MxPedOperacion(models.Model):
     def _document_value_for_505_field(self, campo, documento):
         self.ensure_one()
         source_name = (campo.source_field_id.name if campo.source_field_id else campo.source_field) or ""
-        campo_name = (campo.nombre or "").strip().lower()
-        source_norm = (source_name or "").strip().lower()
+        campo_name = self._norm_layout_token(campo.nombre)
+        source_norm = self._norm_layout_token(source_name)
         token = f"{campo_name} {source_norm}".strip()
 
         if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro"):
@@ -3472,8 +3472,8 @@ class MxPedOperacion(models.Model):
         for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
             val = self._document_value_for_505_field(campo, documento)
             source_name = (campo.source_field_id.name if campo.source_field_id else campo.source_field) or ""
-            campo_name = (campo.nombre or "").strip().lower()
-            source_norm = (source_name or "").strip().lower()
+            campo_name = self._norm_layout_token(campo.nombre)
+            source_norm = self._norm_layout_token(source_name)
             token = f"{campo_name} {source_norm}".strip()
             if val not in (None, "", False) and "fecha" in token and ("cfdi" in token or "documento" in token or "acuse" in token):
                 val = self._format_layout_date_8(val)
