@@ -2884,6 +2884,279 @@ class MxPedOperacion(models.Model):
             "firma_electronica":getattr(self, "fiel",               ""),
         }
 
+    def _proforma_text(self, value, decimals=2):
+        if value in (False, None, ""):
+            return ""
+        if isinstance(value, datetime):
+            return fields.Datetime.to_string(value)
+        if isinstance(value, date):
+            return fields.Date.to_string(value)
+        if isinstance(value, float):
+            return f"{value:.{decimals}f}"
+        if isinstance(value, int):
+            return str(value)
+        return str(self._extract_value(value) or "")
+
+    def _proforma_date(self, value):
+        if not value:
+            return ""
+        dt = fields.Date.to_date(value)
+        return dt.strftime("%d%m%Y") if dt else ""
+
+    def _proforma_partner_address(self, partner):
+        if not partner:
+            return ""
+        street = " ".join(
+            part for part in [partner.x_street_name or partner.street, partner.x_street_number_ext] if part
+        ).strip()
+        if partner.x_street_number_int:
+            street = f"{street} INT {partner.x_street_number_int}".strip()
+        pieces = [
+            street,
+            partner.x_colonia,
+            partner.x_municipio or partner.city,
+            partner.state_id.code if partner.state_id and hasattr(partner.state_id, "code") else (partner.state_id.name if partner.state_id else ""),
+            partner.zip,
+            partner.country_id.code if partner.country_id and hasattr(partner.country_id, "code") else (partner.country_id.name if partner.country_id else ""),
+        ]
+        return ", ".join(piece for piece in pieces if piece)
+
+    def _get_proforma_505_document(self):
+        self.ensure_one()
+        docs = self.documento_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+        return docs.sorted(lambda d: (d.es_documento_principal is not True, d.id))[:1]
+
+    def _get_proforma_fecha_map(self):
+        self.ensure_one()
+        fecha_map = {}
+        if not self.lead_id:
+            return fecha_map
+        for line in self.lead_id.x_fecha_506_ids.sorted(lambda l: (l.sequence or 0, l.id)):
+            if line.tipo_fecha_code and line.fecha and line.tipo_fecha_code not in fecha_map:
+                fecha_map[line.tipo_fecha_code] = line.fecha
+        return fecha_map
+
+    def _build_proforma_contribucion(self, contrib_line):
+        from .pedimento_proforma_v2 import Contribucion
+
+        return Contribucion(
+            clave=self._proforma_text(contrib_line.tipo_contribucion),
+            tipo_tasa="",
+            tasa=self._proforma_text(contrib_line.tasa, decimals=6),
+            importe=self._proforma_text(contrib_line.importe),
+            forma_pago=self._proforma_text(contrib_line.forma_pago_code),
+        )
+
+    def _build_proforma_identificador(self, ident_line):
+        from .pedimento_proforma_v2 import Identificador
+
+        return Identificador(
+            clave=self._proforma_text(ident_line.code),
+            comp1=(ident_line.complemento1 or "").strip() or "NULO",
+            comp2=(ident_line.complemento2 or "").strip() or "NULO",
+            comp3=(ident_line.complemento3 or "").strip() or "NULO",
+        )
+
+    def _build_proforma_guia_list(self):
+        from .pedimento_proforma_v2 import Guia
+
+        guias = []
+        if self.lead_id and (self.lead_id.x_guia_manifiesto or "").strip():
+            guias.append(
+                Guia(
+                    numero=(self.lead_id.x_guia_manifiesto or "").strip(),
+                    identificador=(self.lead_id.x_tipo_guia or "").strip(),
+                )
+            )
+        return guias
+
+    def _build_proforma_contenedor_list(self):
+        from .pedimento_proforma_v2 import Contenedor
+
+        contenedores = []
+        if self.lead_id and (self.lead_id.x_num_contenedor or "").strip():
+            contenedores.append(
+                Contenedor(
+                    numero=(self.lead_id.x_num_contenedor or "").strip(),
+                    tipo=self._proforma_text(self.lead_id.x_tipo_contenedor_id),
+                )
+            )
+        return contenedores
+
+    def _build_proforma_partida(self, partida):
+        from .pedimento_proforma_v2 import Partida
+
+        contribuciones = [
+            self._build_proforma_contribucion(line)
+            for line in partida.contribucion_ids.sorted(lambda l: (l.sequence or 0, l.id))
+        ]
+        precio_pagado = partida.valor_comercial or partida.value_mxn or 0.0
+        return Partida(
+            secuencia=self._proforma_text(partida.numero_partida),
+            fraccion=self._proforma_text(partida.fraccion_arancelaria or partida.fraccion_id),
+            subdivision=self._proforma_text(partida.nico),
+            vinculacion="",
+            met_valoracion="",
+            umc=self._proforma_text(partida.uom_id),
+            cantidad_umc=self._proforma_text(partida.quantity, decimals=6),
+            umt=self._proforma_text(partida.unidad_tarifa or partida.unidad_comercial),
+            cantidad_umt=self._proforma_text(partida.cantidad_tarifa or partida.cantidad_comercial, decimals=5),
+            pais_venta=self._proforma_text(partida.pais_vendedor_id),
+            pais_origen=self._proforma_text(partida.pais_origen_id),
+            descripcion=(partida.descripcion or "").strip(),
+            val_aduana_usd=self._proforma_text(partida.value_usd),
+            imp_precio_pag=self._proforma_text(precio_pagado),
+            precio_pagado=self._proforma_text(precio_pagado),
+            precio_unit=self._proforma_text(partida.precio_unitario, decimals=6),
+            val_agregado=self._proforma_text(partida.valor_aduana),
+            marca="",
+            modelo="",
+            codigo_producto="",
+            contribuciones=contribuciones,
+            identificadores=[],
+            observaciones=(partida.observaciones or partida.notes_regulatorias or "").strip(),
+        )
+
+    def _build_proforma_pedimento(self):
+        from .pedimento_proforma_v2 import Pedimento
+
+        self.ensure_one()
+        lead = self.lead_id
+        participante = self.participante_id or self.importador_id or self.exportador_id
+        transportista = lead.x_transportista_id if lead else self.env["res.partner"]
+        doc_505 = self._get_proforma_505_document()
+        fechas = self._get_proforma_fecha_map()
+        contribuciones_globales = [
+            self._build_proforma_contribucion(line)
+            for line in self.contribucion_global_ids.sorted(lambda l: (l.sequence or 0, l.id))
+        ]
+        partidas = [
+            self._build_proforma_partida(partida)
+            for partida in self.partida_ids.sorted(lambda p: (p.numero_partida or 0, p.id))
+        ]
+        identificadores = [
+            self._build_proforma_identificador(line)
+            for line in self.identificador_pedimento_ids.sorted(lambda l: (l.sequence or 0, l.id))
+        ]
+        total_liquidacion = sum(line.importe or 0.0 for line in self.contribucion_global_ids)
+
+        ped = Pedimento()
+        ped.num_pedimento = (self.pedimento_numero or "").strip()
+        ped.tipo_operacion = "IMP" if self.tipo_operacion != "exportacion" else "EXP"
+        ped.clave_pedimento = self._proforma_text(self.clave_pedimento or self.clave_pedimento_id)
+        ped.regimen = self._proforma_text(self.regimen)
+        ped.destino_origen = self._proforma_text(lead.x_origen_destino_mercancia if lead else "")
+        ped.tipo_cambio = self._proforma_text(lead.x_tipo_cambio if lead else 0.0, decimals=5)
+        ped.peso_bruto = self._proforma_text(self.total_gross_weight or (lead.x_peso_bruto if lead else 0.0), decimals=3)
+        ped.aduana_es = self._proforma_text(self.aduana_clave or self.aduana_seccion_despacho_id)
+        ped.medio_transporte_entrada = self._proforma_text(lead.x_medio_transporte_entrada_salida if lead else "")
+        ped.medio_transporte_arribo = self._proforma_text(lead.x_medio_transporte_arribo if lead else "")
+        ped.medio_transporte_salida = self._proforma_text(lead.x_medio_transporte_salida if lead else "")
+        ped.valor_dolares = self._proforma_text(self.total_value_usd or (lead.x_cfdi_valor_usd if lead else 0.0))
+        ped.valor_aduana = self._proforma_text((lead.x_valor_aduana_estimado if lead else 0.0) or sum(p.valor_aduana or 0.0 for p in self.partida_ids))
+        ped.precio_pagado_valor_comercial = self._proforma_text(
+            (lead.x_valor_factura if lead else 0.0) or sum(p.valor_comercial or p.value_mxn or 0.0 for p in self.partida_ids)
+        )
+        ped.rfc = self._proforma_text(self.participante_rfc or (participante.vat if participante else ""))
+        ped.nombre_razon_social = self._proforma_text(self.participante_nombre or (participante.name if participante else ""))
+        ped.curp = self._proforma_text(self.participante_curp or (participante.x_curp if participante else ""))
+        ped.domicilio = self._proforma_partner_address(participante)
+        ped.val_seguros = self._proforma_text(lead.x_incrementable_seguros if lead else 0.0)
+        ped.seguros = self._proforma_text(lead.x_incrementable_seguros if lead else 0.0)
+        ped.fletes = self._proforma_text(lead.x_incrementable_fletes if lead else 0.0)
+        ped.embalajes = self._proforma_text(lead.x_incrementable_embalajes if lead else 0.0)
+        ped.otros_incrementables = self._proforma_text(lead.x_incrementable_otros if lead else 0.0)
+        ped.codigo_aceptacion = self._proforma_text(self.acuse_validacion)
+        ped.codigo_barras = ""
+        ped.clave_seccion_aduanera = self._proforma_text(self.aduana_seccion_entrada_salida or self.aduana_seccion_despacho_id)
+        ped.marcas_numeros_bultos = " / ".join(
+            value
+            for value in [
+                self._proforma_text(lead.x_num_contenedor if lead else ""),
+                self._proforma_text(lead.x_num_sello if lead else ""),
+                self._proforma_text(lead.x_bultos if lead else 0),
+            ]
+            if value
+        )
+        ped.fecha_entrada = self._proforma_date(fechas.get("01") or self.fecha_operacion)
+        ped.fecha_pago = self._proforma_date(fechas.get("02") or self.fecha_pago)
+        ped.fecha_presentacion = self._proforma_date(fechas.get("05"))
+        ped.fecha_extraccion = self._proforma_date(fechas.get("03"))
+        ped.tasas = contribuciones_globales
+        ped.contribuciones_liq = contribuciones_globales
+        ped.total_efectivo = self._proforma_text(total_liquidacion)
+        ped.total_otros = ""
+        ped.total_total = self._proforma_text(total_liquidacion)
+        ped.num_acuse_valor = self._proforma_text(doc_505.folio if doc_505 else "")
+        ped.vinculacion_505 = ""
+        ped.incoterm = self._proforma_text((doc_505.cfdi_termino_facturacion if doc_505 else "") or self.incoterm)
+        ped.transporte_id = self._proforma_text(lead.x_transporte_identificador if lead else "")
+        ped.transporte_pais = self._proforma_text(lead.x_transporte_pais_id if lead else "")
+        ped.transportista_nombre = self._proforma_text(transportista.name if transportista else "")
+        ped.transportista_rfc = self._proforma_text(lead.x_transportista_rfc if lead else "")
+        ped.transportista_curp = self._proforma_text(lead.x_transportista_curp if lead else "")
+        ped.transportista_domicilio = self._proforma_text(
+            (lead.x_transportista_domicilio if lead else "") or self._proforma_partner_address(transportista)
+        )
+        ped.candado1 = self._proforma_text(lead.x_num_sello if lead else "")
+        ped.candado2 = ""
+        ped.guias = self._build_proforma_guia_list()
+        ped.contenedores = self._build_proforma_contenedor_list()
+        ped.identificadores = identificadores
+        ped.observaciones = (self.observaciones or "").strip()
+        ped.partidas = partidas
+        ped.agente = self._get_agente_data()
+        return ped
+
+    def action_export_proforma(self):
+        self.ensure_one()
+        self._auto_refresh_generated_registros()
+        self._sync_registro_ids_from_tecnicos()
+        self._validate_confirmacion_pago_formas()
+        self._validate_partida_facturas_505()
+        self._run_process_stage_checks("export")
+
+        from .pedimento_proforma_v2 import PedimentoPDF
+
+        ped = self._build_proforma_pedimento()
+        pdf_bytes = PedimentoPDF(ped).build()
+
+        pedimento_ref = re.sub(r"[^A-Za-z0-9_-]+", "", (self.pedimento_numero or self.name or "").strip())
+        pdf_name = "proforma_%s.pdf" % (pedimento_ref or self.id)
+
+        attachment = self.env["ir.attachment"].create({
+            "name": pdf_name,
+            "type": "binary",
+            "datas": base64.b64encode(pdf_bytes),
+            "mimetype": "application/pdf",
+            "res_model": self._name,
+            "res_id": self.id,
+        })
+        return {
+            "type": "ir.actions.act_url",
+            "url": f"/web/content/{attachment.id}?download=true",
+            "target": "self",
+        }
+
+    def _get_agente_data(self):
+        """Construye el bloque de agente para la proforma desde operacion/partner."""
+        from .pedimento_proforma_v2 import AgenteAduanal
+
+        self.ensure_one()
+        company = self.env.company
+        agente = self.agente_aduanal_id or (self.lead_id.x_agente_aduanal_id if self.lead_id else self.env["res.partner"])
+        return AgenteAduanal(
+            nombre=self._proforma_text(agente.name if agente else company.name),
+            rfc=self._proforma_text(agente.vat if agente else company.vat),
+            curp=self._proforma_text(self.curp_agente or (agente.x_curp if agente else "")),
+            patente=self._proforma_text(self.patente or (agente.x_patente_aduanal if agente else "")),
+            mandatario_nombre="",
+            mandatario_rfc="",
+            mandatario_curp="",
+            num_serie_cert="",
+            firma_electronica="",
+        )
+
     def action_export_xml(self):
         self.ensure_one()
         self._auto_refresh_generated_registros()
