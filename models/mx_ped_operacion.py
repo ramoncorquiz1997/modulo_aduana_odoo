@@ -142,6 +142,11 @@ class MxPedOperacion(models.Model):
         compute="_compute_estructura_escenario",
         store=False,
     )
+    show_descargo_ui = fields.Boolean(
+        string="Mostrar descargos 512",
+        compute="_compute_show_descargo_ui",
+        store=False,
+    )
     aduana_seccion_entrada_salida_id = fields.Many2one(
         "mx.ped.aduana.seccion",
         string="Aduana-seccion entrada/salida",
@@ -276,6 +281,12 @@ class MxPedOperacion(models.Model):
         "mx.ped.operacion.observacion",
         "operacion_id",
         string="Observaciones 511",
+        copy=True,
+    )
+    descargo_line_ids = fields.One2many(
+        "mx.ped.operacion.descargo",
+        "operacion_id",
+        string="Descargos 512",
         copy=True,
     )
     bl_file = fields.Binary(string="Archivo B/L (PDF)")
@@ -684,6 +695,19 @@ class MxPedOperacion(models.Model):
                     break
             rec.show_acuse_ui = show_acuse
             rec.show_formas_pago_ui = show_formas
+
+    @api.depends("tipo_movimiento", "regimen", "clave_pedimento_id", "clave_pedimento_id.requiere_immex", "clave_pedimento_id.saai_structure_type")
+    def _compute_show_descargo_ui(self):
+        for rec in self:
+            clave_code = (rec.clave_pedimento or "").strip().upper()
+            structure_type = (rec.clave_pedimento_id.saai_structure_type or "").strip()
+            is_non_immex = not bool(rec.clave_pedimento_id.requiere_immex)
+            rec.show_descargo_ui = bool(any([
+                rec.tipo_movimiento in {"2", "3", "6", "7"},
+                structure_type in {"complementario", "despacho_anticipado", "eliminacion_desistimiento"},
+                rec.regimen == "deposito_fiscal" and clave_code != "IA",
+                rec.regimen == "temporal" and is_non_immex,
+            ]))
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -1736,6 +1760,26 @@ class MxPedOperacion(models.Model):
         txt = " ".join(txt.split())
         return txt[:120].strip()
 
+    @staticmethod
+    def _sanitize_512_pedimento(value):
+        text = re.sub(r"\D+", "", str(value or ""))
+        return text[:7]
+
+    @staticmethod
+    def _sanitize_512_patente(value):
+        text = re.sub(r"\D+", "", str(value or ""))
+        return text[:4]
+
+    @staticmethod
+    def _sanitize_512_fraction(value):
+        text = re.sub(r"[^A-Za-z0-9]", "", str(value or "")).upper()
+        return text[:8]
+
+    @staticmethod
+    def _sanitize_512_numeric_code(value, size=2):
+        text = re.sub(r"\D+", "", str(value or ""))
+        return text[:size]
+
     def _get_511_observation_lines(self):
         self.ensure_one()
         lines = []
@@ -1746,6 +1790,35 @@ class MxPedOperacion(models.Model):
             if clean_text:
                 seq = line.sequence if line.sequence and line.sequence > 0 else idx
                 lines.append({"sequence": seq, "texto": clean_text})
+        return lines
+
+    def _get_512_descargo_lines(self):
+        self.ensure_one()
+        lines = []
+        explicit_lines = self.descargo_line_ids.sorted(lambda l: ((l.sequence or 999999), l.id))
+        for idx, line in enumerate(explicit_lines, start=1):
+            seq = line.sequence if line.sequence and line.sequence > 0 else idx
+            fraccion = self._sanitize_512_fraction(line.fraccion_original or (line.fraccion_original_id.code if line.fraccion_original_id else ""))
+            unidad_code = self._sanitize_512_numeric_code(
+                line.unidad_medida_original_code or (line.unidad_medida_original_id.code if line.unidad_medida_original_id else ""),
+                size=2,
+            )
+            aduana_code = (line.aduana_seccion_original or (line.aduana_seccion_original_id.code if line.aduana_seccion_original_id else "")).strip().upper()[:3]
+            clave_doc = (line.clave_documento_original or (line.clave_documento_original_id.code if line.clave_documento_original_id else "")).strip().upper()[:2]
+            fecha_txt = ""
+            if line.fecha_operacion_original:
+                fecha_txt = fields.Date.to_string(line.fecha_operacion_original)
+            lines.append({
+                "sequence": seq,
+                "patente_original": self._sanitize_512_patente(line.patente_original),
+                "pedimento_original": self._sanitize_512_pedimento(line.pedimento_original),
+                "aduana_seccion_original": aduana_code,
+                "clave_documento_original": clave_doc,
+                "fecha_operacion_original": fecha_txt,
+                "fraccion_original": fraccion,
+                "unidad_medida_original": unidad_code,
+                "cantidad_umt_original": line.cantidad_umt_original,
+            })
         return lines
 
     def _validate_508_cuenta_aduanera_rules(self):
@@ -4305,6 +4378,71 @@ class MxPedOperacion(models.Model):
                 valores[campo.nombre] = self._json_safe_layout_value(val)
         return valores
 
+    def _build_512_valores(self, layout_reg, descargo_line):
+        self.ensure_one()
+        valores = {}
+        fecha_original = ""
+        if descargo_line.get("fecha_operacion_original"):
+            fecha_original = fields.Date.from_string(descargo_line["fecha_operacion_original"]).strftime("%d%m%Y")
+
+        ordered_campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+        for idx, campo in enumerate(ordered_campos, start=1):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            campo_name = self._norm_layout_token(campo.nombre)
+            source_norm = self._norm_layout_token(source_name)
+            token = f"{campo_name} {source_norm}".strip()
+            pos_ini = campo.pos_ini or 0
+            orden = campo.orden or 0
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro") or idx == 1 or orden == 1 or pos_ini == 1:
+                val = "512"
+            elif "pedimento" in token and ("numero" in token or "num" in token) and "original" not in token:
+                val = self.pedimento_numero or ""
+            elif ("patente" in token or "autorizacion" in token) and "original" in token:
+                val = descargo_line.get("patente_original") or ""
+            elif "pedimento" in token and "original" in token:
+                val = descargo_line.get("pedimento_original") or ""
+            elif ("aduana" in token and "original" in token) or source_norm in {"aduana_seccion_original", "aduana_original"}:
+                val = descargo_line.get("aduana_seccion_original") or ""
+            elif ("clave" in token and "documento" in token and "original" in token) or source_norm in {"clave_documento_original", "documento_original"}:
+                val = descargo_line.get("clave_documento_original") or ""
+            elif ("fecha" in token and "original" in token) or source_norm in {"fecha_operacion_original", "fecha_original"}:
+                val = fecha_original
+            elif ("fraccion" in token and "original" in token) or source_norm in {"fraccion_original"}:
+                val = descargo_line.get("fraccion_original") or ""
+            elif ("unidad" in token and "original" in token) or source_norm in {"unidad_medida_original", "um_original"}:
+                val = descargo_line.get("unidad_medida_original") or ""
+            elif ("cantidad" in token and ("umt" in token or "mercancia" in token)) or source_norm in {"cantidad_umt_original", "cantidad_original"}:
+                val = descargo_line.get("cantidad_umt_original")
+            else:
+                if idx == 2 or orden == 2 or pos_ini == 4:
+                    val = self.pedimento_numero or ""
+                elif idx == 3 or orden == 3 or pos_ini == 11:
+                    val = descargo_line.get("patente_original") or ""
+                elif idx == 4 or orden == 4 or pos_ini == 15:
+                    val = descargo_line.get("pedimento_original") or ""
+                elif idx == 5 or orden == 5 or pos_ini == 22:
+                    val = descargo_line.get("aduana_seccion_original") or ""
+                elif idx == 6 or orden == 6 or pos_ini == 25:
+                    val = descargo_line.get("clave_documento_original") or ""
+                elif idx == 7 or orden == 7 or pos_ini == 27:
+                    val = fecha_original
+                elif idx == 8 or orden == 8 or pos_ini == 35:
+                    val = descargo_line.get("fraccion_original") or ""
+                elif idx == 9 or orden == 9 or pos_ini == 43:
+                    val = descargo_line.get("unidad_medida_original") or ""
+                elif idx == 10 or orden == 10 or pos_ini == 45:
+                    val = descargo_line.get("cantidad_umt_original")
+                else:
+                    val = self._field_value_for_layout(campo, partida=False)
+                    if val in (None, "", False) and campo.default:
+                        val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = self._json_safe_layout_value(val)
+        return valores
+
     def action_cargar_desde_lead(self):
         self.ensure_one()
         if not self.layout_id:
@@ -4385,6 +4523,18 @@ class MxPedOperacion(models.Model):
                     }))
                 continue
 
+            if code == "512":
+                descargo_lines = self._get_512_descargo_lines()
+                if not descargo_lines:
+                    continue
+                for secuencia, descargo_line in enumerate(descargo_lines, start=1):
+                    registros.append((0, 0, {
+                        "codigo": layout_reg.codigo,
+                        "secuencia": secuencia,
+                        "valores": self._build_512_valores(layout_reg, descargo_line),
+                    }))
+                continue
+
             if code == "505":
                 # El registro 505 solo debe salir de documentos comerciales.
                 docs_505 = self.documento_ids.filtered(
@@ -4442,6 +4592,70 @@ class MxPedOperacionObservacion(models.Model):
             clean = rec.operacion_id._sanitize_511_text(rec.texto)
             if not clean:
                 raise ValidationError(_("La observacion 511 no puede quedar vacia."))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            records.mapped("operacion_id")._auto_refresh_generated_registros()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            self.mapped("operacion_id")._auto_refresh_generated_registros()
+        return res
+
+    def unlink(self):
+        ops = self.mapped("operacion_id")
+        res = super().unlink()
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            ops._auto_refresh_generated_registros()
+        return res
+
+
+class MxPedOperacionDescargo(models.Model):
+    _name = "mx.ped.operacion.descargo"
+    _description = "Operacion - Descargo 512"
+    _order = "sequence, id"
+
+    operacion_id = fields.Many2one("mx.ped.operacion", required=True, ondelete="cascade", index=True)
+    sequence = fields.Integer(string="Secuencia", default=10)
+    patente_original = fields.Char(string="Patente original", required=True, size=4)
+    pedimento_original = fields.Char(string="Pedimento original", required=True, size=7)
+    aduana_seccion_original_id = fields.Many2one("mx.ped.aduana.seccion", string="Aduana-seccion original", required=True)
+    aduana_seccion_original = fields.Char(string="Aduana-seccion original (codigo)", related="aduana_seccion_original_id.code", store=True, readonly=True)
+    clave_documento_original_id = fields.Many2one("mx.ped.clave", string="Clave documento original", required=True)
+    clave_documento_original = fields.Char(string="Clave documento original (codigo)", related="clave_documento_original_id.code", store=True, readonly=True)
+    fecha_operacion_original = fields.Date(string="Fecha operacion original", required=True)
+    fraccion_original_id = fields.Many2one("mx.ped.fraccion", string="Fraccion original")
+    fraccion_original = fields.Char(string="Fraccion original (codigo)", related="fraccion_original_id.code", store=True, readonly=True)
+    unidad_medida_original_id = fields.Many2one("mx.ped.um", string="Unidad medida original")
+    unidad_medida_original_code = fields.Char(string="Unidad medida original (codigo)", related="unidad_medida_original_id.code", store=True, readonly=True)
+    cantidad_umt_original = fields.Float(string="Cantidad UMT original", digits=(16, 5), required=True)
+
+    @api.constrains(
+        "patente_original",
+        "pedimento_original",
+        "aduana_seccion_original_id",
+        "clave_documento_original_id",
+        "fecha_operacion_original",
+        "cantidad_umt_original",
+    )
+    def _check_required_512_fields(self):
+        for rec in self:
+            if not rec.operacion_id.show_descargo_ui:
+                continue
+            patente = rec.operacion_id._sanitize_512_patente(rec.patente_original)
+            pedimento = rec.operacion_id._sanitize_512_pedimento(rec.pedimento_original)
+            if len(patente) != 4:
+                raise ValidationError(_("La patente original del 512 debe tener 4 digitos."))
+            if len(pedimento) != 7:
+                raise ValidationError(_("El pedimento original del 512 debe tener 7 digitos."))
+            if not rec.fecha_operacion_original:
+                raise ValidationError(_("La fecha de la operacion original del 512 es obligatoria."))
+            if rec.cantidad_umt_original in (False, None):
+                raise ValidationError(_("La cantidad UMT original del 512 es obligatoria."))
 
     @api.model_create_multi
     def create(self, vals_list):

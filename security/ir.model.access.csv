@@ -32,6 +32,7 @@ access_mx_ped_fraccion_contribucion,mx.ped.fraccion.contribucion,model_mx_ped_fr
 access_mx_ped_identificador,mx.ped.identificador,model_mx_ped_identificador,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_mx_ped_operacion_identificador,mx.ped.operacion.identificador,model_mx_ped_operacion_identificador,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_operacion_observacion,mx.ped.operacion.observacion,model_mx_ped_operacion_observacion,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_ped_operacion_descargo,mx.ped.operacion.descargo,model_mx_ped_operacion_descargo,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_operacion_cuenta_aduanera,mx.ped.operacion.cuenta.aduanera,model_mx_ped_operacion_cuenta_aduanera,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_credencial_ws,mx.ped.credencial.ws,model_mx_ped_credencial_ws,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_mx_anam_gafete,mx.anam.gafete,model_mx_anam_gafete,modulo_aduana_odoo.group_aduana_user,1,1,1,1
@@ -89,6 +90,7 @@ access_mx_ped_fraccion_tasa_admin,mx.ped.fraccion.tasa.admin,model_mx_ped_fracci
 access_mx_ped_fraccion_contribucion_admin,mx.ped.fraccion.contribucion.admin,model_mx_ped_fraccion_contribucion,base.group_system,1,1,1,1
 access_mx_ped_identificador_admin,mx.ped.identificador.admin,model_mx_ped_identificador,base.group_system,1,1,1,1
 access_mx_ped_operacion_observacion_admin,mx.ped.operacion.observacion.admin,model_mx_ped_operacion_observacion,base.group_system,1,1,1,1
+access_mx_ped_operacion_descargo_admin,mx.ped.operacion.descargo.admin,model_mx_ped_operacion_descargo,base.group_system,1,1,1,1
 access_mx_ped_operacion_cuenta_aduanera_admin,mx.ped.operacion.cuenta.aduanera.admin,model_mx_ped_operacion_cuenta_aduanera,base.group_system,1,1,1,1
 access_mx_ped_credencial_ws_admin,mx.ped.credencial.ws.admin,model_mx_ped_credencial_ws,base.group_system,1,1,1,1
 access_mx_ped_tipo_contenedor_admin,mx.ped.tipo.contenedor.admin,model_mx_ped_tipo_contenedor,base.group_system,1,1,1,1

@@ -344,6 +344,10 @@ class MxPedOperacionObservacion(models.Model):
     _name = 'mx.ped.operacion.observacion'
     _inherit = ['mx.ped.operacion.observacion', 'aduana.audit.mixin']
 
+class MxPedOperacionDescargo(models.Model):
+    _name = 'mx.ped.operacion.descargo'
+    _inherit = ['mx.ped.operacion.descargo', 'aduana.audit.mixin']
+
 class MxPedTipoMovimiento(models.Model):
     _name = 'mx.ped.tipo.movimiento'
     _inherit = ['mx.ped.tipo.movimiento', 'aduana.audit.mixin']

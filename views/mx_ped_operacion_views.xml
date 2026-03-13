@@ -57,6 +57,7 @@
                 <field name="send_505_contingency" widget="boolean_toggle"/>
                 <field name="show_acuse_ui" invisible="1"/>
                 <field name="show_formas_pago_ui" invisible="1"/>
+                <field name="show_descargo_ui" invisible="1"/>
                 <field name="lead_id"/>
                 <field name="tipo_operacion"/>
                 <field name="regimen"/>
@@ -438,6 +439,36 @@
                       <group>
                         <field name="sequence"/>
                         <field name="texto"/>
+                      </group>
+                    </form>
+                  </field>
+                </group>
+              </page>
+              <page string="Descargos pedimento" invisible="not show_descargo_ui">
+                <group string="Descargos pedimento">
+                  <field name="descargo_line_ids" context="{'default_operacion_id': id}">
+                    <list editable="bottom">
+                      <field name="sequence"/>
+                      <field name="patente_original"/>
+                      <field name="pedimento_original"/>
+                      <field name="aduana_seccion_original_id"/>
+                      <field name="clave_documento_original_id"/>
+                      <field name="fecha_operacion_original"/>
+                      <field name="fraccion_original_id"/>
+                      <field name="unidad_medida_original_id"/>
+                      <field name="cantidad_umt_original"/>
+                    </list>
+                    <form string="Descargo pedimento">
+                      <group>
+                        <field name="sequence"/>
+                        <field name="patente_original"/>
+                        <field name="pedimento_original"/>
+                        <field name="aduana_seccion_original_id"/>
+                        <field name="clave_documento_original_id"/>
+                        <field name="fecha_operacion_original"/>
+                        <field name="fraccion_original_id"/>
+                        <field name="unidad_medida_original_id"/>
+                        <field name="cantidad_umt_original"/>
                       </group>
                     </form>
                   </field>
