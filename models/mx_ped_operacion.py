@@ -4266,20 +4266,35 @@ class MxPedOperacion(models.Model):
         sequence_txt = str(observation_line.get("sequence") or "").zfill(3)
         clean_text = self._sanitize_511_text(observation_line.get("texto"))
 
-        for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
+        ordered_campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+        for idx, campo in enumerate(ordered_campos, start=1):
             source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
             campo_name = self._norm_layout_token(campo.nombre)
             source_norm = self._norm_layout_token(source_name)
             token = f"{campo_name} {source_norm}".strip()
+            pos_ini = campo.pos_ini or 0
+            orden = campo.orden or 0
 
             val = None
             if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro"):
                 val = "511"
             elif "pedimento" in token and ("numero" in token or "num" in token or token == "pedimento"):
                 val = self.pedimento_numero or ""
-            elif "secuencia" in token and "observ" in token:
+            elif (
+                "secuencia" in token
+                or source_norm in {"sequence", "secuencia"}
+                or idx == 3
+                or orden == 3
+                or pos_ini == 11
+            ):
                 val = sequence_txt
-            elif "observ" in token:
+            elif (
+                "observ" in token
+                or source_norm in {"texto", "observaciones", "observacion"}
+                or idx == 4
+                or orden == 4
+                or pos_ini == 14
+            ):
                 val = clean_text
             else:
                 val = self._field_value_for_layout(campo, partida=False)
