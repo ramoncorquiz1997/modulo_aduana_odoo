@@ -53,6 +53,7 @@
             <group col="2">
               <group string="Operación">
                 <field name="show_advanced_info" widget="boolean_toggle"/>
+                <field name="send_505_contingency" widget="boolean_toggle"/>
                 <field name="show_acuse_ui" invisible="1"/>
                 <field name="show_formas_pago_ui" invisible="1"/>
                 <field name="lead_id"/>

@@ -24,6 +24,7 @@ class MxPedOperacion(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Pedimento / Operación Aduanera"
     _order = "create_date desc, id desc"
+    _LAYOUT_EMPTY = "__LAYOUT_EMPTY__"
 
     lead_id = fields.Many2one(
         comodel_name="crm.lead",
@@ -345,6 +346,15 @@ class MxPedOperacion(models.Model):
         string="Info avanzada",
         default=False,
         help="Muestra campos tecnicos y de control para auditoria y solucion de errores.",
+    )
+    send_505_contingency = fields.Boolean(
+        string="Enviar 505 de contingencia",
+        default=False,
+        help=(
+            "Cuando esta activo, el registro 505 se exporta con los campos extendidos "
+            "de contingencia. Si esta desactivado, se dejan vacios los campos que el "
+            "lineamiento reserva para contingencia o casos especiales."
+        ),
     )
     es_consolidado = fields.Boolean(
         string="Pedimento consolidado",
@@ -2631,6 +2641,8 @@ class MxPedOperacion(models.Model):
         return matches.sorted(lambda r: r.orden or 0)[0]
 
     def _format_txt_value(self, campo, val):
+        if val == self._LAYOUT_EMPTY:
+            return ""
         txt = str(val)
 
         # Sanea caracteres de control para no romper el TXT por renglones/columnas.
@@ -3515,6 +3527,45 @@ class MxPedOperacion(models.Model):
             return False
         return self._field_value_for_layout(campo, partida=False)
 
+    def _is_505_export_a1_mode(self):
+        self.ensure_one()
+        return self.tipo_operacion == "exportacion" and (self.clave_pedimento or "").strip().upper() == "A1"
+
+    def _is_505_contingency_mode(self):
+        self.ensure_one()
+        return bool(self.send_505_contingency or self.env.context.get("force_505_contingency"))
+
+    def _should_blank_505_field(self, token):
+        self.ensure_one()
+        if self._is_505_contingency_mode():
+            return False
+
+        export_a1 = self._is_505_export_a1_mode()
+
+        if "fecha" in token and ("cfdi" in token or "documento" in token or "acuse" in token):
+            return not export_a1
+        if "moneda" in token and ("cfdi" in token or "documento" in token):
+            return not export_a1
+        if "valor" in token and ("dolar" in token or "usd" in token):
+            return not export_a1
+        if "valor" in token and "moneda" in token:
+            return not export_a1
+        if "pais" in token and ("cfdi" in token or "documento" in token):
+            return not export_a1
+        if ("entidad" in token or "estado" in token) and ("cfdi" in token or "documento" in token):
+            return not export_a1
+        if "calle" in token:
+            return True
+        if "numero interior" in token or "num interior" in token:
+            return True
+        if "numero exterior" in token or "num exterior" in token:
+            return True
+        if "codigo postal" in token or token.endswith("cp") or token == "cp":
+            return True
+        if "municipio" in token or "ciudad" in token:
+            return True
+        return False
+
     @staticmethod
     def _json_safe_layout_value(value):
         if isinstance(value, datetime):
@@ -3534,11 +3585,14 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         valores = {}
         for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
-            val = self._document_value_for_505_field(campo, documento)
             source_name = (campo.source_field_id.name if campo.source_field_id else campo.source_field) or ""
             campo_name = self._norm_layout_token(campo.nombre)
             source_norm = self._norm_layout_token(source_name)
             token = f"{campo_name} {source_norm}".strip()
+            if self._should_blank_505_field(token):
+                valores[campo.nombre] = self._LAYOUT_EMPTY
+                continue
+            val = self._document_value_for_505_field(campo, documento)
             if val not in (None, "", False) and "fecha" in token and ("cfdi" in token or "documento" in token or "acuse" in token):
                 val = self._format_layout_date_8(val)
             if val in (None, "", False) and campo.default:
