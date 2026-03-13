@@ -2820,6 +2820,67 @@ class MxPedOperacion(models.Model):
             "target": "self",
         }
 
+    def action_export_proforma(self):
+        self.ensure_one()
+        # ── Reutiliza toda la validación y construcción del TXT ──
+        self._auto_refresh_generated_registros()
+        self._sync_registro_ids_from_tecnicos()
+        self._validate_confirmacion_pago_formas()
+        self._validate_partida_facturas_505()
+        self._run_process_stage_checks("export")
+        if not self.layout_id:
+            raise UserError(_("Falta seleccionar un layout en la operación."))
+        if not self.registro_ids:
+            raise UserError(_("No hay registros capturados para exportar."))
+        self._validate_field_rules_on_registros()
+        self._validate_registros_vs_estructura()
+
+        lines = []
+        for reg in self.registro_ids.sorted(lambda r: (r.codigo, r.secuencia or 0)):
+            layout_reg = self._get_layout_registro(reg.codigo)
+            partida_num = self._extract_partida_number(reg.valores)
+            lines.append(self._build_txt_line(layout_reg, reg.valores, partida_num=partida_num))
+
+        sep = self.layout_id.record_separator or "\n"
+        txt_data = sep.join(lines)
+
+        # ── Datos del agente desde la operación/compañía ──
+        agente = self._get_agente_data()
+
+        # ── Generar PDF ──
+        from .pedimento_proforma_v2 import generar_proforma
+        pdf_bytes = generar_proforma(txt_data, agente)
+
+        attachment = self.env["ir.attachment"].create({
+            "name": self._build_txt_filename().replace(".txt", ".pdf"),
+            "type": "binary",
+            "datas": base64.b64encode(pdf_bytes),
+            "mimetype": "application/pdf",
+            "res_model": self._name,
+            "res_id": self.id,
+        })
+        return {
+            "type": "ir.actions.act_url",
+            "url": f"/web/content/{attachment.id}?download=true",
+            "target": "self",
+        }
+
+    def _get_agente_data(self):
+        """Extrae datos del agente aduanal desde la operación o la compañía."""
+        # Ajusta los campos según cómo los tengas guardados en tu modelo
+        company = self.env.company
+        return {
+            "nombre":           getattr(self, "agente_nombre", "") or company.name,
+            "rfc":              getattr(self, "agente_rfc",    "") or company.vat or "",
+            "curp":             getattr(self, "agente_curp",   ""),
+            "patente":          getattr(self, "patente",       ""),
+            "mandatario_nombre":getattr(self, "mandatario_nombre", ""),
+            "mandatario_rfc":   getattr(self, "mandatario_rfc",    ""),
+            "mandatario_curp":  getattr(self, "mandatario_curp",   ""),
+            "num_serie_cert":   getattr(self, "num_serie_cert",    ""),
+            "firma_electronica":getattr(self, "fiel",               ""),
+        }
+
     def action_export_xml(self):
         self.ensure_one()
         self._auto_refresh_generated_registros()
