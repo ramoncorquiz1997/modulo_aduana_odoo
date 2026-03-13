@@ -1787,7 +1787,7 @@ class MxPedOperacion(models.Model):
             if "forma" in norm_name and "pago" in norm_name:
                 return _read_attr(source, "forma_pago_code") or default
             if "pedimento" in norm_name and ("numero" in norm_name or "num" in norm_name or norm_name == "pedimento"):
-                return _read_attr(source, "pedimento_numero") or default
+                return _read_attr(source, "pedimento_numero") or self.pedimento_numero or default
             if "tipo" in norm_name and "tasa" in norm_name:
                 return _read_attr(source, "tipo_tasa") or default
             if "importe" in norm_name or "monto" in norm_name:
@@ -1797,7 +1797,12 @@ class MxPedOperacion(models.Model):
             if "tasa" in norm_name:
                 return _read_attr(source, "tasa") if _read_attr(source, "tasa") not in (None, False) else default
             if "clave" in norm_name and ("contrib" in norm_name or "impuesto" in norm_name):
-                return _read_attr(source, "clave_contribucion") or _read_attr(source, "tipo_contribucion") or default
+                return (
+                    _read_attr(source, "clave_contribucion")
+                    or _read_attr(source, "contribucion_code")
+                    or _read_attr(source, "tipo_contribucion")
+                    or default
+                )
             if "contrib" in norm_name or "impuesto" in norm_name:
                 return _read_attr(source, "tipo_contribucion") or default
 
@@ -2770,6 +2775,8 @@ class MxPedOperacion(models.Model):
 
     def _format_txt_value(self, campo, val):
         if val == self._LAYOUT_EMPTY:
+            return ""
+        if val is False or val is None:
             return ""
         txt = str(val)
 
