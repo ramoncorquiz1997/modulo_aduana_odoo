@@ -213,7 +213,7 @@
                   <field name="consolidado_estado" readonly="1"/>
                 </group>
                 <field name="remesa_ids" context="{'default_operacion_id': id}">
-                  <list editable="bottom" delete="0">
+                  <list open_form_view="1" delete="0">
                     <field name="sequence"/>
                     <field name="folio"/>
                     <field name="fecha_remesa"/>
