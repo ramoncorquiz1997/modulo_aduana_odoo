@@ -1740,10 +1740,12 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         lines = []
         explicit_lines = self.observacion_line_ids.sorted(lambda l: (l.sequence or 0, l.id))
+        explicit_lines = explicit_lines.sorted(lambda l: ((l.sequence or 999999), l.id))
         for idx, line in enumerate(explicit_lines, start=1):
             clean_text = self._sanitize_511_text(line.texto)
             if clean_text:
-                lines.append({"sequence": idx, "texto": clean_text})
+                seq = line.sequence if line.sequence and line.sequence > 0 else idx
+                lines.append({"sequence": seq, "texto": clean_text})
         return lines
 
     def _validate_508_cuenta_aduanera_rules(self):
