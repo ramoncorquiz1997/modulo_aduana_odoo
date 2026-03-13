@@ -272,6 +272,12 @@ class MxPedOperacion(models.Model):
     )
 
     observaciones = fields.Text(string="Observaciones")
+    observacion_line_ids = fields.One2many(
+        "mx.ped.operacion.observacion",
+        "operacion_id",
+        string="Observaciones 511",
+        copy=True,
+    )
     bl_file = fields.Binary(string="Archivo B/L (PDF)")
     bl_filename = fields.Char(string="Nombre archivo B/L")
     bl_last_read = fields.Datetime(string="Ultima lectura B/L", readonly=True)
@@ -1718,6 +1724,27 @@ class MxPedOperacion(models.Model):
     def _get_508_validation_reference_date(self):
         self.ensure_one()
         return self.fecha_pago or self.fecha_operacion or fields.Date.context_today(self)
+
+    @staticmethod
+    def _sanitize_511_text(value):
+        txt = (value or "").strip()
+        if not txt:
+            return ""
+        for ch in ("'", '"', "´", "*", "-", "_"):
+            txt = txt.replace(ch, " ")
+        txt = txt.replace("\r", " ").replace("\n", " ").replace("\t", " ")
+        txt = " ".join(txt.split())
+        return txt[:120].strip()
+
+    def _get_511_observation_lines(self):
+        self.ensure_one()
+        lines = []
+        explicit_lines = self.observacion_line_ids.sorted(lambda l: (l.sequence or 0, l.id))
+        for idx, line in enumerate(explicit_lines, start=1):
+            clean_text = self._sanitize_511_text(line.texto)
+            if clean_text:
+                lines.append({"sequence": idx, "texto": clean_text})
+        return lines
 
     def _validate_508_cuenta_aduanera_rules(self):
         """Valida condicion base de 508 contra formas de pago y calidad de datos."""
@@ -4231,6 +4258,36 @@ class MxPedOperacion(models.Model):
                 valores[campo.nombre] = val
         return valores
 
+    def _build_511_valores(self, layout_reg, observation_line):
+        self.ensure_one()
+        valores = {}
+        sequence_txt = str(observation_line.get("sequence") or "").zfill(3)
+        clean_text = self._sanitize_511_text(observation_line.get("texto"))
+
+        for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            campo_name = self._norm_layout_token(campo.nombre)
+            source_norm = self._norm_layout_token(source_name)
+            token = f"{campo_name} {source_norm}".strip()
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro"):
+                val = "511"
+            elif "pedimento" in token and ("numero" in token or "num" in token or token == "pedimento"):
+                val = self.pedimento_numero or ""
+            elif "secuencia" in token and "observ" in token:
+                val = sequence_txt
+            elif "observ" in token:
+                val = clean_text
+            else:
+                val = self._field_value_for_layout(campo, partida=False)
+                if val in (None, "", False) and campo.default:
+                    val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = self._json_safe_layout_value(val)
+        return valores
+
     def action_cargar_desde_lead(self):
         self.ensure_one()
         if not self.layout_id:
@@ -4299,6 +4356,18 @@ class MxPedOperacion(models.Model):
                     }))
                 continue
 
+            if code == "511":
+                observation_lines = self._get_511_observation_lines()
+                if not observation_lines:
+                    continue
+                for secuencia, observation_line in enumerate(observation_lines, start=1):
+                    registros.append((0, 0, {
+                        "codigo": layout_reg.codigo,
+                        "secuencia": secuencia,
+                        "valores": self._build_511_valores(layout_reg, observation_line),
+                    }))
+                continue
+
             if code == "505":
                 # El registro 505 solo debe salir de documentos comerciales.
                 docs_505 = self.documento_ids.filtered(
@@ -4339,3 +4408,40 @@ class MxPedOperacion(models.Model):
 
         self.registro_ids = [(5, 0, 0)] + registros
         return True
+
+
+class MxPedOperacionObservacion(models.Model):
+    _name = "mx.ped.operacion.observacion"
+    _description = "Operacion - Observacion 511"
+    _order = "sequence, id"
+
+    operacion_id = fields.Many2one("mx.ped.operacion", required=True, ondelete="cascade", index=True)
+    sequence = fields.Integer(string="Secuencia", default=10)
+    texto = fields.Char(string="Observacion", required=True, size=120)
+
+    @api.constrains("texto")
+    def _check_texto(self):
+        for rec in self:
+            clean = rec.operacion_id._sanitize_511_text(rec.texto)
+            if not clean:
+                raise ValidationError(_("La observacion 511 no puede quedar vacia."))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            records.mapped("operacion_id")._auto_refresh_generated_registros()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            self.mapped("operacion_id")._auto_refresh_generated_registros()
+        return res
+
+    def unlink(self):
+        ops = self.mapped("operacion_id")
+        res = super().unlink()
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            ops._auto_refresh_generated_registros()
+        return res

@@ -117,7 +117,6 @@
                 <field name="fecha_pago"/>
                 <field name="semaforo"/>
                 <field name="fecha_liberacion"/>
-                <field name="observaciones"/>
                 <field name="avc_numero" readonly="1"/>
                 <field name="avc_estatus" readonly="1"/>
               </group>
@@ -423,6 +422,22 @@
                         <field name="complemento2"/>
                         <field name="complemento3"/>
                         <field name="notes"/>
+                      </group>
+                    </form>
+                  </field>
+                </group>
+              </page>
+              <page string="Observaciones pedimento">
+                <group string="Observaciones pedimento">
+                  <field name="observacion_line_ids" context="{'default_operacion_id': id}">
+                    <list editable="bottom">
+                      <field name="sequence"/>
+                      <field name="texto"/>
+                    </list>
+                    <form string="Observacion pedimento">
+                      <group>
+                        <field name="sequence"/>
+                        <field name="texto"/>
                       </group>
                     </form>
                   </field>

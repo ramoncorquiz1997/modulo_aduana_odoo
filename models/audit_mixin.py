@@ -340,6 +340,10 @@ class MxPedPartidaContribucion(models.Model):
     _name = 'mx.ped.partida.contribucion'
     _inherit = ['mx.ped.partida.contribucion', 'aduana.audit.mixin']
 
+class MxPedOperacionObservacion(models.Model):
+    _name = 'mx.ped.operacion.observacion'
+    _inherit = ['mx.ped.operacion.observacion', 'aduana.audit.mixin']
+
 class MxPedTipoMovimiento(models.Model):
     _name = 'mx.ped.tipo.movimiento'
     _inherit = ['mx.ped.tipo.movimiento', 'aduana.audit.mixin']
