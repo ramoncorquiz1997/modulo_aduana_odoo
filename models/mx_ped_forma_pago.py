@@ -180,11 +180,41 @@ class MxPedPartidaContribucion(models.Model):
         for rec in self:
             if rec.partida_id:
                 rec.operacion_id = rec.partida_id.operacion_id
+                if not rec.base:
+                    rec.base = rec.partida_id.value_mxn or 0.0
+                if rec.base and rec.tasa:
+                    rec.importe = (rec.base or 0.0) * ((rec.tasa or 0.0) / 100.0)
+
+    @api.onchange("base", "tasa")
+    def _onchange_base_tasa_importe(self):
+        for rec in self:
+            if rec.base not in (None, False) and rec.tasa not in (None, False):
+                rec.importe = (rec.base or 0.0) * ((rec.tasa or 0.0) / 100.0)
+
+    @api.model
+    def _autofill_manual_amounts(self, vals):
+        vals = dict(vals)
+        partida_id = vals.get("partida_id")
+        base = vals.get("base")
+        tasa = vals.get("tasa")
+        importe = vals.get("importe")
+
+        if partida_id and base in (None, False, ""):
+            partida = self.env["mx.ped.partida"].browse(partida_id)
+            vals["base"] = partida.value_mxn or 0.0
+            base = vals["base"]
+
+        if importe in (None, False, "") and base not in (None, False, "") and tasa not in (None, False, ""):
+            vals["importe"] = (float(base or 0.0) * float(tasa or 0.0)) / 100.0
+        return vals
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             self._sync_contribucion_catalog_fields(vals)
+            filled = self._autofill_manual_amounts(vals)
+            vals.clear()
+            vals.update(filled)
         records = super().create(vals_list)
         if not self.env.context.get("skip_auto_generated_refresh"):
             records.mapped("operacion_id")._auto_refresh_generated_registros()
@@ -228,6 +258,7 @@ class MxPedPartidaContribucion(models.Model):
     def write(self, vals):
         vals = dict(vals)
         self._sync_contribucion_catalog_fields(vals)
+        vals = self._autofill_manual_amounts(vals)
         res = super().write(vals)
         if not self.env.context.get("skip_auto_generated_refresh"):
             self.mapped("operacion_id")._auto_refresh_generated_registros()

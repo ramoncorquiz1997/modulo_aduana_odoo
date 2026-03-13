@@ -333,8 +333,8 @@
                 </field>
               </page>
               <page string="Contribuciones">
-                <field name="contribucion_global_ids" context="{'default_operacion_id': id}">
-                  <list editable="bottom">
+                <field name="contribucion_global_ids" readonly="1" context="{'default_operacion_id': id}">
+                  <list>
                     <field name="contribucion_id"/>
                     <field name="contribucion_code" readonly="1" optional="hide"/>
                     <field name="tasa"/>
@@ -357,6 +357,18 @@
                     <field name="forma_pago_id"/>
                     <field name="forma_pago_code" readonly="1"/>
                   </list>
+                  <form string="Cargo adicional">
+                    <group>
+                      <field name="partida_id"/>
+                      <field name="contribucion_id"/>
+                      <field name="contribucion_code" readonly="1"/>
+                      <field name="tasa"/>
+                      <field name="base"/>
+                      <field name="importe"/>
+                      <field name="forma_pago_id"/>
+                      <field name="forma_pago_code" readonly="1"/>
+                    </group>
+                  </form>
                 </field>
               </page>
               <page string="Facturas / COVEs / Documentos">
