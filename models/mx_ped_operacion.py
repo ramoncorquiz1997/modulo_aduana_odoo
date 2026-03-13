@@ -1433,8 +1433,6 @@ class MxPedOperacion(models.Model):
             candidate_codes = set()
 
             for tax_code, amount, rate in candidates:
-                if not partida.forma_pago_sugerida_id:
-                    continue
                 contribucion = self._find_contribucion_catalog(tax_code)
                 if not contribucion:
                     continue
@@ -1443,7 +1441,7 @@ class MxPedOperacion(models.Model):
                 if line:
                     line.with_context(skip_auto_generated_refresh=True).write({
                         "contribucion_id": contribucion.id,
-                        "forma_pago_id": partida.forma_pago_sugerida_id.id,
+                        "forma_pago_id": partida.forma_pago_sugerida_id.id if partida.forma_pago_sugerida_id else False,
                         "importe": amount,
                         "base": partida.value_mxn or 0.0,
                         "tasa": rate,
@@ -1457,7 +1455,7 @@ class MxPedOperacion(models.Model):
                     "tasa": rate,
                     "base": partida.value_mxn or 0.0,
                     "importe": amount,
-                    "forma_pago_id": partida.forma_pago_sugerida_id.id,
+                    "forma_pago_id": partida.forma_pago_sugerida_id.id if partida.forma_pago_sugerida_id else False,
                 })
 
             # Limpia solo las contribuciones autogestionadas que ya no aplican.
