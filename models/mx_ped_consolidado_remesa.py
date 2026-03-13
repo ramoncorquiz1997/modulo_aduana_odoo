@@ -145,6 +145,10 @@ class MxPedConsolidadoRemesa(models.Model):
     def _get_single_factura_documento(self):
         self.ensure_one()
         docs = self.factura_documento_ids.filtered(lambda d: d.tipo in ("factura", "cove", "otro"))
+        if not docs:
+            docs = self.partida_rel_ids.mapped("partida_id.factura_documento_id").filtered(
+                lambda d: d and d.tipo in ("factura", "cove", "otro")
+            )
         return docs[:1] if len(docs) == 1 else self.env["mx.ped.documento"]
 
     def _autofill_documento_fuente_from_factura(self):
@@ -186,6 +190,10 @@ class MxPedConsolidadoRemesa(models.Model):
 
     @api.onchange("factura_documento_ids", "tipo_documento_fuente")
     def _onchange_factura_documento_ids_fill_uuid(self):
+        self._autofill_documento_fuente_from_factura()
+
+    @api.onchange("partida_rel_ids", "partida_rel_ids.partida_id", "partida_rel_ids.partida_id.factura_documento_id")
+    def _onchange_partida_rel_ids_fill_uuid(self):
         self._autofill_documento_fuente_from_factura()
 
     def action_open_full_form(self):

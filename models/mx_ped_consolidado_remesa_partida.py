@@ -83,3 +83,20 @@ class MxPedConsolidadoRemesaPartida(models.Model):
                     _("La suma de valor USD asignado en remesas excede el valor USD de la partida %s.")
                     % (partida.numero_partida or partida.id,)
                 )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records.mapped("remesa_id")._autofill_documento_fuente_from_factura()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        self.mapped("remesa_id")._autofill_documento_fuente_from_factura()
+        return res
+
+    def unlink(self):
+        remesas = self.mapped("remesa_id")
+        res = super().unlink()
+        remesas._autofill_documento_fuente_from_factura()
+        return res
