@@ -1915,14 +1915,14 @@ class MxPedOperacion(models.Model):
     def _validate_508_cuenta_aduanera_rules(self):
         """Valida condicion base de 508 contra formas de pago y calidad de datos."""
         self.ensure_one()
-        has_fp4 = self._has_forma_pago_code("4")
+        has_fp4_or_15 = self._has_forma_pago_code("4") or self._has_forma_pago_code("15")
         has_508 = bool(self.cuenta_aduanera_ids)
         validation_ref_date = self._get_508_validation_reference_date()
 
-        if has_fp4 and not has_508:
-            raise ValidationError(_("Existe forma de pago 4, pero no hay lineas de cuenta aduanera (508)."))
+        if has_fp4_or_15 and not has_508:
+            raise ValidationError(_("Existe forma de pago 4 o 15, pero no hay lineas de cuenta aduanera (508)."))
 
-        # NOTA: 508 es condicional; su presencia no siempre implica forma de pago 4.
+        # NOTA: 508 es condicional; su presencia no siempre implica forma de pago 4/15.
         # El caso de exportacion con DMCA se controla por regla de negocio/rulepack.
 
         for line in self.cuenta_aduanera_ids:
@@ -1937,7 +1937,7 @@ class MxPedOperacion(models.Model):
                     _("508: la fecha de constancia no puede ser posterior a la fecha de validacion/referencia del pedimento en la linea %s.")
                     % (line.sequence or line.id)
                 )
-            if has_fp4:
+            if has_fp4_or_15:
                 missing = []
                 if not line.valor_unitario_titulo:
                     missing.append(_("valor unitario del titulo"))
@@ -1947,7 +1947,7 @@ class MxPedOperacion(models.Model):
                     missing.append(_("titulos asignados"))
                 if missing:
                     raise ValidationError(
-                        _("508: con forma de pago 4 son obligatorios %s en la linea %s.")
+                        _("508: con forma de pago 4 o 15 son obligatorios %s en la linea %s.")
                         % (", ".join(missing), (line.sequence or line.id))
                     )
             if (
@@ -4932,21 +4932,26 @@ class MxPedOperacion(models.Model):
             val = None
             if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro") or idx == 1 or orden == 1 or pos_ini == 1:
                 val = "514"
-            elif "pedimento" in token and ("numero" in token or "num" in token):
+            elif ("pedimento" in token and ("numero" in token or "num" in token)) or idx == 2 or orden == 2 or pos_ini == 4:
                 val = self.pedimento_numero or ""
-            elif "forma" in token and "pago" in token:
+            elif ("forma" in token and "pago" in token) or idx == 3 or orden == 3 or pos_ini == 11:
                 val = forma_pago_code or ""
-            elif ("dependencia" in token or "institucion" in token) and ("emisora" in token or "emisor" in token):
+            elif (
+                (("dependencia" in token or "institucion" in token) and ("emisora" in token or "emisor" in token))
+                or idx == 4
+                or orden == 4
+                or pos_ini == 14
+            ):
                 val = institucion_emisora or ""
-            elif ("numero" in token and "documento" in token) or "folio" in token:
+            elif (("numero" in token and "documento" in token) or "folio" in token) or idx == 5 or orden == 5:
                 val = documento.folio or ""
-            elif "fecha" in token and ("exped" in token or "emision" in token or "expedicion" in token):
+            elif ("fecha" in token and ("exped" in token or "emision" in token or "expedicion" in token)) or idx == 6 or orden == 6:
                 val = fecha_txt
-            elif ("importe" in token and "ampar" in token) or source_norm == "importe_total_amparado_514":
+            elif (("importe" in token and "ampar" in token) or source_norm == "importe_total_amparado_514") or idx == 7 or orden == 7:
                 val = documento.importe_total_amparado_514
-            elif "saldo" in token and "disponible" in token:
+            elif ("saldo" in token and "disponible" in token) or idx == 8 or orden == 8:
                 val = documento.saldo_disponible_514
-            elif ("importe" in token and "pagar" in token) or source_norm == "importe_total_pagar_514":
+            elif (("importe" in token and "pagar" in token) or source_norm == "importe_total_pagar_514") or idx == 9 or orden == 9:
                 val = documento.importe_total_pagar_514
             else:
                 val = self._field_value_for_layout(campo, partida=False)
