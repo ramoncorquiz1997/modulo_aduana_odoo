@@ -2697,6 +2697,22 @@ class MxPedOperacion(models.Model):
             self._store_rule_trace(plan)
             raise UserError("\n".join(errors))
 
+    def _prune_forbidden_registros(self):
+        self.ensure_one()
+        if not self.registro_ids:
+            return
+        plan = self._build_record_plan()
+        states = plan.get("states") or {}
+        forbidden_codes = {
+            code for code, state in states.items()
+            if state.get("forbidden")
+        }
+        if not forbidden_codes:
+            return
+        forbidden_regs = self.registro_ids.filtered(lambda r: (r.codigo or "").strip() in forbidden_codes)
+        if forbidden_regs:
+            forbidden_regs.unlink()
+
     def action_preparar_estructura(self):
         for rec in self:
             plan = rec._build_record_plan()
@@ -3244,6 +3260,7 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         self._auto_refresh_generated_registros()
         self._sync_registro_ids_from_tecnicos()
+        self._prune_forbidden_registros()
         self._validate_confirmacion_pago_formas()
         self._validate_510_forma_pago_required()
         self._validate_partida_facturas_505()
