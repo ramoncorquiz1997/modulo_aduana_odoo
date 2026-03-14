@@ -4962,6 +4962,86 @@ class MxPedOperacion(models.Model):
                 valores[campo.nombre] = self._json_safe_layout_value(val)
         return valores
 
+    def _sanitize_516_transport_identificador(self, value):
+        clean = (value or "").strip()
+        for ch in ("'", '"', "´", "*", "-", "_"):
+            clean = clean.replace(ch, "")
+        return clean.strip()
+
+    def _get_516_candado_lines(self):
+        self.ensure_one()
+        lead = self.lead_id
+        if not lead:
+            return []
+
+        lines = []
+        for line in lead.x_candado_ids.sorted(lambda l: l.id):
+            transporte_identificador = self._sanitize_516_transport_identificador(line.transporte_identificador)
+            num_candado = (line.num_candado or "").strip()
+            if not transporte_identificador or not num_candado:
+                continue
+            lines.append({
+                "transporte_identificador": transporte_identificador,
+                "num_candado": num_candado,
+            })
+
+        if lines:
+            return lines
+
+        transporte_identificador = self._sanitize_516_transport_identificador(lead.x_transporte_identificador)
+        num_candado = (lead.x_num_sello or "").strip()
+        if transporte_identificador and num_candado:
+            return [{
+                "transporte_identificador": transporte_identificador,
+                "num_candado": num_candado,
+            }]
+        return []
+
+    def _build_516_valores(self, layout_reg, candado_line):
+        self.ensure_one()
+        valores = {}
+        transporte_identificador = candado_line.get("transporte_identificador") or ""
+        num_candado = candado_line.get("num_candado") or ""
+
+        ordered_campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+        for idx, campo in enumerate(ordered_campos, start=1):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            campo_name = self._norm_layout_token(campo.nombre)
+            source_norm = self._norm_layout_token(source_name)
+            token = f"{campo_name} {source_norm}".strip()
+            pos_ini = campo.pos_ini or 0
+            orden = campo.orden or 0
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro") or idx == 1 or orden == 1 or pos_ini == 1:
+                val = "516"
+            elif ("pedimento" in token and ("numero" in token or "num" in token)) or idx == 2 or orden == 2 or pos_ini == 4:
+                val = self.pedimento_numero or ""
+            elif (
+                ("transporte" in token and ("identificador" in token or "medio" in token))
+                or source_norm in {"transporte_identificador", "identificador_transporte"}
+                or idx == 3
+                or orden == 3
+                or pos_ini == 11
+            ):
+                val = transporte_identificador
+            elif (
+                ("candado" in token or "precinto" in token)
+                or source_norm in {"num_candado", "numero_candado", "candado", "precinto"}
+                or idx == 4
+                or orden == 4
+                or pos_ini == 28
+            ):
+                val = num_candado
+            else:
+                val = self._field_value_for_layout(campo, partida=False)
+                if val in (None, "", False) and campo.default:
+                    val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = self._json_safe_layout_value(val)
+        return valores
+
     def action_cargar_desde_lead(self):
         self.ensure_one()
         if not self.layout_id:
@@ -5027,6 +5107,18 @@ class MxPedOperacion(models.Model):
                         "codigo": layout_reg.codigo,
                         "secuencia": secuencia,
                         "valores": self._build_508_valores(layout_reg, cuenta_line),
+                    }))
+                continue
+
+            if code == "516":
+                candado_lines = self._get_516_candado_lines()
+                if not candado_lines:
+                    continue
+                for secuencia, candado_line in enumerate(candado_lines, start=1):
+                    registros.append((0, 0, {
+                        "codigo": layout_reg.codigo,
+                        "secuencia": secuencia,
+                        "valores": self._build_516_valores(layout_reg, candado_line),
                     }))
                 continue
 

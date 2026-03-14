@@ -1390,6 +1390,11 @@ class CrmLead(models.Model):
     )
     x_num_contenedor = fields.Char(string="Número de contenedor")
     x_num_sello = fields.Char(string="Número de sello")
+    x_candado_ids = fields.One2many(
+        "crm.lead.candado",
+        "lead_id",
+        string="Candados",
+    )
 
     # --- CFDI / documento equivalente ---
     x_cfdi_fecha = fields.Date(string="Fecha CFDI / doc equivalente")
@@ -2565,6 +2570,30 @@ class CrmLeadPartidaFacturaWizard(models.TransientModel):
             raise ValidationError(_("Todas las partidas deben pertenecer al mismo lead."))
         self.line_ids.write({"factura_documento_id": self.factura_documento_id.id})
         return {"type": "ir.actions.act_window_close"}
+
+
+class CrmLeadCandado(models.Model):
+    _name = "crm.lead.candado"
+    _description = "Candado por Lead"
+    _order = "id"
+
+    lead_id = fields.Many2one(
+        "crm.lead",
+        string="Lead",
+        required=True,
+        ondelete="cascade",
+        index=True,
+    )
+    transporte_identificador = fields.Char(
+        string="Identificador de transporte",
+        size=17,
+        required=True,
+    )
+    num_candado = fields.Char(
+        string="Numero de candado",
+        size=21,
+        required=True,
+    )
 
 
 class CrmLeadFecha506(models.Model):

@@ -89,6 +89,8 @@ access_mx_ped_fraccion_admin,mx.ped.fraccion.admin,model_mx_ped_fraccion,base.gr
 access_mx_ped_fraccion_tasa_admin,mx.ped.fraccion.tasa.admin,model_mx_ped_fraccion_tasa,base.group_system,1,1,1,1
 access_mx_ped_fraccion_contribucion_admin,mx.ped.fraccion.contribucion.admin,model_mx_ped_fraccion_contribucion,base.group_system,1,1,1,1
 access_mx_ped_identificador_admin,mx.ped.identificador.admin,model_mx_ped_identificador,base.group_system,1,1,1,1
+access_crm_lead_candado,crm.lead.candado,model_crm_lead_candado,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_crm_lead_candado_admin,crm.lead.candado.admin,model_crm_lead_candado,base.group_system,1,1,1,1
 access_mx_ped_operacion_observacion_admin,mx.ped.operacion.observacion.admin,model_mx_ped_operacion_observacion,base.group_system,1,1,1,1
 access_mx_ped_operacion_descargo_admin,mx.ped.operacion.descargo.admin,model_mx_ped_operacion_descargo,base.group_system,1,1,1,1
 access_mx_ped_operacion_compensacion,mx.ped.operacion.compensacion,model_mx_ped_operacion_compensacion,modulo_aduana_odoo.group_aduana_user,1,1,1,1
