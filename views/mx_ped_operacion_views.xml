@@ -421,7 +421,8 @@
                     <field name="partida_id"/>
                     <field name="forma_pago_id"/>
                     <field name="forma_pago_code" readonly="1"/>
-                    <field name="institucion_emisora_514"/>
+                    <field name="institucion_emisora_514" readonly="1" optional="hide"/>
+                    <field name="institucion_financiera_514_id"/>
                     <field name="fecha"/>
                     <field name="importe_total_amparado_514"/>
                     <field name="saldo_disponible_514"/>
