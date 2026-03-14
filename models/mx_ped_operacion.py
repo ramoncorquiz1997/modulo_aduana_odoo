@@ -2989,6 +2989,8 @@ class MxPedOperacion(models.Model):
             parts = []
             for campo in campos:
                 val = effective_vals.get(campo.nombre)
+                if (val is None or val == "" or val is False) and layout_registro.codigo == "501":
+                    val = self._get_501_field_fallback_value(campo)
                 if val in (None, ""):
                     if campo.default:
                         val = campo.default
@@ -3021,6 +3023,8 @@ class MxPedOperacion(models.Model):
             length = campo.longitud or (campo.pos_fin - campo.pos_ini + 1)
 
             val = effective_vals.get(campo.nombre)
+            if (val is None or val == "" or val is False) and layout_registro.codigo == "501":
+                val = self._get_501_field_fallback_value(campo)
             if val in (None, ""):
                 if campo.default:
                     val = campo.default
@@ -3053,6 +3057,23 @@ class MxPedOperacion(models.Model):
             max_pos = max(max_pos, pos_fin)
 
         return "".join(line[:max_pos])
+
+    def _get_501_field_fallback_value(self, campo):
+        self.ensure_one()
+        source_name = (campo.source_field_id.name if getattr(campo, "source_field_id", False) else campo.source_field) or ""
+        campo_name = self._norm_layout_token(campo.nombre)
+        source_norm = self._norm_layout_token(source_name)
+        token = f"{campo_name} {source_norm}".strip()
+        token_compact = token.replace(" ", "").replace("_", "")
+        source_compact = source_norm.replace(" ", "").replace("_", "")
+
+        if source_compact == "totalgrossweight" or "pesobruto" in token_compact:
+            return self.total_gross_weight
+        if source_compact == "totalnetweight" or "pesoneto" in token_compact:
+            return self.total_net_weight
+        if source_compact == "totalpackagesline" or "bulto" in token_compact or "paquete" in token_compact:
+            return self.total_packages_line
+        return None
 
     def _build_export_lines_from_registros(self, registros):
         self.ensure_one()
