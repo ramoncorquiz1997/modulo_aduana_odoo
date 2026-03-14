@@ -470,6 +470,13 @@ class MxPedOperacion(models.Model):
         string="Documentos",
         copy=True,
     )
+    documento_514_ids = fields.One2many(
+        "mx.ped.documento",
+        "operacion_id",
+        string="Documentos de formas de pago (514)",
+        domain=[("registro_codigo", "=", "514")],
+        copy=True,
+    )
     identificador_pedimento_ids = fields.One2many(
         "mx.ped.operacion.identificador",
         "operacion_id",

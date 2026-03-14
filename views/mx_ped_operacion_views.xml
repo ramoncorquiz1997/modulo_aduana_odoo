@@ -412,8 +412,7 @@
                     Captura aqui los documentos que amparan formas de pago virtuales (registro 514).
                   </div>
                 </group>
-                <field name="documento_ids"
-                       domain="[('registro_codigo', '=', '514')]"
+                <field name="documento_514_ids"
                        context="{'default_operacion_id': id, 'default_registro_codigo': '514'}">
                   <list editable="bottom">
                     <field name="registro_codigo" optional="hide"/>
