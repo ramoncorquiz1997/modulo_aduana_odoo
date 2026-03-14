@@ -266,14 +266,65 @@ class MxPedDocumento(models.Model):
                 if cuenta and cuenta.folio_constancia:
                     rec.folio = cuenta.folio_constancia
 
+    @api.model
+    def _sync_514_storage_vals(self, vals, current=None):
+        vals = dict(vals or {})
+        registro_codigo = (vals.get("registro_codigo") if "registro_codigo" in vals else (current.registro_codigo if current else "")) or ""
+        if str(registro_codigo).strip() != "514":
+            return vals
+
+        operacion = None
+        operacion_id = vals.get("operacion_id") if "operacion_id" in vals else (current.operacion_id.id if current and current.operacion_id else False)
+        if operacion_id:
+            operacion = self.env["mx.ped.operacion"].browse(operacion_id)
+
+        forma_pago = None
+        forma_pago_id = vals.get("forma_pago_id") if "forma_pago_id" in vals else (current.forma_pago_id.id if current and current.forma_pago_id else False)
+        if forma_pago_id:
+            forma_pago = self.env["mx.forma.pago"].browse(forma_pago_id)
+        fp_code = (forma_pago.code if forma_pago else (current.forma_pago_code if current else "")) or ""
+        fp_code = str(fp_code).strip()
+
+        institucion = None
+        inst_id = vals.get("institucion_financiera_514_id") if "institucion_financiera_514_id" in vals else (
+            current.institucion_financiera_514_id.id if current and current.institucion_financiera_514_id else False
+        )
+        if inst_id:
+            institucion = self.env["aduana.catalogo.institucion_financiera"].browse(inst_id)
+
+        if fp_code == "12":
+            vals["institucion_financiera_514_id"] = False
+            vals["institucion_emisora_514"] = "Aduanas"
+            if operacion and not vals.get("fecha") and not (current and current.fecha):
+                vals["fecha"] = operacion.fecha_pago or vals.get("fecha")
+        else:
+            if institucion:
+                vals["institucion_emisora_514"] = institucion.name
+            elif fp_code in {"4", "15"} and operacion:
+                cuenta = operacion.cuenta_aduanera_ids.sorted(lambda l: (l.sequence or 0, l.id))[:1]
+                if cuenta and cuenta.institucion_financiera_id:
+                    vals.setdefault("institucion_financiera_514_id", cuenta.institucion_financiera_id.id)
+                    vals["institucion_emisora_514"] = cuenta.institucion_financiera_id.name
+                if cuenta and not vals.get("fecha") and not (current and current.fecha) and cuenta.fecha_constancia:
+                    vals["fecha"] = cuenta.fecha_constancia
+                if cuenta and not vals.get("folio") and not (current and current.folio) and cuenta.folio_constancia:
+                    vals["folio"] = cuenta.folio_constancia
+
+        return vals
+
     @api.model_create_multi
     def create(self, vals_list):
-        records = super().create(vals_list)
+        normalized_vals_list = [self._sync_514_storage_vals(vals) for vals in vals_list]
+        records = super().create(normalized_vals_list)
         for rec in records:
             vals = rec._prepare_505_snapshot_vals()
             if vals:
                 super(MxPedDocumento, rec).write(vals)
         return records
+
+    def write(self, vals):
+        vals = self._sync_514_storage_vals(vals, current=self[:1] if len(self) == 1 else None)
+        return super().write(vals)
 
     @api.onchange("aplica_partida_especifica")
     def _onchange_aplica_partida_especifica(self):
