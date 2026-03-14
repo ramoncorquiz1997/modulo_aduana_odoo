@@ -2303,6 +2303,7 @@ class MxPedOperacion(models.Model):
                 "policy": "required" if line.required else "optional",
                 "min": min_occ,
                 "max": max(line.max_occurs or 0, 0),
+                "sequence": line.sequence or 0,
                 "identifier": "",
                 "stop": False,
                 "active": True,
@@ -2331,6 +2332,7 @@ class MxPedOperacion(models.Model):
                 "policy": line.policy,
                 "min": max(line.min_occurs or 0, 0),
                 "max": max(line.max_occurs or 0, 0),
+                "sequence": line.sequence or 0,
                 "identifier": (line.required_identifier_code or "").strip().upper(),
                 "stop": bool(line.stop),
                 "active": True,
@@ -2357,6 +2359,7 @@ class MxPedOperacion(models.Model):
                 "policy": rule.policy,
                 "min": max(rule.min_occurs or 0, 0),
                 "max": max(rule.max_occurs or 0, 0),
+                "sequence": rule.sequence or 0,
                 "identifier": (rule.required_identifier_code or "").strip().upper(),
                 "stop": bool(rule.stop),
                 "active": bool(rule.active),
@@ -2543,6 +2546,7 @@ class MxPedOperacion(models.Model):
                     "specificity_score": item["specificity_score"],
                     "min": item["min"],
                     "max": item["max"],
+                    "sequence": item.get("sequence") or 0,
                     "identifier": item["identifier"],
                     "stop": item["stop"],
                     "matched": True,
@@ -2599,6 +2603,48 @@ class MxPedOperacion(models.Model):
             "diff_base_final": diff,
             "weights": weights,
         }
+
+    def _get_record_order_map(self):
+        self.ensure_one()
+        plan = self._build_record_plan()
+        resolution = plan.get("record_resolution") or {}
+        order_map = {}
+        for key, meta in resolution.items():
+            code = (key.split("|", 1)[0] or "").strip()
+            if not code:
+                continue
+            candidates = meta.get("candidates") or []
+            winner_sequence = None
+            for candidate in candidates:
+                if candidate.get("applied"):
+                    winner_sequence = candidate.get("sequence") or 0
+                    break
+            order_map[code] = winner_sequence if winner_sequence is not None else 0
+        return order_map
+
+    def _layout_registro_sort_key(self, layout_reg, order_map=None):
+        self.ensure_one()
+        code = (layout_reg.codigo or "").strip()
+        layout_order = layout_reg.orden or 0
+        if order_map is None:
+            order_map = self._get_record_order_map()
+        rule_sequence = order_map.get(code)
+        if rule_sequence and rule_sequence > 0:
+            return (rule_sequence, layout_order, code, layout_reg.id)
+        return (999999, layout_order, code, layout_reg.id)
+
+    def _registro_export_sort_key(self, reg, order_map=None):
+        self.ensure_one()
+        code = (reg.codigo or "").strip()
+        if order_map is None:
+            order_map = self._get_record_order_map()
+        rule_sequence = order_map.get(code)
+        partida_num = self._extract_partida_number(reg.valores) or 0
+        if rule_sequence and rule_sequence > 0:
+            return (rule_sequence, code, partida_num, reg.secuencia or 0, reg.id)
+        layout_reg = self._get_layout_registro(code)
+        layout_order = layout_reg.orden if layout_reg else 0
+        return (999999, layout_order, code, partida_num, reg.secuencia or 0, reg.id)
 
     def _store_rule_trace(self, plan):
         self.ensure_one()
@@ -3351,14 +3397,22 @@ class MxPedOperacion(models.Model):
     def _build_remesa_export_registros(self, remesa):
         self.ensure_one()
         excluded_codes = {"514", "557", "551", "552", "553", "554", "555", "556", "558"}
+        order_map = self._get_record_order_map()
         base_regs = [
-            reg for reg in self.registro_ids.sorted(lambda r: (r.codigo, r.secuencia or 0))
+            reg for reg in self.registro_ids.sorted(lambda r: self._registro_export_sort_key(r, order_map=order_map))
             if (reg.codigo or "").strip() not in excluded_codes
         ]
         remesa_regs = list(base_regs)
         remesa_regs.extend(self._get_remesa_514_registros(remesa))
         remesa_regs.extend(self._get_remesa_partida_registros(remesa, {"551", "552", "553", "554", "555", "556", "558"}))
-        remesa_regs.sort(key=lambda r: ((r["codigo"] if isinstance(r, dict) else r.codigo), (r["secuencia"] if isinstance(r, dict) else (r.secuencia or 0))))
+        remesa_regs.sort(
+            key=lambda r: (
+                order_map.get((r["codigo"] if isinstance(r, dict) else (r.codigo or "")).strip()) or 999999,
+                (self._get_layout_registro(r["codigo"] if isinstance(r, dict) else r.codigo).orden if self._get_layout_registro(r["codigo"] if isinstance(r, dict) else r.codigo) else 0),
+                (r["codigo"] if isinstance(r, dict) else r.codigo),
+                (r["secuencia"] if isinstance(r, dict) else (r.secuencia or 0)),
+            )
+        )
         return remesa_regs
 
     def _build_remesa_txt_data(self, remesa):
@@ -3419,7 +3473,8 @@ class MxPedOperacion(models.Model):
             }
 
         lines = []
-        for reg in self.registro_ids.sorted(lambda r: (r.codigo, r.secuencia or 0)):
+        order_map = self._get_record_order_map()
+        for reg in self.registro_ids.sorted(lambda r: self._registro_export_sort_key(r, order_map=order_map)):
             layout_reg = self._get_layout_registro(reg.codigo)
             partida_num = self._extract_partida_number(reg.valores)
             lines.append(self._build_txt_line(layout_reg, reg.valores, partida_num=partida_num))
@@ -3456,7 +3511,8 @@ class MxPedOperacion(models.Model):
         self._validate_registros_vs_estructura()
 
         lines = []
-        for reg in self.registro_ids.sorted(lambda r: (r.codigo, r.secuencia or 0)):
+        order_map = self._get_record_order_map()
+        for reg in self.registro_ids.sorted(lambda r: self._registro_export_sort_key(r, order_map=order_map)):
             layout_reg = self._get_layout_registro(reg.codigo)
             partida_num = self._extract_partida_number(reg.valores)
             lines.append(self._build_txt_line(layout_reg, reg.valores, partida_num=partida_num))
@@ -3792,7 +3848,8 @@ class MxPedOperacion(models.Model):
         self._validate_registros_vs_estructura()
 
         root = ET.Element("pedimento", layout=(self.layout_id.name or ""))
-        for reg in self.registro_ids.sorted(lambda r: (r.codigo, r.secuencia or 0)):
+        order_map = self._get_record_order_map()
+        for reg in self.registro_ids.sorted(lambda r: self._registro_export_sort_key(r, order_map=order_map)):
             reg_el = ET.SubElement(
                 root,
                 "registro",
@@ -5128,7 +5185,8 @@ class MxPedOperacion(models.Model):
         allowed = _allowed_codes()
         repeat_codes_by_partida = {"551", "552", "553", "554", "555", "556", "557", "558"}
         registros = []
-        for layout_reg in self.layout_id.registro_ids.sorted(lambda r: r.orden or 0):
+        order_map = self._get_record_order_map()
+        for layout_reg in self.layout_id.registro_ids.sorted(lambda r: self._layout_registro_sort_key(r, order_map=order_map)):
             if allowed is not None and layout_reg.codigo not in allowed:
                 continue
             code = (layout_reg.codigo or "").strip()
