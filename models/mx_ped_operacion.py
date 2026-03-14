@@ -1981,8 +1981,24 @@ class MxPedOperacion(models.Model):
                 % (", ".join(sorted(needed, key=lambda x: int(x))))
             )
         for code in sorted(needed, key=lambda x: int(x)):
-            if not docs_514.filtered(lambda d: (d.forma_pago_code or "").strip() == code):
+            matching_docs = docs_514.filtered(lambda d: (d.forma_pago_code or "").strip() == code)
+            if not matching_docs:
                 raise ValidationError(_("Falta documento 514 para la forma de pago %s.") % code)
+            for doc in matching_docs:
+                if code == "12" and (doc.institucion_emisora_514 or "").strip() != "Aduanas":
+                    raise ValidationError(_("514: con forma de pago 12 la institucion emisora debe ser Aduanas."))
+                if not (doc.institucion_emisora_514 or "").strip():
+                    raise ValidationError(_("514: la dependencia o institucion emisora es obligatoria."))
+                if not (doc.folio or "").strip():
+                    raise ValidationError(_("514: el numero de documento es obligatorio."))
+                if not doc.fecha:
+                    raise ValidationError(_("514: la fecha de expedicion es obligatoria."))
+                if doc.importe_total_amparado_514 in (None, False) or doc.importe_total_amparado_514 <= 0:
+                    raise ValidationError(_("514: el importe total amparado debe ser mayor a cero."))
+                if doc.saldo_disponible_514 in (None, False) or doc.saldo_disponible_514 < 0:
+                    raise ValidationError(_("514: el saldo disponible es obligatorio."))
+                if doc.importe_total_pagar_514 in (None, False) or doc.importe_total_pagar_514 <= 0:
+                    raise ValidationError(_("514: el importe total a pagar debe ser mayor a cero."))
 
     def _build_sync_payload_from_layout(self, layout_reg, source, code):
         """Construye payload usando campo.nombre y heuristicas por codigo."""

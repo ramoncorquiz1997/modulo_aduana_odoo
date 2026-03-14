@@ -266,40 +266,6 @@ class MxPedDocumento(models.Model):
                 if cuenta and cuenta.folio_constancia:
                     rec.folio = cuenta.folio_constancia
 
-    @api.constrains(
-        "registro_codigo",
-        "forma_pago_id",
-        "institucion_financiera_514_id",
-        "institucion_emisora_514",
-        "folio",
-        "fecha",
-        "importe_total_amparado_514",
-        "saldo_disponible_514",
-        "importe_total_pagar_514",
-    )
-    def _check_514_fields(self):
-        required_codes = {"2", "4", "7", "12", "15", "19", "22"}
-        for rec in self.filtered(lambda r: (r.registro_codigo or "").strip() == "514"):
-            fp_code = (rec.forma_pago_code or "").strip()
-            if not fp_code:
-                raise ValidationError("514: la forma de pago es obligatoria.")
-            if fp_code not in required_codes:
-                continue
-            if fp_code == "12" and (rec.institucion_emisora_514 or "").strip() != "Aduanas":
-                raise ValidationError("514: con forma de pago 12 la institucion emisora debe ser Aduanas.")
-            if not (rec.institucion_emisora_514 or "").strip():
-                raise ValidationError("514: la dependencia o institucion emisora es obligatoria.")
-            if not (rec.folio or "").strip():
-                raise ValidationError("514: el numero de documento es obligatorio.")
-            if not rec.fecha:
-                raise ValidationError("514: la fecha de expedicion es obligatoria.")
-            if rec.importe_total_amparado_514 in (None, False) or rec.importe_total_amparado_514 <= 0:
-                raise ValidationError("514: el importe total amparado debe ser mayor a cero.")
-            if rec.saldo_disponible_514 in (None, False) or rec.saldo_disponible_514 < 0:
-                raise ValidationError("514: el saldo disponible es obligatorio.")
-            if rec.importe_total_pagar_514 in (None, False) or rec.importe_total_pagar_514 <= 0:
-                raise ValidationError("514: el importe total a pagar debe ser mayor a cero.")
-
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
