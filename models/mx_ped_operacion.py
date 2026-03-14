@@ -4544,17 +4544,18 @@ class MxPedOperacion(models.Model):
             campo_name = self._norm_layout_token(campo.nombre)
             source_norm = self._norm_layout_token(source_name)
             token = f"{campo_name} {source_norm}".strip()
+            token_compact = token.replace(" ", "").replace("_", "")
 
             val = None
             if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro"):
                 val = "501"
             elif "pedimento" in token and ("numero" in token or "num" in token or token == "pedimento"):
                 val = self.pedimento_numero or ""
-            elif "pesobruto" in token:
+            elif "pesobruto" in token_compact:
                 val = self.total_gross_weight
-            elif "pesoneto" in token:
+            elif "pesoneto" in token_compact:
                 val = self.total_net_weight
-            elif "bulto" in token or "paquete" in token:
+            elif "bulto" in token_compact or "paquete" in token_compact:
                 val = self.total_packages_line
             else:
                 val = self._field_value_for_layout(campo, partida=False)
