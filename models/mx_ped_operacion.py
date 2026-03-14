@@ -4103,9 +4103,9 @@ class MxPedOperacion(models.Model):
             "moneda": "currency_id",
             "pais_origen": "x_pais_origen_id",
             "pais_destino": "x_pais_destino_id",
-            "bultos": "x_bultos",
-            "peso_bruto": "x_peso_bruto",
-            "peso_neto": "x_peso_neto",
+            "bultos": "total_packages_line",
+            "peso_bruto": "total_gross_weight",
+            "peso_neto": "total_net_weight",
             "valor_factura": "x_valor_factura",
             "valor_aduana": "x_valor_aduana_estimado",
             "folio_operacion": "x_folio_operacion",
@@ -4153,6 +4153,8 @@ class MxPedOperacion(models.Model):
             return self._get_tipo_movimiento_effective() or ""
 
         if source_model == "operacion":
+            return self._record_value_for_field(self, source)
+        if source in {"total_packages_line", "total_gross_weight", "total_net_weight"}:
             return self._record_value_for_field(self, source)
         if source_model == "partida":
             return None
