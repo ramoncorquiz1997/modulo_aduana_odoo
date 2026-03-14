@@ -4147,6 +4147,7 @@ class MxPedOperacion(models.Model):
         source_model = source_model or "lead"
 
         field_norm = _norm(field_name)
+        source_norm_hint = _norm(source)
         if source == field_name:
             if "pesobruto" in field_norm:
                 source = "total_gross_weight"
@@ -4154,6 +4155,12 @@ class MxPedOperacion(models.Model):
                 source = "total_net_weight"
             elif "bulto" in field_norm or "paquete" in field_norm:
                 source = "total_packages_line"
+        elif "pesobruto" in source_norm_hint:
+            source = "total_gross_weight"
+        elif "pesoneto" in source_norm_hint:
+            source = "total_net_weight"
+        elif "bulto" in source_norm_hint or "paquete" in source_norm_hint:
+            source = "total_packages_line"
 
         # Normaliza tipo de operación a 1/2 aunque el layout use nombre "amigable"
         source_norm = _norm(source)
@@ -4529,6 +4536,35 @@ class MxPedOperacion(models.Model):
                 valores[campo.nombre] = val
         return valores
 
+    def _build_501_valores(self, layout_reg):
+        self.ensure_one()
+        valores = {}
+        for campo in layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0):
+            source_name = (campo.source_field_id.name if campo.source_field_id else campo.source_field) or ""
+            campo_name = self._norm_layout_token(campo.nombre)
+            source_norm = self._norm_layout_token(source_name)
+            token = f"{campo_name} {source_norm}".strip()
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro"):
+                val = "501"
+            elif "pedimento" in token and ("numero" in token or "num" in token or token == "pedimento"):
+                val = self.pedimento_numero or ""
+            elif "pesobruto" in token:
+                val = self.total_gross_weight
+            elif "pesoneto" in token:
+                val = self.total_net_weight
+            elif "bulto" in token or "paquete" in token:
+                val = self.total_packages_line
+            else:
+                val = self._field_value_for_layout(campo, partida=False)
+                if val in (None, "", False) and campo.default:
+                    val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = self._json_safe_layout_value(val)
+        return valores
+
     def _build_511_valores(self, layout_reg, observation_line):
         self.ensure_one()
         valores = {}
@@ -4744,6 +4780,14 @@ class MxPedOperacion(models.Model):
                             "valores": self._build_505_valores(layout_reg, documento),
                         }))
                     continue
+
+            if code == "501":
+                registros.append((0, 0, {
+                    "codigo": layout_reg.codigo,
+                    "secuencia": 1,
+                    "valores": self._build_501_valores(layout_reg),
+                }))
+                continue
 
             has_partida_source = any(c.source_model == "partida" for c in campos)
             repeat_by_partida = has_partida_source or code in repeat_codes_by_partida
