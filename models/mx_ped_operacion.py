@@ -5038,6 +5038,7 @@ class MxPedOperacion(models.Model):
                 # El registro 505 solo debe salir de documentos comerciales.
                 docs_505 = self.documento_ids.filtered(
                     lambda d: d.tipo in ("factura", "cove", "otro")
+                    and (d.registro_codigo or "").strip() not in {"514", "510", "557"}
                 ).sorted(lambda d: (d.es_documento_principal is not True, d.id))
                 if docs_505:
                     for secuencia, documento in enumerate(docs_505, start=1):
