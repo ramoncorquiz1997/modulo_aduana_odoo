@@ -80,6 +80,22 @@ class MxPedDocumento(models.Model):
         store=True,
         readonly=True,
     )
+    institucion_emisora_514 = fields.Char(string="Institucion emisora 514")
+    importe_total_amparado_514 = fields.Monetary(
+        string="Importe total amparado 514",
+        currency_field="company_currency_id",
+        digits=(16, 2),
+    )
+    saldo_disponible_514 = fields.Monetary(
+        string="Saldo disponible 514",
+        currency_field="company_currency_id",
+        digits=(16, 2),
+    )
+    importe_total_pagar_514 = fields.Monetary(
+        string="Importe total a pagar 514",
+        currency_field="company_currency_id",
+        digits=(16, 2),
+    )
 
     folio = fields.Char()
     fecha = fields.Datetime()
@@ -216,6 +232,60 @@ class MxPedDocumento(models.Model):
             vals = rec._prepare_505_snapshot_vals() if rec.operacion_id else {}
             for key, value in vals.items():
                 rec[key] = value
+
+    @api.onchange("forma_pago_id", "registro_codigo", "operacion_id")
+    def _onchange_fill_514_defaults(self):
+        for rec in self:
+            if (rec.registro_codigo or "").strip() != "514" or not rec.operacion_id:
+                continue
+            fp_code = (rec.forma_pago_code or "").strip()
+            if fp_code == "12" and not rec.institucion_emisora_514:
+                rec.institucion_emisora_514 = "Aduanas"
+            elif fp_code in {"4", "15"} and not rec.institucion_emisora_514:
+                cuenta = rec.operacion_id.cuenta_aduanera_ids.sorted(lambda l: (l.sequence or 0, l.id))[:1]
+                if cuenta and cuenta.institucion_financiera_id:
+                    rec.institucion_emisora_514 = cuenta.institucion_financiera_id.name
+            if fp_code == "12" and not rec.fecha and rec.operacion_id.fecha_pago:
+                rec.fecha = rec.operacion_id.fecha_pago
+            if fp_code in {"4", "15"} and not rec.fecha:
+                cuenta = rec.operacion_id.cuenta_aduanera_ids.sorted(lambda l: (l.sequence or 0, l.id))[:1]
+                if cuenta and cuenta.fecha_constancia:
+                    rec.fecha = cuenta.fecha_constancia
+            if fp_code in {"4", "15"} and not rec.folio:
+                cuenta = rec.operacion_id.cuenta_aduanera_ids.sorted(lambda l: (l.sequence or 0, l.id))[:1]
+                if cuenta and cuenta.folio_constancia:
+                    rec.folio = cuenta.folio_constancia
+
+    @api.constrains(
+        "registro_codigo",
+        "forma_pago_id",
+        "institucion_emisora_514",
+        "folio",
+        "fecha",
+        "importe_total_amparado_514",
+        "saldo_disponible_514",
+        "importe_total_pagar_514",
+    )
+    def _check_514_fields(self):
+        required_codes = {"2", "4", "7", "12", "15", "19", "22"}
+        for rec in self.filtered(lambda r: (r.registro_codigo or "").strip() == "514"):
+            fp_code = (rec.forma_pago_code or "").strip()
+            if not fp_code:
+                raise ValidationError("514: la forma de pago es obligatoria.")
+            if fp_code not in required_codes:
+                continue
+            if not (rec.institucion_emisora_514 or "").strip():
+                raise ValidationError("514: la dependencia o institucion emisora es obligatoria.")
+            if not (rec.folio or "").strip():
+                raise ValidationError("514: el numero de documento es obligatorio.")
+            if not rec.fecha:
+                raise ValidationError("514: la fecha de expedicion es obligatoria.")
+            if rec.importe_total_amparado_514 in (None, False) or rec.importe_total_amparado_514 <= 0:
+                raise ValidationError("514: el importe total amparado debe ser mayor a cero.")
+            if rec.saldo_disponible_514 in (None, False) or rec.saldo_disponible_514 < 0:
+                raise ValidationError("514: el saldo disponible es obligatorio.")
+            if rec.importe_total_pagar_514 in (None, False) or rec.importe_total_pagar_514 <= 0:
+                raise ValidationError("514: el importe total a pagar debe ser mayor a cero.")
 
     @api.model_create_multi
     def create(self, vals_list):

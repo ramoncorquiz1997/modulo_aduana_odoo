@@ -163,6 +163,11 @@ class MxPedOperacion(models.Model):
         compute="_compute_show_compensacion_ui",
         store=False,
     )
+    show_documentos_forma_pago_ui = fields.Boolean(
+        string="Mostrar documentos de formas de pago 514",
+        compute="_compute_show_documentos_forma_pago_ui",
+        store=False,
+    )
     aduana_seccion_entrada_salida_id = fields.Many2one(
         "mx.ped.aduana.seccion",
         string="Aduana-seccion entrada/salida",
@@ -740,6 +745,17 @@ class MxPedOperacion(models.Model):
     def _compute_show_compensacion_ui(self):
         for rec in self:
             rec.show_compensacion_ui = rec._has_forma_pago_code("12")
+
+    @api.depends(
+        "contribucion_global_ids.forma_pago_code",
+        "partida_contribucion_ids.forma_pago_code",
+        "partida_ids.forma_pago_sugerida_id.code",
+        "documento_ids.forma_pago_code",
+    )
+    def _compute_show_documentos_forma_pago_ui(self):
+        required_codes = {"2", "4", "7", "12", "15", "19", "22"}
+        for rec in self:
+            rec.show_documentos_forma_pago_ui = bool(rec._get_declared_formas_pago_codes() & required_codes)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -1946,6 +1962,21 @@ class MxPedOperacion(models.Model):
         if has_fp12 and not has_513:
             raise ValidationError(_("Existe forma de pago 12, pero no hay lineas de compensacion (513)."))
 
+    def _validate_514_virtual_rules(self):
+        self.ensure_one()
+        required_codes = {"2", "4", "7", "12", "15", "19", "22"}
+        declared = self._get_declared_formas_pago_codes()
+        needed = declared & required_codes
+        docs_514 = self.documento_ids.filtered(lambda d: (d.registro_codigo or "").strip() == "514")
+        if needed and not docs_514:
+            raise ValidationError(
+                _("Existen formas de pago virtuales %s, pero no hay documentos 514.")
+                % (", ".join(sorted(needed, key=lambda x: int(x))))
+            )
+        for code in sorted(needed, key=lambda x: int(x)):
+            if not docs_514.filtered(lambda d: (d.forma_pago_code or "").strip() == code):
+                raise ValidationError(_("Falta documento 514 para la forma de pago %s.") % code)
+
     def _build_sync_payload_from_layout(self, layout_reg, source, code):
         """Construye payload usando campo.nombre y heuristicas por codigo."""
         values = {}
@@ -2082,7 +2113,7 @@ class MxPedOperacion(models.Model):
             )
             for idx, doc in enumerate(docs, start=1):
                 key = f"514:{doc.id}"
-                payload = self._build_sync_payload_from_layout(layout_regs["514"], doc, "514")
+                payload = self._build_514_valores(layout_regs["514"], doc)
                 payload["__sync_origin"] = "tecnico"
                 payload["__sync_key"] = key
                 desired.append({
@@ -2202,6 +2233,7 @@ class MxPedOperacion(models.Model):
         self._run_process_stage_checks("pre_validate")
         self._validate_508_cuenta_aduanera_rules()
         self._validate_513_compensacion_rules()
+        self._validate_514_virtual_rules()
 
     def _validate_510_forma_pago_required(self):
         self.ensure_one()
@@ -3211,7 +3243,7 @@ class MxPedOperacion(models.Model):
         )
         registros = []
         for secuencia, doc in enumerate(docs, start=1):
-            payload = self._build_sync_payload_from_layout(layout_reg, doc, "514")
+            payload = self._build_514_valores(layout_reg, doc)
             registros.append({
                 "codigo": "514",
                 "secuencia": secuencia,
@@ -4838,6 +4870,50 @@ class MxPedOperacion(models.Model):
                 val = compensacion_line.get("contribucion_compensada") or ""
             elif ("importe" in token and "compens" in token) or source_norm == "importe_compensado":
                 val = compensacion_line.get("importe_compensado")
+            else:
+                val = self._field_value_for_layout(campo, partida=False)
+                if val in (None, "", False) and campo.default:
+                    val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = self._json_safe_layout_value(val)
+        return valores
+
+    def _build_514_valores(self, layout_reg, documento):
+        self.ensure_one()
+        valores = {}
+        fecha_txt = ""
+        if documento.fecha:
+            fecha_txt = fields.Date.to_date(documento.fecha).strftime("%d%m%Y")
+
+        ordered_campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+        for idx, campo in enumerate(ordered_campos, start=1):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            campo_name = self._norm_layout_token(campo.nombre)
+            source_norm = self._norm_layout_token(source_name)
+            token = f"{campo_name} {source_norm}".strip()
+            pos_ini = campo.pos_ini or 0
+            orden = campo.orden or 0
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro") or idx == 1 or orden == 1 or pos_ini == 1:
+                val = "514"
+            elif "pedimento" in token and ("numero" in token or "num" in token):
+                val = self.pedimento_numero or ""
+            elif "forma" in token and "pago" in token:
+                val = documento.forma_pago_code or ""
+            elif ("dependencia" in token or "institucion" in token) and ("emisora" in token or "emisor" in token):
+                val = documento.institucion_emisora_514 or ""
+            elif ("numero" in token and "documento" in token) or "folio" in token:
+                val = documento.folio or ""
+            elif "fecha" in token and ("exped" in token or "emision" in token or "expedicion" in token):
+                val = fecha_txt
+            elif ("importe" in token and "ampar" in token) or source_norm == "importe_total_amparado_514":
+                val = documento.importe_total_amparado_514
+            elif "saldo" in token and "disponible" in token:
+                val = documento.saldo_disponible_514
+            elif ("importe" in token and "pagar" in token) or source_norm == "importe_total_pagar_514":
+                val = documento.importe_total_pagar_514
             else:
                 val = self._field_value_for_layout(campo, partida=False)
                 if val in (None, "", False) and campo.default:

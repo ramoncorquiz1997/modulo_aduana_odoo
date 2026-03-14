@@ -59,6 +59,7 @@
                 <field name="show_formas_pago_ui" invisible="1"/>
                 <field name="show_descargo_ui" invisible="1"/>
                 <field name="show_compensacion_ui" invisible="1"/>
+                <field name="show_documentos_forma_pago_ui" invisible="1"/>
                 <field name="lead_id"/>
                 <field name="tipo_operacion"/>
                 <field name="regimen"/>
@@ -405,7 +406,10 @@
                   </list>
                 </field>
               </page>
-              <page string="Docs virtuales 514" invisible="not show_advanced_info">
+              <page string="Documentos de formas de pago" invisible="not show_documentos_forma_pago_ui">
+                <group>
+                  <label string="Captura aqui los documentos que amparan formas de pago virtuales (registro 514)."/>
+                </group>
                 <field name="documento_ids" context="{'default_operacion_id': id, 'default_registro_codigo': '514'}">
                   <list editable="bottom">
                     <field name="registro_codigo"/>
@@ -414,9 +418,30 @@
                     <field name="partida_id"/>
                     <field name="forma_pago_id"/>
                     <field name="forma_pago_code" readonly="1"/>
+                    <field name="institucion_emisora_514"/>
                     <field name="fecha"/>
+                    <field name="importe_total_amparado_514"/>
+                    <field name="saldo_disponible_514"/>
+                    <field name="importe_total_pagar_514"/>
                     <field name="estatus"/>
                   </list>
+                  <form string="Documento virtual 514">
+                    <group>
+                      <field name="registro_codigo"/>
+                      <field name="tipo"/>
+                      <field name="folio"/>
+                      <field name="partida_id"/>
+                      <field name="forma_pago_id"/>
+                      <field name="forma_pago_code" readonly="1"/>
+                      <field name="institucion_emisora_514"/>
+                      <field name="fecha"/>
+                      <field name="importe_total_amparado_514"/>
+                      <field name="saldo_disponible_514"/>
+                      <field name="importe_total_pagar_514"/>
+                      <field name="estatus"/>
+                      <field name="notas"/>
+                    </group>
+                  </form>
                 </field>
               </page>
               <page string="Identificadores">
