@@ -58,6 +58,7 @@
                 <field name="show_acuse_ui" invisible="1"/>
                 <field name="show_formas_pago_ui" invisible="1"/>
                 <field name="show_descargo_ui" invisible="1"/>
+                <field name="show_compensacion_ui" invisible="1"/>
                 <field name="lead_id"/>
                 <field name="tipo_operacion"/>
                 <field name="regimen"/>
@@ -485,6 +486,32 @@
                         <field name="fraccion_original_id"/>
                         <field name="unidad_medida_original_id"/>
                         <field name="cantidad_umt_original"/>
+                      </group>
+                    </form>
+                  </field>
+                </group>
+              </page>
+              <page string="Compensaciones pedimento" invisible="not show_compensacion_ui">
+                <group string="Compensaciones pedimento">
+                  <field name="compensacion_line_ids" context="{'default_operacion_id': id}">
+                    <list editable="bottom">
+                      <field name="sequence"/>
+                      <field name="patente_original"/>
+                      <field name="pedimento_original"/>
+                      <field name="aduana_seccion_original_id"/>
+                      <field name="fecha_pago_original"/>
+                      <field name="contribucion_compensada_id"/>
+                      <field name="importe_compensado"/>
+                    </list>
+                    <form string="Compensacion pedimento">
+                      <group>
+                        <field name="sequence"/>
+                        <field name="patente_original"/>
+                        <field name="pedimento_original"/>
+                        <field name="aduana_seccion_original_id"/>
+                        <field name="fecha_pago_original"/>
+                        <field name="contribucion_compensada_id"/>
+                        <field name="importe_compensado"/>
                       </group>
                     </form>
                   </field>

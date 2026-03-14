@@ -158,6 +158,11 @@ class MxPedOperacion(models.Model):
         compute="_compute_show_descargo_ui",
         store=False,
     )
+    show_compensacion_ui = fields.Boolean(
+        string="Mostrar compensaciones 513",
+        compute="_compute_show_compensacion_ui",
+        store=False,
+    )
     aduana_seccion_entrada_salida_id = fields.Many2one(
         "mx.ped.aduana.seccion",
         string="Aduana-seccion entrada/salida",
@@ -298,6 +303,12 @@ class MxPedOperacion(models.Model):
         "mx.ped.operacion.descargo",
         "operacion_id",
         string="Descargos 512",
+        copy=True,
+    )
+    compensacion_line_ids = fields.One2many(
+        "mx.ped.operacion.compensacion",
+        "operacion_id",
+        string="Compensaciones 513",
         copy=True,
     )
     bl_file = fields.Binary(string="Archivo B/L (PDF)")
@@ -719,6 +730,16 @@ class MxPedOperacion(models.Model):
                 rec.regimen == "deposito_fiscal" and clave_code != "IA",
                 rec.regimen == "temporal" and is_non_immex,
             ]))
+
+    @api.depends(
+        "contribucion_global_ids.forma_pago_code",
+        "partida_contribucion_ids.forma_pago_code",
+        "partida_ids.forma_pago_sugerida_id.code",
+        "documento_ids.forma_pago_code",
+    )
+    def _compute_show_compensacion_ui(self):
+        for rec in self:
+            rec.show_compensacion_ui = rec._has_forma_pago_code("12")
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -1832,6 +1853,42 @@ class MxPedOperacion(models.Model):
             })
         return lines
 
+    @staticmethod
+    def _sanitize_513_pedimento(value):
+        text = re.sub(r"\D+", "", str(value or ""))
+        return text[:7]
+
+    @staticmethod
+    def _sanitize_513_patente(value):
+        text = re.sub(r"\D+", "", str(value or ""))
+        return text[:4]
+
+    def _get_513_compensacion_lines(self):
+        self.ensure_one()
+        if not self._has_forma_pago_code("12"):
+            return []
+        lines = []
+        explicit_lines = self.compensacion_line_ids.sorted(lambda l: ((l.sequence or 999999), l.id))
+        for idx, line in enumerate(explicit_lines, start=1):
+            seq = line.sequence if line.sequence and line.sequence > 0 else idx
+            aduana_code = (line.aduana_seccion_original or (line.aduana_seccion_original_id.code if line.aduana_seccion_original_id else "")).strip().upper()[:3]
+            fecha_txt = ""
+            if line.fecha_pago_original:
+                fecha_txt = fields.Date.to_string(line.fecha_pago_original)
+            contrib_code = ""
+            if line.contribucion_compensada_id and line.contribucion_compensada_id.code is not None:
+                contrib_code = str(line.contribucion_compensada_id.code).strip()
+            lines.append({
+                "sequence": seq,
+                "patente_original": self._sanitize_513_patente(line.patente_original),
+                "pedimento_original": self._sanitize_513_pedimento(line.pedimento_original),
+                "aduana_seccion_original": aduana_code,
+                "fecha_pago_original": fecha_txt,
+                "contribucion_compensada": contrib_code,
+                "importe_compensado": line.importe_compensado,
+            })
+        return lines
+
     def _validate_508_cuenta_aduanera_rules(self):
         """Valida condicion base de 508 contra formas de pago y calidad de datos."""
         self.ensure_one()
@@ -1880,6 +1937,14 @@ class MxPedOperacion(models.Model):
                     _("508: incoherencia en montos (valor_unitario*titulos != total_garantia) en la linea %s.")
                     % (line.sequence or line.id)
                 )
+
+    def _validate_513_compensacion_rules(self):
+        self.ensure_one()
+        has_fp12 = self._has_forma_pago_code("12")
+        has_513 = bool(self.compensacion_line_ids)
+
+        if has_fp12 and not has_513:
+            raise ValidationError(_("Existe forma de pago 12, pero no hay lineas de compensacion (513)."))
 
     def _build_sync_payload_from_layout(self, layout_reg, source, code):
         """Construye payload usando campo.nombre y heuristicas por codigo."""
@@ -2136,6 +2201,7 @@ class MxPedOperacion(models.Model):
         self._validate_cancel_desist_structure()
         self._run_process_stage_checks("pre_validate")
         self._validate_508_cuenta_aduanera_rules()
+        self._validate_513_compensacion_rules()
 
     def _validate_510_forma_pago_required(self):
         self.ensure_one()
@@ -4739,6 +4805,48 @@ class MxPedOperacion(models.Model):
                 valores[campo.nombre] = self._json_safe_layout_value(val)
         return valores
 
+    def _build_513_valores(self, layout_reg, compensacion_line):
+        self.ensure_one()
+        valores = {}
+        fecha_original = ""
+        if compensacion_line.get("fecha_pago_original"):
+            fecha_original = fields.Date.from_string(compensacion_line["fecha_pago_original"]).strftime("%d%m%Y")
+
+        ordered_campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+        for idx, campo in enumerate(ordered_campos, start=1):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            campo_name = self._norm_layout_token(campo.nombre)
+            source_norm = self._norm_layout_token(source_name)
+            token = f"{campo_name} {source_norm}".strip()
+            pos_ini = campo.pos_ini or 0
+            orden = campo.orden or 0
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro") or idx == 1 or orden == 1 or pos_ini == 1:
+                val = "513"
+            elif "pedimento" in token and ("numero" in token or "num" in token) and "original" not in token:
+                val = self.pedimento_numero or ""
+            elif ("patente" in token or "autorizacion" in token) and "original" in token:
+                val = compensacion_line.get("patente_original") or ""
+            elif "pedimento" in token and "original" in token:
+                val = compensacion_line.get("pedimento_original") or ""
+            elif ("aduana" in token and "original" in token) or source_norm in {"aduana_seccion_original", "aduana_original"}:
+                val = compensacion_line.get("aduana_seccion_original") or ""
+            elif "fecha" in token and ("pago" in token or "original" in token):
+                val = fecha_original
+            elif ("contribucion" in token and "compens" in token) or ("gravamen" in token and "compens" in token):
+                val = compensacion_line.get("contribucion_compensada") or ""
+            elif ("importe" in token and "compens" in token) or source_norm == "importe_compensado":
+                val = compensacion_line.get("importe_compensado")
+            else:
+                val = self._field_value_for_layout(campo, partida=False)
+                if val in (None, "", False) and campo.default:
+                    val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = self._json_safe_layout_value(val)
+        return valores
+
     def action_cargar_desde_lead(self):
         self.ensure_one()
         if not self.layout_id:
@@ -4828,6 +4936,18 @@ class MxPedOperacion(models.Model):
                         "codigo": layout_reg.codigo,
                         "secuencia": secuencia,
                         "valores": self._build_512_valores(layout_reg, descargo_line),
+                    }))
+                continue
+
+            if code == "513":
+                compensacion_lines = self._get_513_compensacion_lines()
+                if not compensacion_lines:
+                    continue
+                for secuencia, compensacion_line in enumerate(compensacion_lines, start=1):
+                    registros.append((0, 0, {
+                        "codigo": layout_reg.codigo,
+                        "secuencia": secuencia,
+                        "valores": self._build_513_valores(layout_reg, compensacion_line),
                     }))
                 continue
 
@@ -4960,6 +5080,72 @@ class MxPedOperacionDescargo(models.Model):
                 raise ValidationError(_("La fecha de la operacion original del 512 es obligatoria."))
             if rec.cantidad_umt_original in (False, None):
                 raise ValidationError(_("La cantidad UMT original del 512 es obligatoria."))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            records.mapped("operacion_id")._auto_refresh_generated_registros()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            self.mapped("operacion_id")._auto_refresh_generated_registros()
+        return res
+
+    def unlink(self):
+        ops = self.mapped("operacion_id")
+        res = super().unlink()
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            ops._auto_refresh_generated_registros()
+        return res
+
+
+class MxPedOperacionCompensacion(models.Model):
+    _name = "mx.ped.operacion.compensacion"
+    _description = "Operacion - Compensacion 513"
+    _order = "sequence, id"
+
+    operacion_id = fields.Many2one("mx.ped.operacion", required=True, ondelete="cascade", index=True)
+    sequence = fields.Integer(string="Secuencia", default=10)
+    patente_original = fields.Char(string="Patente original", required=True, size=4)
+    pedimento_original = fields.Char(string="Pedimento original", required=True, size=7)
+    aduana_seccion_original_id = fields.Many2one("mx.ped.aduana.seccion", string="Aduana-seccion original", required=True)
+    aduana_seccion_original = fields.Char(string="Aduana-seccion original (codigo)", related="aduana_seccion_original_id.code", store=True, readonly=True)
+    fecha_pago_original = fields.Date(string="Fecha de pago original", required=True)
+    contribucion_compensada_id = fields.Many2one(
+        "aduana.catalogo.contribucion",
+        string="Contribucion compensada",
+        required=True,
+        ondelete="restrict",
+    )
+    importe_compensado = fields.Float(string="Importe compensado", digits=(16, 2), required=True)
+
+    @api.constrains(
+        "patente_original",
+        "pedimento_original",
+        "aduana_seccion_original_id",
+        "fecha_pago_original",
+        "contribucion_compensada_id",
+        "importe_compensado",
+    )
+    def _check_required_fields(self):
+        for rec in self:
+            if not rec.operacion_id._has_forma_pago_code("12"):
+                raise ValidationError(_("513 solo aplica cuando existe forma de pago 12 en la operacion."))
+            if not rec.patente_original or len(re.sub(r"\D+", "", rec.patente_original)) != 4:
+                raise ValidationError(_("513: la patente original debe tener 4 digitos."))
+            if not rec.pedimento_original or len(re.sub(r"\D+", "", rec.pedimento_original)) != 7:
+                raise ValidationError(_("513: el pedimento original debe tener 7 digitos."))
+            if not rec.aduana_seccion_original_id:
+                raise ValidationError(_("513: la aduana-seccion original es obligatoria."))
+            if not rec.fecha_pago_original:
+                raise ValidationError(_("513: la fecha de pago original es obligatoria."))
+            if not rec.contribucion_compensada_id:
+                raise ValidationError(_("513: la contribucion compensada es obligatoria."))
+            if not rec.importe_compensado or rec.importe_compensado <= 0:
+                raise ValidationError(_("513: el importe compensado debe ser mayor a cero."))
 
     @api.model_create_multi
     def create(self, vals_list):
