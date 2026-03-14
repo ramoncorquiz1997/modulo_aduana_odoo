@@ -2137,6 +2137,29 @@ class MxPedOperacion(models.Model):
         self._run_process_stage_checks("pre_validate")
         self._validate_508_cuenta_aduanera_rules()
 
+    def _validate_510_forma_pago_required(self):
+        self.ensure_one()
+        missing = self.contribucion_global_ids.filtered(
+            lambda l: (l.importe or 0.0) > 0 and not ((l.forma_pago_code or "").strip())
+        )
+        if not missing:
+            return
+
+        labels = []
+        for line in missing:
+            contrib = (
+                (line.contribucion_id.abbreviation or "").strip()
+                or (line.contribucion_id.contribucion or "").strip()
+                or (line.tipo_contribucion or "").strip()
+                or str(line.id)
+            )
+            labels.append(contrib)
+
+        raise UserError(
+            _("Falta la forma de pago en registro 510 para: %s")
+            % (", ".join(labels))
+        )
+
     def _normalize_structure_rules(self, estructura_rule, source_weight):
         normalized = []
         if not estructura_rule:
@@ -3222,6 +3245,7 @@ class MxPedOperacion(models.Model):
         self._auto_refresh_generated_registros()
         self._sync_registro_ids_from_tecnicos()
         self._validate_confirmacion_pago_formas()
+        self._validate_510_forma_pago_required()
         self._validate_partida_facturas_505()
         self._run_process_stage_checks("export")
         if not self.layout_id:
