@@ -4104,8 +4104,14 @@ class MxPedOperacion(models.Model):
             "pais_origen": "x_pais_origen_id",
             "pais_destino": "x_pais_destino_id",
             "bultos": "total_packages_line",
+            "bultos_totales": "total_packages_line",
+            "numero_total_de_bultos": "total_packages_line",
             "peso_bruto": "total_gross_weight",
+            "peso_bruto_total": "total_gross_weight",
+            "peso_bruto_total_de_la_mercancia": "total_gross_weight",
             "peso_neto": "total_net_weight",
+            "peso_neto_total": "total_net_weight",
+            "peso_neto_total_de_la_mercancia": "total_net_weight",
             "valor_factura": "x_valor_factura",
             "valor_aduana": "x_valor_aduana_estimado",
             "folio_operacion": "x_folio_operacion",
@@ -4135,9 +4141,19 @@ class MxPedOperacion(models.Model):
             "comprador": "x_comprador_id",
             "nombre_proveedor_comprador": "x_counterparty_name_505",
         }
+        aliases_by_norm = {_norm(key): value for key, value in aliases.items()}
 
-        source = source_field or aliases.get(field_name, field_name)
+        source = source_field or aliases.get(field_name, aliases_by_norm.get(_norm(field_name), field_name))
         source_model = source_model or "lead"
+
+        field_norm = _norm(field_name)
+        if source == field_name:
+            if "pesobruto" in field_norm:
+                source = "total_gross_weight"
+            elif "pesoneto" in field_norm:
+                source = "total_net_weight"
+            elif "bulto" in field_norm or "paquete" in field_norm:
+                source = "total_packages_line"
 
         # Normaliza tipo de operación a 1/2 aunque el layout use nombre "amigable"
         source_norm = _norm(source)
