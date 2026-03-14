@@ -80,6 +80,11 @@ class MxPedDocumento(models.Model):
         store=True,
         readonly=True,
     )
+    institucion_financiera_514_id = fields.Many2one(
+        "aduana.catalogo.institucion_financiera",
+        string="Institucion financiera 514",
+        ondelete="restrict",
+    )
     institucion_emisora_514 = fields.Char(string="Institucion emisora 514")
     importe_total_amparado_514 = fields.Monetary(
         string="Importe total amparado 514",
@@ -233,17 +238,22 @@ class MxPedDocumento(models.Model):
             for key, value in vals.items():
                 rec[key] = value
 
-    @api.onchange("forma_pago_id", "registro_codigo", "operacion_id")
+    @api.onchange("forma_pago_id", "registro_codigo", "operacion_id", "institucion_financiera_514_id")
     def _onchange_fill_514_defaults(self):
         for rec in self:
             if (rec.registro_codigo or "").strip() != "514" or not rec.operacion_id:
                 continue
             fp_code = (rec.forma_pago_code or "").strip()
-            if fp_code == "12" and not rec.institucion_emisora_514:
+            if rec.institucion_financiera_514_id:
+                rec.institucion_emisora_514 = rec.institucion_financiera_514_id.name
+
+            if fp_code == "12":
+                rec.institucion_financiera_514_id = False
                 rec.institucion_emisora_514 = "Aduanas"
-            elif fp_code in {"4", "15"} and not rec.institucion_emisora_514:
+            elif fp_code in {"4", "15"} and not rec.institucion_financiera_514_id:
                 cuenta = rec.operacion_id.cuenta_aduanera_ids.sorted(lambda l: (l.sequence or 0, l.id))[:1]
                 if cuenta and cuenta.institucion_financiera_id:
+                    rec.institucion_financiera_514_id = cuenta.institucion_financiera_id
                     rec.institucion_emisora_514 = cuenta.institucion_financiera_id.name
             if fp_code == "12" and not rec.fecha and rec.operacion_id.fecha_pago:
                 rec.fecha = rec.operacion_id.fecha_pago
@@ -259,6 +269,7 @@ class MxPedDocumento(models.Model):
     @api.constrains(
         "registro_codigo",
         "forma_pago_id",
+        "institucion_financiera_514_id",
         "institucion_emisora_514",
         "folio",
         "fecha",
@@ -274,6 +285,8 @@ class MxPedDocumento(models.Model):
                 raise ValidationError("514: la forma de pago es obligatoria.")
             if fp_code not in required_codes:
                 continue
+            if fp_code == "12" and (rec.institucion_emisora_514 or "").strip() != "Aduanas":
+                raise ValidationError("514: con forma de pago 12 la institucion emisora debe ser Aduanas.")
             if not (rec.institucion_emisora_514 or "").strip():
                 raise ValidationError("514: la dependencia o institucion emisora es obligatoria.")
             if not (rec.folio or "").strip():
