@@ -78,6 +78,10 @@ class MxPedConsolidadoRemesa(models.Model):
     candados = fields.Char(string="Candados")
     acuse_valor = fields.Char(string="Acuse de valor")
     acuse_presentacion = fields.Char(string="Acuse presentacion")
+    avc_plazo_id = fields.Selection(
+        [("1", "Semanal"), ("2", "Mensual")],
+        string="Plazo AVC",
+    )
     observaciones = fields.Text(string="Observaciones")
     partida_rel_ids = fields.One2many(
         "mx.ped.consolidado.remesa.partida",

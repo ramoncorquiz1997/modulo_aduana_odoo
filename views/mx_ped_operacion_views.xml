@@ -103,6 +103,22 @@
                 <field name="avc_numero_gafete" invisible="not (show_advanced_info and avc_modalidad_cruce_id == '2')"/>
                 <field name="avc_fast_id" invisible="not show_advanced_info"/>
                 <field name="avc_datos_adicionales" invisible="not show_advanced_info"/>
+                <field name="avc_pedimento_subtipo" invisible="not (show_advanced_info and avc_tipo_documento_id == '1')"/>
+                <field name="avc_es_consolidacion_carga" invisible="not (show_advanced_info and avc_tipo_documento_id == '1')"/>
+                <field name="avc_consolidacion_autorizacion_1"
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_es_consolidacion_carga)"/>
+                <field name="avc_consolidacion_autorizacion_2"
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_es_consolidacion_carga)"/>
+                <field name="avc_parte2_consecutivo"
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'parte_2')"/>
+                <field name="avc_remesa_id"
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'remesa_previo_consolidado')"/>
+                <field name="avc_aviso_electronico_folio"
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico')"/>
+                <field name="avc_aviso_electronico_plazo_id"
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico')"/>
+                <field name="avc_aviso_electronico_consecutivo"
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico')"/>
               </group>
             </group>
 
@@ -227,6 +243,7 @@
                     <field name="chofer_id"/>
                     <field name="gafete_id"/>
                     <field name="acuse_valor" optional="hide"/>
+                    <field name="avc_plazo_id" optional="hide"/>
                     <field name="acuse_presentacion" optional="hide"/>
                     <button name="action_open_full_form" type="object" string="Abrir" class="btn-link"/>
                   </list>
@@ -245,6 +262,7 @@
                         <field name="cfdi_uuid"/>
                         <field name="numero_documento"/>
                         <field name="acuse_valor"/>
+                        <field name="avc_plazo_id"/>
                         <field name="acuse_presentacion"/>
                       </group>
                     </group>
@@ -595,6 +613,23 @@
               <page string="AVC">
                 <group>
                   <group>
+                    <field name="avc_tipo_documento_id" readonly="1"/>
+                    <field name="avc_pedimento_subtipo" readonly="1" invisible="avc_tipo_documento_id != '1'"/>
+                    <field name="avc_es_consolidacion_carga" readonly="1" invisible="avc_tipo_documento_id != '1'"/>
+                    <field name="avc_consolidacion_autorizacion_1" readonly="1"
+                           invisible="not (avc_tipo_documento_id == '1' and avc_es_consolidacion_carga)"/>
+                    <field name="avc_consolidacion_autorizacion_2" readonly="1"
+                           invisible="not (avc_tipo_documento_id == '1' and avc_es_consolidacion_carga)"/>
+                    <field name="avc_parte2_consecutivo" readonly="1"
+                           invisible="not (avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'parte_2')"/>
+                    <field name="avc_remesa_id" readonly="1"
+                           invisible="not (avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'remesa_previo_consolidado')"/>
+                    <field name="avc_aviso_electronico_folio" readonly="1"
+                           invisible="not (avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico')"/>
+                    <field name="avc_aviso_electronico_plazo_id" readonly="1"
+                           invisible="not (avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico')"/>
+                    <field name="avc_aviso_electronico_consecutivo" readonly="1"
+                           invisible="not (avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico')"/>
                     <field name="avc_numero" readonly="1"/>
                     <field name="avc_estatus" readonly="1"/>
                     <field name="avc_fecha_emision" readonly="1"/>

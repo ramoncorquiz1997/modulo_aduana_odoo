@@ -212,6 +212,16 @@ class MxPedOperacion(models.Model):
         string="Tipo documento AVC",
         default="1",
     )
+    avc_pedimento_subtipo = fields.Selection(
+        [
+            ("normal", "Pedimento normal"),
+            ("parte_2", "Parte II"),
+            ("remesa_previo_consolidado", "Remesa previo consolidado"),
+            ("aviso_electronico", "Aviso electronico"),
+        ],
+        string="Subtipo pedimento AVC",
+        default="normal",
+    )
     avc_tag = fields.Char(string="TAG AVC", size=24)
     avc_numero_gafete = fields.Char(string="Numero gafete AVC", size=24)
     avc_transportista_id = fields.Many2one(
@@ -231,6 +241,21 @@ class MxPedOperacion(models.Model):
     )
     avc_fast_id = fields.Char(string="FAST ID AVC", size=50)
     avc_datos_adicionales = fields.Char(string="Datos adicionales AVC", size=500)
+    avc_es_consolidacion_carga = fields.Boolean(string="Consolidacion de carga AVC")
+    avc_consolidacion_autorizacion_1 = fields.Char(string="Autorizacion consolidacion 1", size=4)
+    avc_consolidacion_autorizacion_2 = fields.Char(string="Autorizacion consolidacion 2", size=4)
+    avc_parte2_consecutivo = fields.Integer(string="Consecutivo parte II AVC")
+    avc_remesa_id = fields.Many2one(
+        "mx.ped.consolidado.remesa",
+        string="Remesa AVC",
+        domain="[('operacion_id', '=', id)]",
+    )
+    avc_aviso_electronico_folio = fields.Char(string="Folio aviso electronico AVC")
+    avc_aviso_electronico_plazo_id = fields.Selection(
+        [("1", "Semanal"), ("2", "Mensual")],
+        string="Plazo aviso electronico AVC",
+    )
+    avc_aviso_electronico_consecutivo = fields.Integer(string="Consecutivo aviso electronico AVC")
 
     cliente_id = fields.Many2one(
         "res.partner",
@@ -3908,17 +3933,124 @@ class MxPedOperacion(models.Model):
             raise UserError(_("La credencial WS no tiene AVC API Base URL configurada."))
         return f"{base}/{suffix.lstrip('/')}"
 
+    def _build_avc_pedimento_llave(self, numero_pedimento, aduana, autorizacion, consecutivo=0):
+        self.ensure_one()
+        pedimento = "".join(ch for ch in str(numero_pedimento or "") if ch.isalnum())[:7].zfill(7)
+        aduana_digits = "".join(ch for ch in str(aduana or "") if ch.isdigit())[:2].zfill(2)
+        autorizacion_digits = "".join(ch for ch in str(autorizacion or "") if ch.isdigit())[:4].zfill(4)
+        consecutivo_txt = "".join(ch for ch in str(consecutivo or 0) if ch.isdigit()).zfill(12)
+        return f"{pedimento}{aduana_digits}{autorizacion_digits}{consecutivo_txt}"
+
+    def _build_avc_llave_normal(self):
+        self.ensure_one()
+        return self._build_avc_pedimento_llave(
+            self.pedimento_numero,
+            self.aduana_clave,
+            self.patente,
+            consecutivo=0,
+        )
+
+    def _build_avc_llave_parte2(self):
+        self.ensure_one()
+        return self._build_avc_pedimento_llave(
+            self.pedimento_numero,
+            self.aduana_clave,
+            self.patente,
+            consecutivo=self.avc_parte2_consecutivo,
+        )
+
+    def _build_avc_llave_remesa(self, remesa):
+        self.ensure_one()
+        return self._build_avc_pedimento_llave(
+            self.pedimento_numero,
+            self.aduana_clave,
+            self.patente,
+            consecutivo=(remesa.sequence if remesa else 0),
+        )
+
+    def _build_avc_llave_aviso_electronico(self):
+        self.ensure_one()
+        return self._build_avc_pedimento_llave(
+            self.pedimento_numero,
+            self.aduana_clave,
+            self.patente,
+            consecutivo=self.avc_aviso_electronico_consecutivo,
+        )
+
+    def _get_avc_consolidacion_payload(self):
+        self.ensure_one()
+        if not self.avc_es_consolidacion_carga:
+            return False
+        auth_1 = "".join(ch for ch in str(self.avc_consolidacion_autorizacion_1 or "") if ch.isdigit())[:4]
+        auth_2 = "".join(ch for ch in str(self.avc_consolidacion_autorizacion_2 or "") if ch.isdigit())[:4]
+        if not auth_1 or not auth_2:
+            raise UserError(_("Para consolidacion de carga AVC se requieren ambas autorizaciones."))
+        return {
+            "autorizacion_1": auth_1.zfill(4),
+            "autorizacion_2": auth_2.zfill(4),
+        }
+
+    def _build_avc_pedimento_item(self, subtipo):
+        self.ensure_one()
+        pedimento = (self.pedimento_numero or "").strip()
+        rfc = (self.participante_rfc or "").strip()
+        if not pedimento:
+            raise UserError(_("Falta numero de pedimento para generar AVC."))
+        if not rfc:
+            raise UserError(_("Falta RFC del importador/exportador para generar AVC."))
+
+        item = {
+            "numero_pedimento": pedimento,
+            "rfc": rfc,
+        }
+        if self.avc_es_consolidacion_carga:
+            autorizacion = "".join(ch for ch in str(self.patente or "") if ch.isdigit())[:4]
+            if not autorizacion:
+                raise UserError(_("Falta patente/autorizacion para consolidacion de carga AVC."))
+            item["autorizacion"] = autorizacion.zfill(4)
+
+        if subtipo == "normal":
+            return "normal", item
+        if subtipo == "parte_2":
+            if not self.avc_parte2_consecutivo:
+                raise UserError(_("Para AVC parte II se requiere consecutivo."))
+            item["consecutivo"] = self.avc_parte2_consecutivo
+            return "parte_2", item
+        if subtipo == "remesa_previo_consolidado":
+            remesa = self.avc_remesa_id
+            if not remesa:
+                raise UserError(_("Selecciona una remesa para AVC previo consolidado."))
+            factura = (remesa.acuse_valor or "").strip()
+            if not factura:
+                raise UserError(_("La remesa AVC requiere acuse de valor para generar previo consolidado."))
+            if not remesa.avc_plazo_id:
+                raise UserError(_("La remesa AVC requiere plazo para generar previo consolidado."))
+            item.update({
+                "consecutivo": remesa.sequence or 0,
+                "factura": factura,
+                "plazo_id": int(remesa.avc_plazo_id),
+            })
+            return "remesa_previo_consolidado", item
+        if subtipo == "aviso_electronico":
+            if not (self.avc_aviso_electronico_folio or "").strip():
+                raise UserError(_("Para AVC aviso electronico se requiere folio."))
+            if not self.avc_aviso_electronico_plazo_id:
+                raise UserError(_("Para AVC aviso electronico se requiere plazo."))
+            if not self.avc_aviso_electronico_consecutivo:
+                raise UserError(_("Para AVC aviso electronico se requiere consecutivo."))
+            item.update({
+                "folio": (self.avc_aviso_electronico_folio or "").strip(),
+                "plazo_id": int(self.avc_aviso_electronico_plazo_id),
+                "consecutivo": self.avc_aviso_electronico_consecutivo,
+            })
+            return "aviso_electronico", item
+        raise UserError(_("Subtipo de pedimento AVC no soportado: %s") % subtipo)
+
     def _build_avc_payload(self):
         self.ensure_one()
         aduana = "".join(ch for ch in str(self.aduana_clave or "") if ch.isdigit())[:2]
         if len(aduana) != 2:
             raise UserError(_("La aduana debe contener 2 digitos para AVC."))
-        pedimento = (self.pedimento_numero or "").strip()
-        if not pedimento:
-            raise UserError(_("Falta numero de pedimento para generar AVC."))
-        rfc = (self.participante_rfc or "").strip()
-        if not rfc:
-            raise UserError(_("Falta RFC del importador/exportador para generar AVC."))
 
         modalidad = int(self.avc_modalidad_cruce_id or "1")
         if modalidad == 1 and not (self.avc_tag or "").strip():
@@ -3931,15 +4063,18 @@ class MxPedOperacion(models.Model):
             "tipo_operacion_id": self._get_avc_tipo_operacion_id(),
             "modalidad_cruce_id": modalidad,
             "tipo_documento_id": int(self.avc_tipo_documento_id or "1"),
-            "documentos_aduanales": {
-                "pedimentos": {
-                    "normal": [{
-                        "numero_pedimento": pedimento,
-                        "rfc": rfc,
-                    }]
-                }
-            },
         }
+        if int(self.avc_tipo_documento_id or "1") == 1:
+            subtipo = self.avc_pedimento_subtipo or "normal"
+            bucket, item = self._build_avc_pedimento_item(subtipo)
+            payload["documentos_aduanales"] = {
+                "pedimentos": {
+                    bucket: [item],
+                }
+            }
+        consolidacion = self._get_avc_consolidacion_payload()
+        if consolidacion:
+            payload["consolidacion_carga"] = consolidacion
         if (self.avc_tag or "").strip():
             payload["tag"] = (self.avc_tag or "").strip()
         numero_gafete = (self.avc_numero_gafete or "").strip() or (self.avc_gafete_id.numero_gafete or "").strip()
