@@ -4908,6 +4908,17 @@ class MxPedOperacion(models.Model):
         fecha_txt = ""
         if documento.fecha:
             fecha_txt = fields.Date.to_date(documento.fecha).strftime("%d%m%Y")
+        forma_pago_code = (documento.forma_pago_code or "").strip()
+        institucion_emisora = (documento.institucion_emisora_514 or "").strip()
+        if not institucion_emisora:
+            if forma_pago_code == "12":
+                institucion_emisora = "Aduanas"
+            elif documento.institucion_financiera_514_id:
+                institucion_emisora = documento.institucion_financiera_514_id.name or ""
+            elif forma_pago_code in {"4", "15"}:
+                cuenta = self.cuenta_aduanera_ids.sorted(lambda l: (l.sequence or 0, l.id))[:1]
+                if cuenta and cuenta.institucion_financiera_id:
+                    institucion_emisora = cuenta.institucion_financiera_id.name or ""
 
         ordered_campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
         for idx, campo in enumerate(ordered_campos, start=1):
@@ -4924,9 +4935,9 @@ class MxPedOperacion(models.Model):
             elif "pedimento" in token and ("numero" in token or "num" in token):
                 val = self.pedimento_numero or ""
             elif "forma" in token and "pago" in token:
-                val = documento.forma_pago_code or ""
+                val = forma_pago_code or ""
             elif ("dependencia" in token or "institucion" in token) and ("emisora" in token or "emisor" in token):
-                val = documento.institucion_emisora_514 or ""
+                val = institucion_emisora or ""
             elif ("numero" in token and "documento" in token) or "folio" in token:
                 val = documento.folio or ""
             elif "fecha" in token and ("exped" in token or "emision" in token or "expedicion" in token):
