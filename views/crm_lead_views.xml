@@ -530,6 +530,22 @@
               </group>
             </group>
 
+            <group string="Destinatario contingencia 520">
+              <field name="x_send_520_contingency"/>
+              <field name="x_destinatario_520_ids" invisible="not x_send_520_contingency">
+                <list editable="bottom">
+                  <field name="identificacion_fiscal"/>
+                  <field name="nombre"/>
+                  <field name="calle"/>
+                  <field name="num_interior"/>
+                  <field name="num_exterior"/>
+                  <field name="codigo_postal"/>
+                  <field name="municipio_ciudad"/>
+                  <field name="pais_id"/>
+                </list>
+              </field>
+            </group>
+
             <group>
               <group string="Salida">
                 <field name="x_punto_salida"/>

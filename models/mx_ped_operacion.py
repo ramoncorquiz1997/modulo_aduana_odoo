@@ -4962,6 +4962,71 @@ class MxPedOperacion(models.Model):
                 valores[campo.nombre] = self._json_safe_layout_value(val)
         return valores
 
+    def _get_520_destinatario_lines(self):
+        self.ensure_one()
+        lead = self.lead_id
+        if not lead or not lead.x_send_520_contingency:
+            return []
+
+        lines = []
+        for line in lead.x_destinatario_520_ids.sorted(lambda l: l.id):
+            if not ((line.nombre or "").strip() and (line.calle or "").strip() and (line.num_exterior or "").strip()):
+                continue
+            lines.append({
+                "identificacion_fiscal": (line.identificacion_fiscal or "").strip(),
+                "nombre": (line.nombre or "").strip(),
+                "calle": (line.calle or "").strip(),
+                "num_interior": (line.num_interior or "").strip(),
+                "num_exterior": (line.num_exterior or "").strip(),
+                "codigo_postal": (line.codigo_postal or "").strip(),
+                "municipio_ciudad": (line.municipio_ciudad or "").strip(),
+                "pais": (line.pais_id.code or "").strip() if line.pais_id else "",
+            })
+        return lines
+
+    def _build_520_valores(self, layout_reg, destinatario_line):
+        self.ensure_one()
+        valores = {}
+
+        ordered_campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+        for idx, campo in enumerate(ordered_campos, start=1):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            campo_name = self._norm_layout_token(campo.nombre)
+            source_norm = self._norm_layout_token(source_name)
+            token = f"{campo_name} {source_norm}".strip()
+            pos_ini = campo.pos_ini or 0
+            orden = campo.orden or 0
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro") or idx == 1 or orden == 1 or pos_ini == 1:
+                val = "520"
+            elif ("pedimento" in token and ("numero" in token or "num" in token)) or idx == 2 or orden == 2 or pos_ini == 4:
+                val = self.pedimento_numero or ""
+            elif ("identificacion" in token and "fiscal" in token) or source_norm in {"identificacion_fiscal", "id_fiscal"} or idx == 3 or orden == 3:
+                val = destinatario_line.get("identificacion_fiscal") or ""
+            elif ("nombre" in token and "destinat" in token) or source_norm in {"nombre", "nombre_destinatario"} or idx == 4 or orden == 4:
+                val = destinatario_line.get("nombre") or ""
+            elif "calle" in token or source_norm == "calle" or idx == 5 or orden == 5:
+                val = destinatario_line.get("calle") or ""
+            elif (("numero" in token and "interior" in token) or source_norm in {"num_interior", "numero_interior"}) or idx == 6 or orden == 6:
+                val = destinatario_line.get("num_interior") or ""
+            elif (("numero" in token and "exterior" in token) or source_norm in {"num_exterior", "numero_exterior"}) or idx == 7 or orden == 7:
+                val = destinatario_line.get("num_exterior") or ""
+            elif ("codigo" in token and "postal" in token) or source_norm in {"codigo_postal", "cp"} or idx == 8 or orden == 8:
+                val = destinatario_line.get("codigo_postal") or ""
+            elif ("municipio" in token or "ciudad" in token) or source_norm in {"municipio_ciudad", "municipio", "ciudad"} or idx == 9 or orden == 9:
+                val = destinatario_line.get("municipio_ciudad") or ""
+            elif "pais" in token or source_norm in {"pais", "pais_destinatario"} or idx == 10 or orden == 10:
+                val = destinatario_line.get("pais") or ""
+            else:
+                val = self._field_value_for_layout(campo, partida=False)
+                if val in (None, "", False) and campo.default:
+                    val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = self._json_safe_layout_value(val)
+        return valores
+
     def _sanitize_516_transport_identificador(self, value):
         clean = (value or "").strip()
         for ch in ("'", '"', "´", "*", "-", "_"):
@@ -5119,6 +5184,20 @@ class MxPedOperacion(models.Model):
                         "codigo": layout_reg.codigo,
                         "secuencia": secuencia,
                         "valores": self._build_516_valores(layout_reg, candado_line),
+                    }))
+                continue
+
+            if code == "520":
+                destinatario_lines = self._get_520_destinatario_lines()
+                if self.lead_id.x_send_520_contingency and not destinatario_lines:
+                    raise UserError(_("Activas 520 de contingencia pero no capturaste destinatarios en el lead."))
+                if not destinatario_lines:
+                    continue
+                for secuencia, destinatario_line in enumerate(destinatario_lines, start=1):
+                    registros.append((0, 0, {
+                        "codigo": layout_reg.codigo,
+                        "secuencia": secuencia,
+                        "valores": self._build_520_valores(layout_reg, destinatario_line),
                     }))
                 continue
 

@@ -344,6 +344,10 @@ class CrmLeadCandado(models.Model):
     _name = 'crm.lead.candado'
     _inherit = ['crm.lead.candado', 'aduana.audit.mixin']
 
+class CrmLeadDestinatario520(models.Model):
+    _name = 'crm.lead.destinatario.520'
+    _inherit = ['crm.lead.destinatario.520', 'aduana.audit.mixin']
+
 class MxPedOperacionObservacion(models.Model):
     _name = 'mx.ped.operacion.observacion'
     _inherit = ['mx.ped.operacion.observacion', 'aduana.audit.mixin']

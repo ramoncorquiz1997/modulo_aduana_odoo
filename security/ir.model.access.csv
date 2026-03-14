@@ -91,6 +91,8 @@ access_mx_ped_fraccion_contribucion_admin,mx.ped.fraccion.contribucion.admin,mod
 access_mx_ped_identificador_admin,mx.ped.identificador.admin,model_mx_ped_identificador,base.group_system,1,1,1,1
 access_crm_lead_candado,crm.lead.candado,model_crm_lead_candado,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_crm_lead_candado_admin,crm.lead.candado.admin,model_crm_lead_candado,base.group_system,1,1,1,1
+access_crm_lead_destinatario_520,crm.lead.destinatario.520,model_crm_lead_destinatario_520,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_crm_lead_destinatario_520_admin,crm.lead.destinatario.520.admin,model_crm_lead_destinatario_520,base.group_system,1,1,1,1
 access_mx_ped_operacion_observacion_admin,mx.ped.operacion.observacion.admin,model_mx_ped_operacion_observacion,base.group_system,1,1,1,1
 access_mx_ped_operacion_descargo_admin,mx.ped.operacion.descargo.admin,model_mx_ped_operacion_descargo,base.group_system,1,1,1,1
 access_mx_ped_operacion_compensacion,mx.ped.operacion.compensacion,model_mx_ped_operacion_compensacion,modulo_aduana_odoo.group_aduana_user,1,1,1,1

@@ -391,6 +391,18 @@ class CrmLead(models.Model):
 
     x_consignatario_name = fields.Char(string="Consignatario")
     x_destinatario_final_name = fields.Char(string="Destinatario final")
+    x_send_520_contingency = fields.Boolean(
+        string="Enviar 520 de contingencia",
+        help=(
+            "Activalo solo cuando debas transmitir el registro 520 por contingencia "
+            "de Ventanilla Digital o el caso normativo correspondiente."
+        ),
+    )
+    x_destinatario_520_ids = fields.One2many(
+        "crm.lead.destinatario.520",
+        "lead_id",
+        string="Destinatarios 520",
+    )
 
     # --- Documentos / control documental ---
     x_docs_requeridos_ids = fields.Many2many(
@@ -2593,6 +2605,58 @@ class CrmLeadCandado(models.Model):
         string="Numero de candado",
         size=21,
         required=True,
+    )
+
+
+class CrmLeadDestinatario520(models.Model):
+    _name = "crm.lead.destinatario.520"
+    _description = "Destinatario contingencia 520 por Lead"
+    _order = "id"
+
+    lead_id = fields.Many2one(
+        "crm.lead",
+        string="Lead",
+        required=True,
+        ondelete="cascade",
+        index=True,
+    )
+    identificacion_fiscal = fields.Char(
+        string="Identificacion fiscal",
+        size=17,
+    )
+    nombre = fields.Char(
+        string="Nombre del destinatario",
+        required=True,
+    )
+    calle = fields.Char(
+        string="Calle",
+        required=True,
+        size=80,
+    )
+    num_interior = fields.Char(
+        string="Numero interior",
+        size=10,
+    )
+    num_exterior = fields.Char(
+        string="Numero exterior",
+        required=True,
+        size=10,
+    )
+    codigo_postal = fields.Char(
+        string="Codigo postal",
+        required=True,
+        size=10,
+    )
+    municipio_ciudad = fields.Char(
+        string="Municipio / ciudad",
+        required=True,
+        size=80,
+    )
+    pais_id = fields.Many2one(
+        "res.country",
+        string="Pais destinatario",
+        required=True,
+        ondelete="restrict",
     )
 
 
