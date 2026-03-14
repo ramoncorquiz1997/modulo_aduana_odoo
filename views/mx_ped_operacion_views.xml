@@ -408,7 +408,9 @@
               </page>
               <page string="Documentos de formas de pago" invisible="not show_documentos_forma_pago_ui">
                 <group>
-                  <label string="Captura aqui los documentos que amparan formas de pago virtuales (registro 514)."/>
+                  <div class="o_form_label">
+                    Captura aqui los documentos que amparan formas de pago virtuales (registro 514).
+                  </div>
                 </group>
                 <field name="documento_ids" context="{'default_operacion_id': id, 'default_registro_codigo': '514'}">
                   <list editable="bottom">
