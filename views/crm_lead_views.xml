@@ -367,6 +367,11 @@
                 <field name="x_tipo_compra"/>
                 <field name="x_tratado_aplicable"/>
                 <field name="x_pedimento_rectificacion"/>
+                <field name="x_es_rectificacion"/>
+                <field name="x_rect_pedimento_original" invisible="not x_es_rectificacion" required="x_es_rectificacion"/>
+                <field name="x_rect_fecha_pago_original" invisible="not x_es_rectificacion" required="x_es_rectificacion"/>
+                <field name="x_rect_patente_original" invisible="not x_es_rectificacion"/>
+                <field name="x_rect_aduana_original_id" invisible="not x_es_rectificacion"/>
               </group>
               <group string="Resumen regulatorio (desde partidas)">
                 <field name="x_resumen_permisos" readonly="1"/>

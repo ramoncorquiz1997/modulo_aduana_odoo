@@ -73,6 +73,16 @@
                 <field name="fecha_operacion"/>
                 <field name="tipo_movimiento" invisible="not show_advanced_info"/>
                 <field name="es_rectificacion" invisible="not (show_advanced_info and tipo_movimiento == '1')"/>
+                <field name="rect_pedimento_original"
+                       invisible="not es_rectificacion"
+                       required="es_rectificacion"/>
+                <field name="rect_fecha_pago_original"
+                       invisible="not es_rectificacion"
+                       required="es_rectificacion"/>
+                <field name="rect_patente_original"
+                       invisible="not es_rectificacion"/>
+                <field name="rect_aduana_original_id"
+                       invisible="not es_rectificacion"/>
                 <field name="formas_pago_claves" invisible="not (show_advanced_info and show_formas_pago_ui)"/>
                 <field name="clave_pedimento_id"
                        domain="[('active','=',True), '|', ('tipo_operacion','=','ambas'), ('tipo_operacion','=',tipo_operacion), '|', ('regimen','=','cualquiera'), ('regimen','=',regimen)]"/>

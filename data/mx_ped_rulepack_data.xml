@@ -9,6 +9,12 @@
     <field name="fecha_inicio">2026-01-01</field>
   </record>
 
+  <record id="mx_ped_rulepack_scenario_rectificacion" model="mx.ped.rulepack.scenario">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="sequence">5</field>
+    <field name="code">rectificacion</field>
+    <field name="name">Rectificacion</field>
+  </record>
   <record id="mx_ped_rulepack_scenario_normal" model="mx.ped.rulepack.scenario">
     <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
     <field name="sequence">10</field>
@@ -116,6 +122,14 @@
     <field name="scenario_id" ref="mx_ped_rulepack_scenario_gc"/>
     <field name="stop">True</field>
   </record>
+  <record id="mx_ped_rulepack_selector_1_rectificacion" model="mx.ped.rulepack.selector">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="priority">750</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_1"/>
+    <field name="es_rectificacion">yes</field>
+    <field name="scenario_id" ref="mx_ped_rulepack_scenario_rectificacion"/>
+    <field name="stop">True</field>
+  </record>
   <record id="mx_ped_rulepack_selector_1" model="mx.ped.rulepack.selector">
     <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
     <field name="priority">700</field>
@@ -124,6 +138,24 @@
     <field name="stop">True</field>
   </record>
 
+  <record id="mx_ped_rulepack_process_rect_pedimento_original" model="mx.ped.rulepack.process.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Rectificacion requiere num. pedimento original</field>
+    <field name="stage">pre_validate</field>
+    <field name="action_type">require_field</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_1"/>
+    <field name="es_rectificacion">yes</field>
+    <field name="payload_json" eval="{'field': 'rect_pedimento_original'}"/>
+  </record>
+  <record id="mx_ped_rulepack_process_rect_fecha_pago_original" model="mx.ped.rulepack.process.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Rectificacion requiere fecha pago original</field>
+    <field name="stage">pre_validate</field>
+    <field name="action_type">require_field</field>
+    <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_1"/>
+    <field name="es_rectificacion">yes</field>
+    <field name="payload_json" eval="{'field': 'rect_fecha_pago_original'}"/>
+  </record>
   <record id="mx_ped_rulepack_process_load_m2" model="mx.ped.rulepack.process.rule">
     <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
     <field name="name">Mov 2 solo registros 500/800/801</field>

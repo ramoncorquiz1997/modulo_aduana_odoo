@@ -122,6 +122,29 @@ class MxPedOperacion(models.Model):
         string="Rectificacion",
         help="Usa esta marca cuando el movimiento 1 corresponda a rectificacion.",
     )
+    rect_pedimento_original = fields.Char(
+        string="Num. pedimento original",
+        size=21,
+        copy=False,
+        help="Numero del pedimento que se rectifica (formato SAAI: YYAAPPPPD).",
+    )
+    rect_patente_original = fields.Char(
+        string="Patente original",
+        size=4,
+        copy=False,
+        help="Patente del agente que presento el pedimento original. Si es la misma, dejar vacio.",
+    )
+    rect_aduana_original_id = fields.Many2one(
+        "mx.ped.aduana.seccion",
+        string="Aduana-seccion original",
+        copy=False,
+        help="Aduana y seccion donde se presento el pedimento original. Si es la misma, dejar vacio.",
+    )
+    rect_fecha_pago_original = fields.Date(
+        string="Fecha de pago original",
+        copy=False,
+        help="Fecha en que se pago el pedimento original.",
+    )
     modo_export_consolidado = fields.Selection(
         [
             ("pedimento_final", "Pedimento final"),
@@ -178,7 +201,7 @@ class MxPedOperacion(models.Model):
         store=True,
         readonly=True,
     )
-    acuse_validacion = fields.Char(string="Acuse electronico validacion")
+    acuse_validacion = fields.Char(string="Acuse electronico validacion", copy=False)
     curp_agente = fields.Char(string="CURP agente/apoderado")
     ws_ambiente = fields.Selection(
         [("pruebas", "Pruebas"), ("produccion", "Produccion")],
@@ -306,7 +329,7 @@ class MxPedOperacion(models.Model):
     # ==========================
     # Resultado oficial/operativo
     # ==========================
-    pedimento_numero = fields.Char(string="Número de pedimento")
+    pedimento_numero = fields.Char(string="Número de pedimento", copy=False, index=True)
     fecha_pago = fields.Date(string="Fecha de pago")
     fecha_liberacion = fields.Date(string="Fecha de liberación")
     semaforo = fields.Selection(
@@ -882,6 +905,11 @@ class MxPedOperacion(models.Model):
             "semaforo": lead.x_semaforo or False,
             "observaciones": lead.x_incidente_text or False,
             "avc_transportista_id": lead.x_transportista_id or False,
+            "es_rectificacion": bool(lead.x_es_rectificacion),
+            "rect_pedimento_original": lead.x_rect_pedimento_original or False,
+            "rect_fecha_pago_original": lead.x_rect_fecha_pago_original or False,
+            "rect_patente_original": lead.x_rect_patente_original or False,
+            "rect_aduana_original_id": lead.x_rect_aduana_original_id or False,
         }
         for field_name, value in defaults.items():
             if not self[field_name]:
@@ -980,6 +1008,20 @@ class MxPedOperacion(models.Model):
     def _compute_estructura_escenario(self):
         for rec in self:
             rec.estructura_escenario = rec._detect_escenario_estructura()
+
+    @api.constrains("es_rectificacion", "rect_pedimento_original", "rect_fecha_pago_original")
+    def _check_rectificacion_campos(self):
+        for rec in self:
+            if not rec.es_rectificacion:
+                continue
+            if not (rec.rect_pedimento_original or "").strip():
+                raise ValidationError(
+                    _("Rectificacion: captura el numero del pedimento original que se esta rectificando.")
+                )
+            if not rec.rect_fecha_pago_original:
+                raise ValidationError(
+                    _("Rectificacion: captura la fecha de pago del pedimento original.")
+                )
 
     @api.constrains("tipo_movimiento", "acuse_validacion", "clave_pedimento_id")
     def _check_acuse_validacion(self):
@@ -1281,6 +1323,7 @@ class MxPedOperacion(models.Model):
             "fraccion_ids": fraccion_ids,
             "fraccion_capitulos": fraccion_capitulos,
             "declared_formas_pago": declared_formas_pago,
+            "es_rectificacion": bool(self.es_rectificacion),
         }
 
     def _rule_condition_match(self, rule, context):
@@ -1298,6 +1341,10 @@ class MxPedOperacion(models.Model):
         if getattr(rule, "is_virtual", False) and rule.is_virtual != "any":
             expected_virtual = (rule.is_virtual == "yes")
             if expected_virtual != bool(context.get("is_virtual")):
+                return False
+        if getattr(rule, "es_rectificacion", False) and rule.es_rectificacion != "any":
+            expected_rect = (rule.es_rectificacion == "yes")
+            if expected_rect != bool(context.get("es_rectificacion")):
                 return False
         if hasattr(rule, "escenario_code") and rule.escenario_code and rule.escenario_code != "any":
             if rule.escenario_code != context.get("escenario"):
@@ -3345,6 +3392,114 @@ class MxPedOperacion(models.Model):
             })
         return registros
 
+    def _get_remesa_557_registros(self, remesa):
+        """Genera registros 557 para una remesa con importes prorrateados segun valor USD asignado.
+
+        Para cada partida en la remesa, el importe y base de cada contribucion se calculan
+        aplicando la razon: remesa_rel.value_usd / partida.value_usd. La ultima remesa de
+        cada partida recibe el monto residual para evitar diferencias acumuladas de redondeo.
+        """
+        self.ensure_one()
+        layout_reg = self._get_layout_registro("557")
+        if not layout_reg:
+            return []
+
+        ordered_rel = remesa.partida_rel_ids.sorted(
+            lambda rel: ((rel.partida_id.numero_partida or 0) if rel.partida_id else 0, rel.sequence or 0, rel.id)
+        )
+
+        # Nombres de campos monetarios detectados via heuristica (misma logica que _build_sync_payload_from_layout)
+        importe_campos = []
+        base_campos = []
+        for campo in layout_reg.campo_ids:
+            norm = self._norm_layout_token(campo.nombre)
+            if "importe" in norm or "monto" in norm:
+                importe_campos.append(campo.nombre)
+            elif norm == "base" or (norm.startswith("base") and "gravable" in norm):
+                base_campos.append(campo.nombre)
+
+        registros = []
+        seq = 1
+
+        for remesa_rel in ordered_rel:
+            partida = remesa_rel.partida_id
+            if not partida:
+                continue
+
+            contribs = self.partida_contribucion_ids.filtered(
+                lambda c: c.partida_id == partida
+            ).sorted(lambda c: (c.sequence or 0, c.id))
+            if not contribs:
+                continue
+
+            partida_value_usd = partida.value_usd or 0.0
+            remesa_value_usd = remesa_rel.value_usd or 0.0
+
+            # Ratio de prorrateo por valor; si no hay valor, usar cantidad
+            if partida_value_usd > 0.0:
+                ratio = min(remesa_value_usd / partida_value_usd, 1.0)
+            elif (partida.quantity or 0.0) > 0.0:
+                ratio = min((remesa_rel.quantity or 0.0) / partida.quantity, 1.0)
+            else:
+                ratio = 1.0
+
+            # Determina si es la ultima remesa para este partida (correccion de redondeo)
+            all_assignments = partida.remesa_assignment_ids.filtered(
+                lambda r: r.remesa_id.operacion_id == self
+            ).sorted(lambda r: (r.remesa_id.sequence or 0, r.remesa_id.id, r.id))
+            is_last = bool(all_assignments) and all_assignments[-1].id == remesa_rel.id
+
+            # Para la ultima remesa: calcular monto residual = total - suma de remesas anteriores
+            if is_last:
+                prev_assignments = all_assignments[:-1]
+                already_importe = {}
+                already_base = {}
+                for prev in prev_assignments:
+                    prev_total_usd = prev.partida_id.value_usd or 0.0
+                    if prev_total_usd > 0.0:
+                        prev_ratio = min((prev.value_usd or 0.0) / prev_total_usd, 1.0)
+                    elif (prev.partida_id.quantity or 0.0) > 0.0:
+                        prev_ratio = min((prev.quantity or 0.0) / (prev.partida_id.quantity or 1.0), 1.0)
+                    else:
+                        prev_ratio = 1.0
+                    for contrib in contribs:
+                        already_importe[contrib.id] = already_importe.get(contrib.id, 0.0) + round(
+                            (contrib.importe or 0.0) * prev_ratio, 2
+                        )
+                        already_base[contrib.id] = already_base.get(contrib.id, 0.0) + round(
+                            (contrib.base or 0.0) * prev_ratio, 2
+                        )
+
+            for contrib in contribs:
+                total_importe = contrib.importe or 0.0
+                total_base = contrib.base or 0.0
+
+                if is_last:
+                    pro_importe = round(total_importe - already_importe.get(contrib.id, 0.0), 2)
+                    pro_base = round(total_base - already_base.get(contrib.id, 0.0), 2)
+                else:
+                    pro_importe = round(total_importe * ratio, 2)
+                    pro_base = round(total_base * ratio, 2)
+
+                # Forzar minimo cero (no puede haber contribucion negativa)
+                pro_importe = max(pro_importe, 0.0)
+                pro_base = max(pro_base, 0.0)
+
+                payload = self._build_sync_payload_from_layout(layout_reg, contrib, "557")
+                for nombre in importe_campos:
+                    payload[nombre] = self._json_safe_layout_value(pro_importe)
+                for nombre in base_campos:
+                    payload[nombre] = self._json_safe_layout_value(pro_base)
+
+                registros.append({
+                    "codigo": "557",
+                    "secuencia": seq,
+                    "valores": payload,
+                })
+                seq += 1
+
+        return registros
+
     def _remesa_partida_override_value(self, campo, remesa_rel, base_val):
         self.ensure_one()
         partida = remesa_rel.partida_id
@@ -3379,7 +3534,6 @@ class MxPedOperacion(models.Model):
         if source_norm in value_mxn_tokens or ("valor" in token and "mxn" in token):
             return (remesa_rel.value_usd or 0.0) * tipo_cambio
 
-        # TODO: 557 por remesa requiere recalculo/prorrateo especifico; queda fuera de esta primera version.
         return base_val
 
     def _build_remesa_partida_payload(self, layout_reg, remesa_rel):
@@ -3421,7 +3575,7 @@ class MxPedOperacion(models.Model):
 
     def _build_remesa_export_registros(self, remesa):
         self.ensure_one()
-        excluded_codes = {"514", "557", "551", "552", "553", "554", "555", "556", "558"}
+        excluded_codes = {"514", "557", "551", "552", "553", "554", "555", "556", "558", "700", "801"}
         order_map = self._get_record_order_map()
         base_regs = [
             reg for reg in self.registro_ids.sorted(lambda r: self._registro_export_sort_key(r, order_map=order_map))
@@ -3429,6 +3583,7 @@ class MxPedOperacion(models.Model):
         ]
         remesa_regs = list(base_regs)
         remesa_regs.extend(self._get_remesa_514_registros(remesa))
+        remesa_regs.extend(self._get_remesa_557_registros(remesa))
         remesa_regs.extend(self._get_remesa_partida_registros(remesa, {"551", "552", "553", "554", "555", "556", "558"}))
         remesa_regs.sort(
             key=lambda r: (
@@ -3444,15 +3599,17 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         registros = self._build_remesa_export_registros(remesa)
         lines = []
+        total_registros = sum(1 for r in registros if (r["codigo"] if isinstance(r, dict) else (r.codigo or "")).strip() != "801")
         for reg in registros:
-            if isinstance(reg, dict):
-                layout_reg = self._get_layout_registro(reg["codigo"])
-                partida_num = self._extract_partida_number(reg["valores"])
-                lines.append(self._build_txt_line(layout_reg, reg["valores"], partida_num=partida_num))
-            else:
-                layout_reg = self._get_layout_registro(reg.codigo)
-                partida_num = self._extract_partida_number(reg.valores)
-                lines.append(self._build_txt_line(layout_reg, reg.valores, partida_num=partida_num))
+            codigo = (reg["codigo"] if isinstance(reg, dict) else (reg.codigo or "")).strip()
+            layout_reg = self._get_layout_registro(codigo)
+            if not layout_reg:
+                continue
+            valores = dict(reg["valores"] if isinstance(reg, dict) else (reg.valores or {}))
+            if codigo == "801":
+                valores = self._build_801_valores(layout_reg, total_registros)
+            partida_num = self._extract_partida_number(valores)
+            lines.append(self._build_txt_line(layout_reg, valores, partida_num=partida_num))
         sep = self.layout_id.record_separator or "\n"
         return sep.join(lines)
 
@@ -3481,7 +3638,7 @@ class MxPedOperacion(models.Model):
             with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
                 for remesa in remesas:
                     txt_data = self._build_remesa_txt_data(remesa)
-                    zip_file.writestr(self._build_remesa_txt_member_name(remesa), txt_data.encode("utf-8"))
+                    zip_file.writestr(self._build_remesa_txt_member_name(remesa), txt_data.encode("latin-1", errors="replace"))
 
             attachment = self.env["ir.attachment"].create({
                 "name": self._build_remesa_zip_name(),
@@ -3499,18 +3656,25 @@ class MxPedOperacion(models.Model):
 
         lines = []
         order_map = self._get_record_order_map()
-        for reg in self.registro_ids.sorted(lambda r: self._registro_export_sort_key(r, order_map=order_map)):
+        sorted_regs = self.registro_ids.sorted(lambda r: self._registro_export_sort_key(r, order_map=order_map))
+        total_registros = sum(1 for r in sorted_regs if (r.codigo or "").strip() != "801")
+        for reg in sorted_regs:
             layout_reg = self._get_layout_registro(reg.codigo)
-            partida_num = self._extract_partida_number(reg.valores)
-            lines.append(self._build_txt_line(layout_reg, reg.valores, partida_num=partida_num))
+            if not layout_reg:
+                continue
+            valores = dict(reg.valores or {})
+            if (reg.codigo or "").strip() == "801":
+                valores = self._build_801_valores(layout_reg, total_registros)
+            partida_num = self._extract_partida_number(valores)
+            lines.append(self._build_txt_line(layout_reg, valores, partida_num=partida_num))
 
         sep = self.layout_id.record_separator or "\n"
         txt_data = sep.join(lines)
         attachment = self.env["ir.attachment"].create({
             "name": self._build_txt_filename(),
             "type": "binary",
-            "datas": base64.b64encode(txt_data.encode("utf-8")),
-            "mimetype": "text/plain",
+            "datas": base64.b64encode(txt_data.encode("latin-1", errors="replace")),
+            "mimetype": "text/plain; charset=latin-1",
             "res_model": self._name,
             "res_id": self.id,
         })
@@ -3901,6 +4065,8 @@ class MxPedOperacion(models.Model):
             "type": "binary",
             "datas": base64.b64encode(xml_data),
             "mimetype": "application/xml",
+            "res_model": self._name,
+            "res_id": self.id,
         })
         return {
             "type": "ir.actions.act_url",
@@ -5299,6 +5465,115 @@ class MxPedOperacion(models.Model):
                 valores[campo.nombre] = self._json_safe_layout_value(val)
         return valores
 
+    def _build_801_valores(self, layout_reg, total_registros):
+        """Genera payload del registro 801 (Fin de archivo).
+
+        Campos SAAI M3 Anexo 22 registro 801:
+          pos 1-3   tipo de registro = "801"
+          pos 4-10  total de registros del archivo (sin contar el 801 mismo)
+        """
+        self.ensure_one()
+        valores = {}
+        ordered_campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+        for idx, campo in enumerate(ordered_campos, start=1):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            campo_name = self._norm_layout_token(campo.nombre)
+            source_norm = self._norm_layout_token(source_name)
+            token = f"{campo_name} {source_norm}".strip()
+            pos_ini = campo.pos_ini or 0
+            orden = campo.orden or 0
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro") or idx == 1 or orden == 1 or pos_ini == 1:
+                val = "801"
+            elif (
+                "total" in token
+                or "conteo" in token
+                or "numero" in token
+                or "num" in token
+                or source_norm in {"total_registros", "num_registros", "conteo", "total"}
+                or idx == 2
+                or orden == 2
+                or pos_ini == 4
+            ):
+                val = total_registros
+            else:
+                val = self._field_value_for_layout(campo, partida=False)
+                if val in (None, "", False) and campo.default:
+                    val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = self._json_safe_layout_value(val)
+        return valores
+
+    def _build_700_valores(self, layout_reg):
+        """Genera payload del registro 700 (Rectificacion).
+
+        Campos SAAI M3 Anexo 22 registro 700:
+          pos 1-3   tipo de registro = "700"
+          pos 4-7   patente del agente (del pedimento que rectifica)
+          pos 8-15  fecha de pago del pedimento original (AAAAMMDD)
+          pos 16-24 numero del pedimento original
+          pos 25-27 aduana-seccion del pedimento original
+        """
+        self.ensure_one()
+        valores = {}
+
+        fecha_pago_original = ""
+        if self.rect_fecha_pago_original:
+            fecha_pago_original = fields.Date.from_string(self.rect_fecha_pago_original).strftime("%Y%m%d")
+
+        patente_orig = (self.rect_patente_original or self.patente or "").strip()
+        pedimento_orig = (self.rect_pedimento_original or "").strip()
+        aduana_orig = ""
+        if self.rect_aduana_original_id:
+            aduana_orig = self.rect_aduana_original_id.code or ""
+        elif self.aduana_seccion_despacho_id:
+            aduana_orig = self.aduana_seccion_despacho_id.code or ""
+
+        ordered_campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+        for idx, campo in enumerate(ordered_campos, start=1):
+            source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
+            campo_name = self._norm_layout_token(campo.nombre)
+            source_norm = self._norm_layout_token(source_name)
+            token = f"{campo_name} {source_norm}".strip()
+            pos_ini = campo.pos_ini or 0
+            orden = campo.orden or 0
+
+            val = None
+            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro") or idx == 1 or orden == 1 or pos_ini == 1:
+                val = "700"
+            elif "patente" in token and "original" not in token:
+                val = patente_orig
+            elif ("fecha" in token and "pago" in token) or source_norm in {"fecha_pago_original", "fecha_pago"}:
+                val = fecha_pago_original
+            elif "pedimento" in token and "original" in token:
+                val = pedimento_orig
+            elif "pedimento" in token and ("numero" in token or "num" in token):
+                val = self.pedimento_numero or ""
+            elif ("aduana" in token and "original" in token) or source_norm in {"aduana_seccion_original", "aduana_original"}:
+                val = aduana_orig
+            elif "aduana" in token or source_norm in {"aduana", "aduana_seccion", "aduana_clave"}:
+                val = aduana_orig
+            else:
+                # Fallback por posicion/orden segun layout estandar SAAI M3 registro 700
+                if idx == 2 or orden == 2 or pos_ini == 4:
+                    val = patente_orig
+                elif idx == 3 or orden == 3 or pos_ini == 8:
+                    val = fecha_pago_original
+                elif idx == 4 or orden == 4 or pos_ini == 16:
+                    val = pedimento_orig
+                elif idx == 5 or orden == 5 or pos_ini == 25:
+                    val = aduana_orig
+                else:
+                    val = self._field_value_for_layout(campo, partida=False)
+                    if val in (None, "", False) and campo.default:
+                        val = campo.default
+
+            if val not in (None, "", False):
+                valores[campo.nombre] = self._json_safe_layout_value(val)
+        return valores
+
     def action_cargar_desde_lead(self):
         self.ensure_one()
         if not self.layout_id:
@@ -5329,6 +5604,18 @@ class MxPedOperacion(models.Model):
             if code in {"509", "510", "557", "514"}:
                 continue
             campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
+
+            if code == "700":
+                if not self._is_rectificacion():
+                    continue
+                if not (self.rect_pedimento_original or "").strip():
+                    continue
+                registros.append((0, 0, {
+                    "codigo": layout_reg.codigo,
+                    "secuencia": 1,
+                    "valores": self._build_700_valores(layout_reg),
+                }))
+                continue
 
             if code == "506":
                 fecha_lines = self.lead_id.x_fecha_506_ids.sorted(lambda l: (l.sequence or 0, l.id))
@@ -5450,6 +5737,18 @@ class MxPedOperacion(models.Model):
                     "codigo": layout_reg.codigo,
                     "secuencia": 1,
                     "valores": self._build_501_valores(layout_reg),
+                }))
+                continue
+
+            if code == "801":
+                # Fin de archivo: se genera siempre, sin campos de partida.
+                # El contenido real (conteo de registros) se resuelve al momento de exportar
+                # porque aun no sabemos cuantos registros tendra el archivo.
+                # Se guarda como placeholder; _build_txt_line lo rellena via campos default/layout.
+                registros.append((0, 0, {
+                    "codigo": layout_reg.codigo,
+                    "secuencia": 1,
+                    "valores": {},
                 }))
                 continue
 

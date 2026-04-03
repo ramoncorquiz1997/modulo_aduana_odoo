@@ -117,6 +117,12 @@ class MxPedRulepackSelector(models.Model):
         default="any",
         required=True,
     )
+    es_rectificacion = fields.Selection(
+        [("any", "Cualquiera"), ("yes", "Si"), ("no", "No")],
+        string="Es rectificacion",
+        default="any",
+        required=True,
+    )
     scenario_id = fields.Many2one("mx.ped.rulepack.scenario", required=True, ondelete="restrict")
 
 
@@ -169,6 +175,12 @@ class MxPedRulepackProcessRule(models.Model):
     clave_pedimento_id = fields.Many2one("mx.ped.clave", string="Clave pedimento", ondelete="restrict")
     is_virtual = fields.Selection(
         [("any", "Cualquiera"), ("yes", "Si"), ("no", "No")],
+        default="any",
+        required=True,
+    )
+    es_rectificacion = fields.Selection(
+        [("any", "Cualquiera"), ("yes", "Si"), ("no", "No")],
+        string="Es rectificacion",
         default="any",
         required=True,
     )

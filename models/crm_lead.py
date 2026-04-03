@@ -88,6 +88,16 @@ class CrmLead(models.Model):
     )
     x_acuse_validacion = fields.Char(string="Acuse electrónico validación")
 
+    # --- Rectificación ---
+    x_es_rectificacion = fields.Boolean(string="Rectificacion")
+    x_rect_pedimento_original = fields.Char(string="Num. pedimento original (rectif.)", size=21)
+    x_rect_fecha_pago_original = fields.Date(string="Fecha pago original (rectif.)")
+    x_rect_patente_original = fields.Char(string="Patente original (rectif.)", size=4)
+    x_rect_aduana_original_id = fields.Many2one(
+        "mx.ped.aduana.seccion",
+        string="Aduana-seccion original (rectif.)",
+    )
+
     x_incoterm = fields.Selection(
         selection=[
             ("EXW", "EXW"),
@@ -744,6 +754,11 @@ class CrmLead(models.Model):
             "fecha_liberacion": self.x_fecha_liberacion,
             "semaforo": self.x_semaforo,
             "observaciones": self.x_incidente_text or "",
+            "es_rectificacion": bool(self.x_es_rectificacion),
+            "rect_pedimento_original": self.x_rect_pedimento_original or "",
+            "rect_fecha_pago_original": self.x_rect_fecha_pago_original or False,
+            "rect_patente_original": self.x_rect_patente_original or "",
+            "rect_aduana_original_id": self.x_rect_aduana_original_id.id or False,
         }
 
     def _sync_lead_documents_to_operacion(self, operacion):
