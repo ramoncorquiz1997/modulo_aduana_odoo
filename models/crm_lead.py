@@ -1417,6 +1417,16 @@ class CrmLead(models.Model):
     )
     x_num_contenedor = fields.Char(string="Número de contenedor")
     x_num_sello = fields.Char(string="Número de sello")
+    x_guia_ids = fields.One2many(
+        "crm.lead.guia",
+        "lead_id",
+        string="Guías / Manifiestos (503)",
+    )
+    x_contenedor_ids = fields.One2many(
+        "crm.lead.contenedor",
+        "lead_id",
+        string="Contenedores (504)",
+    )
     x_candado_ids = fields.One2many(
         "crm.lead.candado",
         "lead_id",
@@ -2619,6 +2629,48 @@ class CrmLeadCandado(models.Model):
     num_candado = fields.Char(
         string="Numero de candado",
         size=21,
+        required=True,
+    )
+
+
+class CrmLeadGuia(models.Model):
+    _name = "crm.lead.guia"
+    _description = "Guía / Manifiesto por Lead (Registro 503)"
+    _order = "sequence, id"
+
+    lead_id = fields.Many2one(
+        "crm.lead",
+        required=True,
+        ondelete="cascade",
+        index=True,
+    )
+    sequence = fields.Integer(default=10)
+    numero = fields.Char(string="Número de guía/manifiesto", size=20, required=True)
+    identificador = fields.Selection(
+        selection=[("M", "M - Master"), ("H", "H - House")],
+        string="Identificador",
+        required=True,
+        default="M",
+    )
+
+
+class CrmLeadContenedor(models.Model):
+    _name = "crm.lead.contenedor"
+    _description = "Contenedor por Lead (Registro 504)"
+    _order = "sequence, id"
+
+    lead_id = fields.Many2one(
+        "crm.lead",
+        required=True,
+        ondelete="cascade",
+        index=True,
+    )
+    sequence = fields.Integer(default=10)
+    numero = fields.Char(string="Número de contenedor", size=12, required=True)
+    tipo_contenedor_id = fields.Many2one(
+        "mx.ped.tipo.contenedor",
+        string="Tipo de contenedor/vehículo",
+        domain=[("active", "=", True)],
         required=True,
     )
 
