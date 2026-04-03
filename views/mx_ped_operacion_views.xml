@@ -585,11 +585,11 @@
               <page string="Rectificación (701/702)" invisible="not es_rectificacion">
                 <group string="Datos del pedimento original (Reg. 701)">
                   <group>
-                    <field name="pedimento_numero_original"/>
-                    <field name="patente_original_rectif"/>
-                    <field name="aduana_seccion_original_id"/>
-                    <field name="clave_pedimento_original_id"/>
-                    <field name="fecha_operacion_original"/>
+                    <field name="rect_pedimento_original"/>
+                    <field name="rect_patente_original"/>
+                    <field name="rect_aduana_original_id"/>
+                    <field name="rect_clave_pedimento_original_id"/>
+                    <field name="rect_fecha_pago_original"/>
                   </group>
                 </group>
                 <group string="Diferencias de contribuciones (Reg. 702)">

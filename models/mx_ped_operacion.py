@@ -343,30 +343,31 @@ class MxPedOperacion(models.Model):
     )
     # ----------------------------------------
     # Campos para registro 701 – Rectificación
+    # Nombres en rect_* para coincidir con el mapeo de crm_lead
     # ----------------------------------------
-    pedimento_numero_original = fields.Char(string="Pedimento original (Rectif.)", size=7)
-    patente_original_rectif = fields.Char(string="Patente original (Rectif.)", size=4)
-    aduana_seccion_original_id = fields.Many2one(
+    rect_pedimento_original = fields.Char(string="Pedimento original (Rectif.)", size=7)
+    rect_patente_original = fields.Char(string="Patente original (Rectif.)", size=4)
+    rect_aduana_original_id = fields.Many2one(
         "mx.ped.aduana.seccion",
         string="Aduana sección original (Rectif.)",
     )
-    aduana_seccion_original_code = fields.Char(
+    rect_aduana_original = fields.Char(
         string="Aduana original código (Rectif.)",
-        related="aduana_seccion_original_id.code",
+        related="rect_aduana_original_id.code",
         store=True,
         readonly=True,
     )
-    clave_pedimento_original_id = fields.Many2one(
+    rect_clave_pedimento_original_id = fields.Many2one(
         "mx.ped.clave",
         string="Clave pedimento original (Rectif.)",
     )
-    clave_pedimento_original = fields.Char(
+    rect_clave_pedimento_original = fields.Char(
         string="Clave pedimento original código (Rectif.)",
-        related="clave_pedimento_original_id.code",
+        related="rect_clave_pedimento_original_id.code",
         store=True,
         readonly=True,
     )
-    fecha_operacion_original = fields.Date(string="Fecha operación original (Rectif.)")
+    rect_fecha_pago_original = fields.Date(string="Fecha operación original (Rectif.)")
     # ----------------------------------------
     # Campos para registro 800 – Cancelación / Desistimiento
     # ----------------------------------------
@@ -5880,17 +5881,17 @@ class MxPedOperacion(models.Model):
             or ""
         ).strip().upper()[:3]
         aduana_orig = (
-            self.aduana_seccion_original_code
+            self.rect_aduana_original
             or ""
         ).strip().upper()[:3]
         fecha_pago_str = self.fecha_pago.strftime("%Y%m%d") if self.fecha_pago else ""
-        fecha_orig_str = self.fecha_operacion_original.strftime("%Y%m%d") if self.fecha_operacion_original else ""
+        fecha_orig_str = self.rect_fecha_pago_original.strftime("%Y%m%d") if self.rect_fecha_pago_original else ""
         patente = (self.patente or "").strip().zfill(4)[:4]
-        patente_orig = (self.patente_original_rectif or "").strip().zfill(4)[:4]
+        patente_orig = (self.rect_patente_original or "").strip().zfill(4)[:4]
         num_ped = (self.pedimento_numero or "").strip()[:7]
-        num_ped_orig = (self.pedimento_numero_original or "").strip()[:7]
+        num_ped_orig = (self.rect_pedimento_original or "").strip()[:7]
         clave_rect = (self.clave_pedimento or "").strip().upper()[:2]
-        clave_orig = (self.clave_pedimento_original or "").strip().upper()[:2]
+        clave_orig = (self.rect_clave_pedimento_original or "").strip().upper()[:2]
         return {
             "clave_registro":            "701",
             "patente":                   patente,
