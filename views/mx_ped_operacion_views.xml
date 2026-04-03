@@ -565,6 +565,63 @@
                   </field>
                 </group>
               </page>
+              <!-- ===== Cancelación / Desistimiento 800 ===== -->
+              <page string="Cancelación / Desistimiento (800)" invisible="tipo_movimiento not in ['2','3']">
+                <group string="Datos de cancelación / desistimiento (Reg. 800)">
+                  <field name="motivo_cancelacion" placeholder="Describe el motivo de cancelación o desistimiento..."/>
+                </group>
+              </page>
+              <!-- ===== Rectificación 701 / 702 ===== -->
+              <page string="Rectificación (701/702)" invisible="not es_rectificacion">
+                <group string="Datos del pedimento original (Reg. 701)">
+                  <group>
+                    <field name="pedimento_numero_original"/>
+                    <field name="patente_original_rectif"/>
+                    <field name="aduana_seccion_original_id"/>
+                    <field name="clave_pedimento_original_id"/>
+                    <field name="fecha_operacion_original"/>
+                  </group>
+                </group>
+                <group string="Diferencias de contribuciones (Reg. 702)">
+                  <field name="contribucion_702_ids" context="{'default_operacion_id': id}">
+                    <list editable="bottom">
+                      <field name="sequence" optional="hide"/>
+                      <field name="contribucion_id"/>
+                      <field name="clave_contribucion"/>
+                      <field name="clave_forma_pago"/>
+                      <field name="importe_pago"/>
+                    </list>
+                  </field>
+                </group>
+              </page>
+              <!-- ===== Complementario 301 / 302 ===== -->
+              <page string="Complementario (301/302)" invisible="clave_pedimento != 'CT'">
+                <group string="Encabezado complementario (Reg. 301)">
+                  <p>Los datos del 301 se generan automáticamente desde el exportador, agente, patente y tipo de cambio del expediente.</p>
+                </group>
+                <group string="Prueba suficiente (Reg. 302)">
+                  <field name="prueba_suficiente_302_ids" context="{'default_operacion_id': id}">
+                    <list editable="bottom">
+                      <field name="sequence" optional="hide"/>
+                      <field name="pais_destino_id"/>
+                      <field name="pais_destino"/>
+                      <field name="pedimento_eua_can"/>
+                      <field name="prueba_suficiente"/>
+                      <field name="fecha_documento"/>
+                    </list>
+                    <form string="Prueba suficiente">
+                      <group>
+                        <field name="sequence"/>
+                        <field name="pais_destino_id"/>
+                        <field name="pais_destino"/>
+                        <field name="pedimento_eua_can"/>
+                        <field name="prueba_suficiente"/>
+                        <field name="fecha_documento"/>
+                      </group>
+                    </form>
+                  </field>
+                </group>
+              </page>
               <page string="Cuenta aduanera">
                 <group string="Lineas de cuenta aduanera">
                   <field name="cuenta_aduanera_ids" context="{'default_operacion_id': id}">

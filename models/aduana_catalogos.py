@@ -130,6 +130,12 @@ class AduanaCatalogoPais(models.Model):
     saai_fiii = fields.Char(string="Clave SAAI FIII", required=True, index=True, size=3)
     saai_m3 = fields.Char(string="Clave SAAI M3", required=True, index=True, size=3)
     name = fields.Char(string="Pais", required=True)
+    country_id = fields.Many2one(
+        "res.country",
+        string="País Odoo",
+        index=True,
+        help="Enlace al país de Odoo (res.country) para resolver el código SAAI automáticamente en registros 502/505/551.",
+    )
     active = fields.Boolean(default=True)
 
     _sql_constraints = [
