@@ -2320,7 +2320,7 @@ class MxPedOperacion(models.Model):
                     continue
                 value = getattr(self, field_name, False)
                 if not value:
-                    raise ValidationError(_("Regla %s: el campo %s es obligatorio.") % (rule.name, field_name))
+                    raise ValidationError(_("Regla %s: el campo %s es obligatorio. [DEBUG es_rect=%s rect_field=%s]") % (rule.name, field_name, self._is_rectificacion(), getattr(self, field_name, "NOEXIST")))
             elif action == "forbid_field":
                 field_name = payload.get("field")
                 if not field_name:
