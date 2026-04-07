@@ -733,51 +733,71 @@ class PedimentoPDF:
         a = p.agente
         c = self.c
 
-        fy = MB - 2    # base del pie
+        F_ROW = 6 * mm   # altura de fila de datos
+        F_HDR = 5 * mm   # altura de sub-encabezado
 
-        # Borde superior del pie
-        c.setStrokeColor(BLACK)
-        c.setLineWidth(0.5)
-        c.line(ML, fy + 14 * mm, ML + CW, fy + 14 * mm)
+        # Construimos de abajo hacia arriba desde MB
+        base = MB
 
-        # Encabezado pie
+        # FIRMA ELECTRONICA
+        firma_y = base + 1.5 * mm
         c.setFont(FB, SZ_FIELD_NAME)
         c.setFillColor(BLACK)
-        c.drawString(ML, fy + 12.5 * mm,
-                     "AGENTE ADUANAL, APODERADO ADUANAL O DE ALMACEN")
+        c.drawString(ML, firma_y,
+            f"FIRMA ELECTRONICA AVANZADA: {a.firma_electronica or ''}")
 
-        # Fila: NOMBRE | RFC | CURP | PATENTE
-        fila1_y = fy + 9 * mm
-        for x, w, lbl, val in [
-            (ML,              CW * 0.40, "NOMBRE O RAZ. SOC", a.nombre),
-            (ML + CW * 0.40,  CW * 0.20, "RFC",              a.rfc),
-            (ML + CW * 0.60,  CW * 0.20, "CURP",             a.curp),
-            (ML + CW * 0.80,  CW * 0.20, "PATENTE O AUTORIZACION", a.patente),
-        ]:
-            self._field_cell(x, fila1_y, w, 5 * mm, lbl, val)
+        # NUMERO DE SERIE
+        serie_y = firma_y + 3.5 * mm
+        c.drawString(ML, serie_y,
+            f"NUMERO DE SERIE DEL CERTIFICADO: {a.num_serie_cert or ''}")
 
-        # Mandatario
-        c.setFont(FB, SZ_FIELD_NAME)
-        c.drawString(ML, fila1_y - 1.5 * mm, "MANDATARIO/PERSONA AUTORIZADA")
-        fila2_y = fila1_y - 5 * mm
-        for x, w, lbl, val in [
-            (ML,             CW * 0.40, "NOMBRE", a.mandatario_nombre),
-            (ML + CW * 0.40, CW * 0.20, "RFC",   a.mandatario_rfc),
-            (ML + CW * 0.60, CW * 0.40, "CURP",  a.mandatario_curp),
-        ]:
-            self._field_cell(x, fila2_y, w, 5 * mm, lbl, val)
-
-        # Leyenda protesta + FIEL
-        leyenda_y = fila2_y - 0.5 * mm
+        # LEYENDA PROTESTA
+        leyenda_y = serie_y + 4 * mm
         c.setFont(FN, 5.5)
         c.drawString(ML, leyenda_y,
             "DECLARO BAJO PROTESTA DE DECIR VERDAD, EN LOS TERMINOS DE LO DISPUESTO"
             " POR EL ARTICULO 81 DE LA LEY ADUANERA:")
+
+        # FILA 2 — MANDATARIO (datos)
+        fila2_y = leyenda_y + 2 * mm
+        for x, w, lbl, val in [
+            (ML,              CW * 0.40, "NOMBRE", a.mandatario_nombre),
+            (ML + CW * 0.40,  CW * 0.20, "RFC",   a.mandatario_rfc),
+            (ML + CW * 0.60,  CW * 0.40, "CURP",  a.mandatario_curp),
+        ]:
+            self._field_cell(x, fila2_y, w, F_ROW, lbl, val)
+
+        # SUB-ENCABEZADO — MANDATARIO
+        mand_y = fila2_y + F_ROW
+        self._rect(ML, mand_y, CW, F_HDR, fill=SHADE15)
         c.setFont(FB, SZ_FIELD_NAME)
-        c.drawString(ML, leyenda_y - 3.5 * mm,
-            f"NUMERO DE SERIE DEL CERTIFICADO: {a.num_serie_cert or ''}")
-        c.drawString(ML, leyenda_y - 6.5 * mm,
-            f"FIRMA ELECTRONICA AVANZADA: {a.firma_electronica or ''}")
+        c.setFillColor(BLACK)
+        c.drawString(ML + 2, mand_y + (F_HDR - SZ_FIELD_NAME) / 2,
+                     "MANDATARIO/PERSONA AUTORIZADA")
+
+        # FILA 1 — AGENTE (datos)
+        fila1_y = mand_y + F_HDR
+        for x, w, lbl, val in [
+            (ML,              CW * 0.40, "NOMBRE O RAZ. SOC",      a.nombre),
+            (ML + CW * 0.40,  CW * 0.20, "RFC",                   a.rfc),
+            (ML + CW * 0.60,  CW * 0.20, "CURP",                  a.curp),
+            (ML + CW * 0.80,  CW * 0.20, "PATENTE O AUTORIZACION", a.patente),
+        ]:
+            self._field_cell(x, fila1_y, w, F_ROW, lbl, val)
+
+        # ENCABEZADO — AGENTE ADUANAL
+        agente_y = fila1_y + F_ROW
+        self._rect(ML, agente_y, CW, F_HDR, fill=SHADE15)
+        c.setFont(FB, SZ_FIELD_NAME)
+        c.setFillColor(BLACK)
+        c.drawString(ML + 2, agente_y + (F_HDR - SZ_FIELD_NAME) / 2,
+                     "AGENTE ADUANAL, APODERADO ADUANAL O DE ALMACEN")
+
+        # Línea separadora superior
+        line_y = agente_y + F_HDR
+        c.setStrokeColor(BLACK)
+        c.setLineWidth(0.5)
+        c.line(ML, line_y, ML + CW, line_y)
 
     # ─────────────────────────────────────────
     #  BLOQUE PROVEEDOR/COMPRADOR  (505)
