@@ -1331,6 +1331,7 @@ class MxPedOperacion(models.Model):
             "fraccion_ids": fraccion_ids,
             "fraccion_capitulos": fraccion_capitulos,
             "declared_formas_pago": declared_formas_pago,
+            "es_rectificacion": self._is_rectificacion(),
         }
 
     def _rule_condition_match(self, rule, context):
@@ -1348,6 +1349,11 @@ class MxPedOperacion(models.Model):
         if getattr(rule, "is_virtual", False) and rule.is_virtual != "any":
             expected_virtual = (rule.is_virtual == "yes")
             if expected_virtual != bool(context.get("is_virtual")):
+                return False
+        rule_es_rect = getattr(rule, "es_rectificacion", "any") or "any"
+        if rule_es_rect != "any":
+            expected_rect = (rule_es_rect == "yes")
+            if expected_rect != bool(context.get("es_rectificacion")):
                 return False
         if hasattr(rule, "escenario_code") and rule.escenario_code and rule.escenario_code != "any":
             if rule.escenario_code != context.get("escenario"):
