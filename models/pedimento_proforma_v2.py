@@ -458,12 +458,16 @@ class PedimentoPDF:
         # ── Fila 2: DESTINO | TIPO CAMBIO | PESO BRUTO | ADUANA E/S
         H2 = ROW_H
         y2 = self.y - H2
-        cw2 = 1 - certif_w / CW
+        # Anchura compartida para la columna de valores (ADUANA E/S, VALOR DOLARES, etc.)
+        # El espacio no-certif es CW*(1-certif_w/CW). Reservamos ~35% para los valores.
+        w_val_col = CW * 0.19                     # ADUANA E/S / VALOR DOLARES / etc.
+        w_transp  = CW * (1 - certif_w / CW) - w_val_col  # DESTINO+TC+PB / MEDIOS
+        w_cell2   = w_transp / 3                  # cada celda de la fila 2
         cols2 = [
-            ("DESTINO",       p.destino_origen,   0.18),
-            ("TIPO CAMBIO",   p.tipo_cambio,       0.18),
-            ("PESO BRUTO",    p.peso_bruto,        0.18),
-            ("ADUANA E/S",    p.aduana_es,         cw2 - 0.18 - 0.18 - 0.18),
+            ("DESTINO",       p.destino_origen,   w_cell2 / CW),
+            ("TIPO CAMBIO",   p.tipo_cambio,       w_cell2 / CW),
+            ("PESO BRUTO",    p.peso_bruto,        w_cell2 / CW),
+            ("ADUANA E/S",    p.aduana_es,         w_val_col / CW),
         ]
         x = ML
         for fn, fv, fr in cols2:
@@ -475,7 +479,6 @@ class PedimentoPDF:
         # ── Fila 3: MEDIOS DE TRANSPORTE | VALOR DOLARES
         H3 = ROW_H
         y3 = self.y - H3
-        w_transp = CW * 0.54
         # sub-celdas transporte
         self._rect(ML, y3, w_transp, H3)
         self._text(ML + 2, y3 + H3 - SZ_FIELD_NAME - 0.5,
@@ -493,7 +496,7 @@ class PedimentoPDF:
 
         # valor dolares / aduana / precio pagado (columna derecha triple)
         vx = ML + w_transp
-        vw = CW - w_transp - certif_w
+        vw = w_val_col
         vh3 = H3 * 3
         self._rect(vx, y3 - H3 * 2, vw, vh3)
         for i, (lbl, val) in enumerate([
