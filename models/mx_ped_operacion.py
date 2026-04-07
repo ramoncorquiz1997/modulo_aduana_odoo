@@ -5527,14 +5527,18 @@ class MxPedOperacion(models.Model):
             orden = campo.orden or 0
 
             val = None
-            if ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro") or idx == 1 or orden == 1 or pos_ini == 1:
+            if source_norm in {"identificador_guia", "tipo_guia", "id_guia"}:
+                val = guia_line.get("identificador") or ""
+            elif source_norm in {"guia", "numero_guia", "guia_manifiesto", "num_guia", "conocimiento_embarque"}:
+                val = guia_line.get("numero") or ""
+            elif ("tipo" in token and "registro" in token) or token in ("registro", "clave_registro") or idx == 1 or orden == 1 or pos_ini == 1:
                 val = "503"
             elif ("pedimento" in token and ("numero" in token or "num" in token)) or idx == 2 or orden == 2 or pos_ini == 4:
                 val = self.pedimento_numero or ""
-            elif "guia" in token or "manifiesto" in token or "conocimiento" in token or source_norm in {"guia", "numero_guia", "guia_manifiesto", "num_guia"} or idx == 3 or orden == 3:
-                val = guia_line.get("numero") or ""
-            elif ("identificad" in token and ("guia" in token or "tipo" in token)) or source_norm in {"identificador_guia", "tipo_guia", "id_guia"} or idx == 4 or orden == 4:
+            elif ("identificad" in token and ("guia" in token or "tipo" in token)) or idx == 4 or orden == 4:
                 val = guia_line.get("identificador") or ""
+            elif "guia" in token or "manifiesto" in token or "conocimiento" in token or idx == 3 or orden == 3:
+                val = guia_line.get("numero") or ""
             else:
                 val = self._field_value_for_layout(campo, partida=False)
                 if val in (None, "", False) and campo.default:
