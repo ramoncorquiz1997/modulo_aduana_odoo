@@ -3542,6 +3542,19 @@ class MxPedOperacion(models.Model):
         sep = self.layout_id.record_separator or "\n"
         return sep.join(lines)
 
+    def action_validar_operacion(self):
+        """Abre el wizard de validación mostrando todos los errores y advertencias de una vez."""
+        self.ensure_one()
+        wizard = self.env["mx.ped.validacion.wizard"].ejecutar_para_operacion(self)
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Validación del Pedimento"),
+            "res_model": "mx.ped.validacion.wizard",
+            "res_id": wizard.id,
+            "view_mode": "form",
+            "target": "new",
+        }
+
     def action_export_txt(self):
         self.ensure_one()
         self._auto_refresh_generated_registros()

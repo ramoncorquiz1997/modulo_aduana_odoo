@@ -33,7 +33,8 @@
             <button name="action_preparar_estructura" type="object" string="Preparar estructura" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
             <button name="action_simular_estructura" type="object" string="Simular estructura" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
             <button name="action_generar_contribuciones_557" type="object" string="Generar contribuciones 557" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
-            <button name="action_export_txt" type="object" string="Exportar TXT" class="btn-primary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_export_txt"/>
+            <button name="action_validar_operacion" type="object" string="Validar" class="btn-primary" icon="fa-check-circle"/>
+            <button name="action_export_txt" type="object" string="Exportar TXT" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_export_txt"/>
             <button name="action_export_proforma" type="object" string="Proforma PDF" class="btn-secondary" icon="fa-file-pdf-o"/>
             <button name="action_avc_generar" type="object" string="Generar AVC" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_generar"/>
             <button name="action_avc_consultar" type="object" string="Consultar AVC" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_consultar"/>

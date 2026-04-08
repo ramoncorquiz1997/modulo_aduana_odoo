@@ -120,3 +120,7 @@ access_mx_ped_operacion_contribucion,mx.ped.operacion.contribucion,model_mx_ped_
 access_mx_ped_operacion_contribucion_admin,mx.ped.operacion.contribucion.admin,model_mx_ped_operacion_contribucion,base.group_system,1,1,1,1
 access_mx_ped_operacion_prueba_suficiente,mx.ped.operacion.prueba.suficiente,model_mx_ped_operacion_prueba_suficiente,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_operacion_prueba_suficiente_admin,mx.ped.operacion.prueba.suficiente.admin,model_mx_ped_operacion_prueba_suficiente,base.group_system,1,1,1,1
+access_mx_ped_validacion_wizard,mx.ped.validacion.wizard,model_mx_ped_validacion_wizard,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_ped_validacion_wizard_admin,mx.ped.validacion.wizard.admin,model_mx_ped_validacion_wizard,base.group_system,1,1,1,1
+access_mx_ped_validacion_linea,mx.ped.validacion.linea,model_mx_ped_validacion_linea,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_ped_validacion_linea_admin,mx.ped.validacion.linea.admin,model_mx_ped_validacion_linea,base.group_system,1,1,1,1
