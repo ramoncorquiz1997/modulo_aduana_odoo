@@ -152,22 +152,22 @@ class MxPedValidacionWizard(models.TransientModel):
                 # NOM / Permisos / RRNA desde fracción
                 if p.fraccion_id:
                     frac = p.fraccion_id
-                    if frac.nom_ids and not p.nom_ids:
+                    if frac.nom_default_ids and not p.nom_ids:
                         w(
                             _("La fracción %s requiere NOM(s) (%s) pero no están capturadas en la partida.")
-                            % (frac.fraccion_arancelaria, ", ".join(frac.nom_ids.mapped("code"))),
+                            % (frac.fraccion_arancelaria, ", ".join(frac.nom_default_ids.mapped("code"))),
                             ref=ref, cat="regulatorio", seq=10,
                         )
-                    if frac.permiso_ids and not p.permiso_ids:
+                    if frac.permiso_default_ids and not p.permiso_ids:
                         w(
                             _("La fracción %s sugiere Permiso(s) (%s) pero no están capturados en la partida.")
-                            % (frac.fraccion_arancelaria, ", ".join(frac.permiso_ids.mapped("code") or [])),
+                            % (frac.fraccion_arancelaria, ", ".join(frac.permiso_default_ids.mapped("code") or [])),
                             ref=ref, cat="regulatorio", seq=20,
                         )
-                    if frac.rrna_ids and not p.rrna_ids:
+                    if frac.rrna_default_ids and not p.rrna_ids:
                         w(
                             _("La fracción %s tiene RRNA(s) (%s) asociados que no están capturados en la partida.")
-                            % (frac.fraccion_arancelaria, ", ".join(frac.rrna_ids.mapped("code") or [])),
+                            % (frac.fraccion_arancelaria, ", ".join(frac.rrna_default_ids.mapped("code") or [])),
                             ref=ref, cat="regulatorio", seq=30,
                         )
 
