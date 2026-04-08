@@ -10,17 +10,17 @@
           <sheet>
 
             <!-- Resumen en banner -->
-            <div class="alert alert-danger mb-3" attrs="{'invisible': [('tiene_errores', '=', False)]}">
+            <div class="alert alert-danger mb-3" invisible="not tiene_errores">
               <i class="fa fa-times-circle me-2"/>
               <strong><field name="resumen" readonly="1"/></strong>
-              &amp;nbsp; Corrija los errores antes de exportar el archivo TXT.
+              &#160; Corrija los errores antes de exportar el archivo TXT.
             </div>
-            <div class="alert alert-warning mb-3" attrs="{'invisible': ['|', ('tiene_errores', '=', True), ('tiene_advertencias', '=', False)]}">
+            <div class="alert alert-warning mb-3" invisible="tiene_errores or not tiene_advertencias">
               <i class="fa fa-exclamation-triangle me-2"/>
               <strong><field name="resumen" readonly="1"/></strong>
-              &amp;nbsp; Puede exportar pero se recomienda revisar las advertencias.
+              &#160; Puede exportar pero se recomienda revisar las advertencias.
             </div>
-            <div class="alert alert-success mb-3" attrs="{'invisible': ['|', ('tiene_errores', '=', True), ('tiene_advertencias', '=', True)]}">
+            <div class="alert alert-success mb-3" invisible="tiene_errores or tiene_advertencias">
               <i class="fa fa-check-circle me-2"/>
               <strong><field name="resumen" readonly="1"/></strong>
             </div>
@@ -34,10 +34,9 @@
 
             <!-- Tabla de resultados -->
             <field name="linea_ids" readonly="1" nolabel="1">
-              <tree decoration-danger="severidad == 'error'"
-                    decoration-warning="severidad == 'advertencia'"
-                    decoration-info="severidad == 'info'"
-                    default_order="severidad_order asc, categoria asc, sequence asc">
+              <list>
+                <field name="severidad_order" column_invisible="1"/>
+                <field name="sequence" column_invisible="1"/>
                 <field name="severidad" widget="badge"
                        decoration-danger="severidad == 'error'"
                        decoration-warning="severidad == 'advertencia'"
@@ -45,9 +44,7 @@
                 <field name="categoria"/>
                 <field name="referencia"/>
                 <field name="mensaje"/>
-                <field name="severidad_order" column_invisible="1"/>
-                <field name="sequence" column_invisible="1"/>
-              </tree>
+              </list>
             </field>
 
           </sheet>
@@ -56,12 +53,12 @@
                     type="object"
                     string="Exportar TXT"
                     class="btn-primary"
-                    attrs="{'invisible': [('tiene_errores', '=', True)]}"/>
+                    invisible="tiene_errores"/>
             <button name="action_exportar_proforma"
                     type="object"
                     string="Proforma PDF"
                     class="btn-secondary"
-                    attrs="{'invisible': [('tiene_errores', '=', True)]}"/>
+                    invisible="tiene_errores"/>
             <button string="Cerrar" special="cancel" class="btn-secondary"/>
           </footer>
         </form>
