@@ -179,6 +179,18 @@ class ResPartner(models.Model):
         string="Motor reglas STRICT",
         default="inherit",
     )
+    x_portal_status = fields.Selection(
+        [
+            ("pending", "Pendiente de aprobación"),
+            ("approved", "Aprobado"),
+            ("rejected", "Rechazado"),
+        ],
+        string="Estado portal",
+        default=False,
+        tracking=True,
+    )
+    x_portal_registration_date = fields.Datetime(string="Fecha de registro portal", readonly=True)
+    x_portal_password = fields.Char(string="Contraseña portal", groups="base.group_system")
 
     def _wa_param(self, key):
         return self.env["ir.config_parameter"].sudo().get_param(key)
@@ -521,6 +533,63 @@ class ResPartner(models.Model):
             return result[0].data.decode("utf-8", errors="ignore")
         except Exception:
             return False
+
+    def action_approve_portal_user(self):
+        self.ensure_one()
+        if not self.email:
+            raise UserError("El partner necesita un correo electrónico para crear el usuario de portal.")
+
+        portal_group = self.env.ref("base.group_portal")
+
+        existing_user = self.env["res.users"].sudo().search([("partner_id", "=", self.id)], limit=1)
+        if existing_user:
+            self.write({"x_portal_status": "approved"})
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "title": "Portal",
+                    "message": "El partner ya tenía usuario de portal. Estado actualizado a Aprobado.",
+                    "type": "warning",
+                    "sticky": False,
+                },
+            }
+
+        new_user = self.env["res.users"].sudo().with_context(no_reset_password=True).create({
+            "name": self.name,
+            "login": self.email,
+            "partner_id": self.id,
+            "groups_id": [(6, 0, [portal_group.id])],
+        })
+
+        if self.x_portal_password:
+            new_user.sudo()._set_password(self.x_portal_password)
+
+        self.write({"x_portal_status": "approved"})
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "Portal",
+                "message": f"Usuario de portal creado: {new_user.login}. El cliente puede acceder al portal.",
+                "type": "success",
+                "sticky": False,
+            },
+        }
+
+    def action_reject_portal_user(self):
+        self.ensure_one()
+        self.write({"x_portal_status": "rejected"})
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "Portal",
+                "message": "Solicitud rechazada. El cliente no podrá acceder al portal.",
+                "type": "danger",
+                "sticky": False,
+            },
+        }
 
     def action_qr_decoder_status(self):
         self.ensure_one()

@@ -1,6 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <odoo>
   <data>
+    <!-- Acción: Solicitudes de registro portal pendientes -->
+    <record id="action_portal_pending_partners" model="ir.actions.act_window">
+      <field name="name">Solicitudes Portal</field>
+      <field name="res_model">res.partner</field>
+      <field name="view_mode">list,form</field>
+      <field name="domain">[("x_portal_status", "=", "pending")]</field>
+      <field name="context">{"search_default_x_portal_status": "pending"}</field>
+    </record>
+
+    <menuitem id="menu_portal_pending_partners"
+              name="Solicitudes Portal"
+              parent="mx_ped_operacion_menu_root"
+              action="action_portal_pending_partners"
+              sequence="5"/>
+
     <record id="action_mx_ped_transportistas" model="ir.actions.act_window">
       <field name="name">Transportistas</field>
       <field name="res_model">res.partner</field>
@@ -46,6 +61,19 @@
                   invisible="x_contact_role != 'chofer' and x_contact_role != 'transportista'">
             <div class="o_stat_info">
               <span class="o_stat_text">Escanear Gafete</span>
+            </div>
+          </button>
+          <button class="oe_stat_button"
+                  icon="fa-globe"
+                  invisible="x_portal_status == False"
+                  type="object"
+                  name="action_approve_portal_user">
+            <div class="o_stat_info">
+              <field name="x_portal_status" widget="badge"
+                     decoration-warning="x_portal_status == 'pending'"
+                     decoration-success="x_portal_status == 'approved'"
+                     decoration-danger="x_portal_status == 'rejected'"/>
+              <span class="o_stat_text">Portal</span>
             </div>
           </button>
         </xpath>
@@ -182,6 +210,36 @@
                 </field>
               </group>
             </group>
+          </page>
+
+          <page string="Portal Cliente" name="mi_modulo_portal_partner"
+                invisible="x_portal_status == False">
+            <group string="Estado de registro">
+              <field name="x_portal_status" widget="badge"
+                     decoration-warning="x_portal_status == 'pending'"
+                     decoration-success="x_portal_status == 'approved'"
+                     decoration-danger="x_portal_status == 'rejected'"/>
+              <field name="x_portal_registration_date" readonly="1"/>
+            </group>
+            <div invisible="x_portal_status != 'pending'" class="alert alert-warning" role="alert">
+              <strong>Solicitud pendiente:</strong> Este cliente se registró desde el portal y espera aprobación para acceder.
+            </div>
+            <div invisible="x_portal_status != 'pending'">
+              <button name="action_approve_portal_user"
+                      type="object"
+                      string="Aprobar y crear usuario de portal"
+                      class="btn-primary me-2"/>
+              <button name="action_reject_portal_user"
+                      type="object"
+                      string="Rechazar solicitud"
+                      class="btn-danger"/>
+            </div>
+            <div invisible="x_portal_status != 'approved'" class="alert alert-success" role="alert">
+              <strong>Aprobado:</strong> El cliente tiene acceso al portal con su correo como usuario de Odoo.
+            </div>
+            <div invisible="x_portal_status != 'rejected'" class="alert alert-danger" role="alert">
+              <strong>Rechazado:</strong> El cliente no puede acceder al portal.
+            </div>
           </page>
 
           <page string="Documentos" name="mi_modulo_documentos_partner">
