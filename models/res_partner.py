@@ -596,7 +596,7 @@ class ResPartner(models.Model):
         })
 
         if self.x_portal_password:
-            new_user.sudo()._set_password(self.x_portal_password)
+            new_user.sudo().write({"password": self.x_portal_password})
 
         self.write({"x_portal_status": "approved"})
         return {
