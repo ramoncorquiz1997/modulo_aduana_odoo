@@ -534,6 +534,11 @@ class ResPartner(models.Model):
         except Exception:
             return False
 
+    @api.model
+    def portal_extract_csf(self, file_b64):
+        """Método público para extracción de CSF vía XML-RPC desde el portal."""
+        return self._extract_csf_values(file_b64)
+
     def action_approve_portal_user(self):
         self.ensure_one()
         if not self.email:
