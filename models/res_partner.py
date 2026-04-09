@@ -5,9 +5,11 @@ import json
 import logging
 import re
 import requests
+import secrets
 import ssl
 import unicodedata
 import urllib3
+from datetime import timedelta
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
@@ -75,6 +77,7 @@ class ResPartner(models.Model):
     x_contact_role = fields.Selection(
         [
             ("cliente", "Cliente"),
+            ("freight_forwarder", "Freight Forwarder"),
             ("agente_aduanal", "Agente Aduanal"),
             ("transportista", "Transportista"),
             ("chofer", "Chofer"),
@@ -83,6 +86,23 @@ class ResPartner(models.Model):
         ],
         string="Rol aduanal",
         default="cliente",
+    )
+    x_freight_forwarder_id = fields.Many2one(
+        "res.partner",
+        string="Freight Forwarder",
+        domain=[("x_contact_role", "=", "freight_forwarder")],
+    )
+    x_ff_client_ids = fields.One2many(
+        "res.partner",
+        "x_freight_forwarder_id",
+        string="Clientes del FF",
+    )
+    x_portal_invite_token = fields.Char(string="Token de invitación", copy=False)
+    x_portal_invite_expiry = fields.Datetime(string="Expiración del token", copy=False)
+    x_portal_invite_url = fields.Char(
+        string="Link de invitación",
+        compute="_compute_invite_url",
+        store=False,
     )
     chofer_ids = fields.One2many(
         "res.partner",
@@ -562,10 +582,194 @@ class ResPartner(models.Model):
         except Exception:
             return False
 
+    def _compute_invite_url(self):
+        base = self.env["ir.config_parameter"].sudo().get_param(
+            "modulo_aduana_odoo.portal_base_url", default="https://portal.aduanex.com"
+        )
+        for rec in self:
+            if rec.x_portal_invite_token:
+                rec.x_portal_invite_url = f"{base}/set-password?token={rec.x_portal_invite_token}"
+            else:
+                rec.x_portal_invite_url = False
+
+    def action_generate_invite_token(self):
+        """Genera un token de invitación (48h) sin enviar email."""
+        self.ensure_one()
+        if not self.email:
+            raise UserError("El partner necesita un correo electrónico para generar el link de invitación.")
+        token = secrets.token_urlsafe(32)
+        expiry = fields.Datetime.now() + timedelta(hours=48)
+        self.write({
+            "x_portal_invite_token": token,
+            "x_portal_invite_expiry": expiry,
+            "x_portal_status": "pending",
+        })
+        base = self.env["ir.config_parameter"].sudo().get_param(
+            "modulo_aduana_odoo.portal_base_url", default="https://portal.aduanex.com"
+        )
+        invite_url = f"{base}/set-password?token={token}"
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "Token generado",
+                "message": f"Link listo para copiar. Expira en 48 horas.",
+                "type": "success",
+                "sticky": False,
+            },
+        }
+
+    def action_send_portal_invite(self):
+        """Genera token y envía email de invitación al FF."""
+        self.ensure_one()
+        if not self.email:
+            raise UserError("El partner necesita un correo electrónico para enviar la invitación.")
+        token = secrets.token_urlsafe(32)
+        expiry = fields.Datetime.now() + timedelta(hours=48)
+        self.write({
+            "x_portal_invite_token": token,
+            "x_portal_invite_expiry": expiry,
+            "x_portal_status": "pending",
+        })
+        base = self.env["ir.config_parameter"].sudo().get_param(
+            "modulo_aduana_odoo.portal_base_url", default="https://portal.aduanex.com"
+        )
+        invite_url = f"{base}/set-password?token={token}"
+        template = self.env.ref(
+            "modulo_aduana_odoo.mail_template_portal_invite", raise_if_not_found=False
+        )
+        if template:
+            template.with_context(invite_url=invite_url).send_mail(self.id, force_send=True)
+        else:
+            # Fallback: enviar email básico sin template
+            self.env["mail.mail"].sudo().create({
+                "subject": "Invitación al portal Aduanex",
+                "email_to": self.email,
+                "body_html": f"""
+                    <p>Hola {self.name},</p>
+                    <p>Has sido invitado a acceder al portal de clientes de Aduanex.</p>
+                    <p>Haz clic en el siguiente enlace para crear tu contraseña:</p>
+                    <p><a href="{invite_url}">{invite_url}</a></p>
+                    <p>Este link expira en 48 horas.</p>
+                """,
+            }).send()
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "Invitación enviada",
+                "message": f"Email enviado a {self.email}. El link expira en 48 horas.",
+                "type": "success",
+                "sticky": False,
+            },
+        }
+
+    @api.model
+    def portal_validate_token(self, token):
+        """Valida un token de invitación. Retorna datos del partner o error."""
+        if not token:
+            return {"error": "Token inválido"}
+        partner = self.sudo().search([("x_portal_invite_token", "=", token)], limit=1)
+        if not partner:
+            return {"error": "El link de invitación no es válido."}
+        if partner.x_portal_invite_expiry and fields.Datetime.now() > partner.x_portal_invite_expiry:
+            return {"error": "El link de invitación ha expirado. Solicita uno nuevo a la agencia."}
+        return {
+            "valid": True,
+            "partner_id": partner.id,
+            "name": partner.name,
+            "email": partner.email,
+            "rfc": partner.vat or "",
+            "role": partner.x_contact_role or "cliente",
+        }
+
+    @api.model
+    def portal_set_password(self, token, password):
+        """Establece la contraseña desde el link de invitación y aprueba el acceso."""
+        if not token or not password:
+            return {"error": "Datos incompletos"}
+        if len(password) < 6:
+            return {"error": "La contraseña debe tener al menos 6 caracteres"}
+        partner = self.sudo().search([("x_portal_invite_token", "=", token)], limit=1)
+        if not partner:
+            return {"error": "Token inválido"}
+        if partner.x_portal_invite_expiry and fields.Datetime.now() > partner.x_portal_invite_expiry:
+            return {"error": "El link ha expirado. Solicita uno nuevo a la agencia."}
+        partner.write({
+            "x_portal_password": password,
+            "x_portal_status": "approved",
+            "x_portal_invite_token": False,
+            "x_portal_invite_expiry": False,
+        })
+        return {"success": True, "rfc": partner.vat or "", "name": partner.name}
+
+    @api.model
+    def portal_get_ff_clients(self, ff_partner_id):
+        """Retorna los clientes asociados a un Freight Forwarder."""
+        clients = self.sudo().search([
+            ("x_freight_forwarder_id", "=", ff_partner_id),
+        ])
+        result = []
+        for c in clients:
+            result.append({
+                "id": c.id,
+                "name": c.name,
+                "vat": c.vat or "",
+                "email": c.email or "",
+                "phone": c.phone or "",
+                "has_csf": bool(c.x_csf_file),
+                "portal_status": c.x_portal_status or False,
+            })
+        return result
+
+    @api.model
+    def portal_ff_add_client(self, ff_partner_id, name, rfc, email, phone, csf_b64, csf_filename):
+        """Crea un cliente vinculado a un Freight Forwarder."""
+        if not all([ff_partner_id, name, rfc]):
+            return {"error": "Nombre y RFC son requeridos"}
+        ff = self.sudo().browse(ff_partner_id)
+        if not ff.exists() or ff.x_contact_role != "freight_forwarder":
+            return {"error": "Freight Forwarder no válido"}
+        existing = self.sudo().search([("vat", "=", rfc.strip().upper())], limit=1)
+        if existing:
+            return {"error": f"El RFC {rfc} ya está registrado en el sistema."}
+        vals = {
+            "name": name.strip(),
+            "vat": rfc.strip().upper(),
+            "email": (email or "").strip().lower() or False,
+            "phone": (phone or "").strip() or False,
+            "x_contact_role": "cliente",
+            "x_freight_forwarder_id": ff_partner_id,
+            "x_portal_status": False,
+            "customer_rank": 1,
+            "is_company": False,
+        }
+        if csf_b64:
+            vals["x_csf_file"] = csf_b64
+            vals["x_csf_filename"] = csf_filename or "csf.pdf"
+        client = self.sudo().create(vals)
+        return {
+            "success": True,
+            "client_id": client.id,
+            "name": client.name,
+            "vat": client.vat,
+        }
+
     @api.model
     def portal_extract_csf(self, file_b64):
         """Método público para extracción de CSF vía XML-RPC desde el portal."""
         return self._extract_csf_values(file_b64)
+
+    def action_view_ff_clients(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": f"Clientes de {self.name}",
+            "res_model": "res.partner",
+            "view_mode": "list,form",
+            "domain": [("x_freight_forwarder_id", "=", self.id)],
+            "context": {"default_x_freight_forwarder_id": self.id, "default_x_contact_role": "cliente"},
+        }
 
     def action_approve_portal_user(self):
         self.ensure_one()

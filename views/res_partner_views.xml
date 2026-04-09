@@ -76,6 +76,15 @@
               <span class="o_stat_text">Portal</span>
             </div>
           </button>
+          <button class="oe_stat_button"
+                  icon="fa-users"
+                  invisible="x_contact_role != 'freight_forwarder'"
+                  type="object"
+                  name="action_view_ff_clients">
+            <div class="o_stat_info">
+              <field name="x_ff_client_ids" widget="statinfo" string="Clientes"/>
+            </div>
+          </button>
         </xpath>
         <xpath expr="//field[@name='child_ids']" position="attributes">
           <attribute name="context">{'default_parent_id': id, 'default_type': 'contact', 'default_function': 'Chofer', 'default_x_contact_role': 'chofer', 'default_company_type': 'person'}</attribute>
@@ -212,8 +221,46 @@
             </group>
           </page>
 
+          <!-- Pestaña FF: clientes del freight forwarder -->
+          <page string="Clientes FF" name="mi_modulo_ff_clients"
+                invisible="x_contact_role != 'freight_forwarder'">
+            <group string="Invitación al portal">
+              <field name="x_portal_status" widget="badge"
+                     decoration-warning="x_portal_status == 'pending'"
+                     decoration-success="x_portal_status == 'approved'"
+                     decoration-danger="x_portal_status == 'rejected'"/>
+              <field name="x_portal_invite_expiry" readonly="1"
+                     invisible="not x_portal_invite_token"/>
+            </group>
+            <div invisible="not x_portal_invite_token" class="alert alert-info" role="status">
+              <strong>Link de invitación (copia manualmente):</strong><br/>
+              <field name="x_portal_invite_url" readonly="1" widget="url"/>
+            </div>
+            <div class="mb-3">
+              <button name="action_generate_invite_token"
+                      type="object"
+                      string="Generar link de invitación"
+                      class="btn-secondary me-2"/>
+              <button name="action_send_portal_invite"
+                      type="object"
+                      string="Generar y enviar por email"
+                      class="btn-primary"
+                      invisible="not email"/>
+            </div>
+            <separator string="Clientes registrados por este FF"/>
+            <field name="x_ff_client_ids" readonly="1">
+              <list>
+                <field name="name"/>
+                <field name="vat" string="RFC"/>
+                <field name="email"/>
+                <field name="phone"/>
+                <field name="x_csf_filename" string="CSF"/>
+              </list>
+            </field>
+          </page>
+
           <page string="Portal Cliente" name="mi_modulo_portal_partner"
-                invisible="x_portal_status == False">
+                invisible="x_portal_status == False and x_contact_role == 'freight_forwarder'">
             <group string="Estado de registro">
               <field name="x_portal_status" widget="badge"
                      decoration-warning="x_portal_status == 'pending'"
