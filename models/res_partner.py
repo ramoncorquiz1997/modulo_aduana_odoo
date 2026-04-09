@@ -309,30 +309,58 @@ class ResPartner(models.Model):
                 return {}
 
             soup = BeautifulSoup(response.text, "html.parser")
+
+            # Intentar extraer con <td> (estructura clásica del SAT)
             tds = soup.find_all("td")
             page_data = {}
             for i in range(len(tds)):
                 label = tds[i].get_text().replace(":", "").strip()
                 if i + 1 < len(tds):
                     value = tds[i + 1].get_text(strip=True)
-                    if "RFC" in label:
+                    if "RFC" in label.upper():
                         page_data["rfc"] = value
-                    if "CURP" in label:
+                    if "CURP" in label.upper():
                         page_data["curp"] = value
-                    if "CP" in label:
+                    if "CP" in label.upper() or "CODIGO POSTAL" in label.upper():
                         page_data["cp"] = value
-                    if "Nombre de la vialidad" in label:
+                    if "VIALIDAD" in label.upper() or "NOMBRE DE LA CALLE" in label.upper():
                         page_data["calle"] = value
-                    if "Numero exterior" in label or "NÃºmero exterior" in label:
+                    if "EXTERIOR" in label.upper():
                         page_data["n_ext"] = value
-                    if "Numero interior" in label or "NÃºmero interior" in label:
+                    if "INTERIOR" in label.upper():
                         page_data["n_int"] = value
-                    if "Colonia" in label:
+                    if "COLONIA" in label.upper():
                         page_data["colonia"] = value
-                    if "Municipio" in label or "Demarcacion Territorial" in label:
+                    if "MUNICIPIO" in label.upper() or "DEMARCACION" in label.upper() or "ALCALDIA" in label.upper():
                         page_data["municipio"] = value
-                    if "Localidad" in label:
+                    if "LOCALIDAD" in label.upper():
                         page_data["localidad"] = value
+
+            # Si no se encontró RFC con <td>, buscar en toda la página con regex
+            if not page_data.get("rfc"):
+                rfc_match = re.search(
+                    r'\b([A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3})\b',
+                    response.text,
+                    re.IGNORECASE,
+                )
+                if rfc_match:
+                    page_data["rfc"] = rfc_match.group(1).upper()
+                    _logger.info("CSF: RFC extraído via regex: %s", page_data["rfc"])
+
+            # Intentar también con <span>, <div>, <p> si aún no hay RFC
+            if not page_data.get("rfc"):
+                for tag in soup.find_all(["span", "div", "p", "li"]):
+                    text = tag.get_text(strip=True)
+                    if "RFC" in text.upper() and len(text) < 60:
+                        rfc_match = re.search(
+                            r'\b([A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3})\b',
+                            text,
+                            re.IGNORECASE,
+                        )
+                        if rfc_match:
+                            page_data["rfc"] = rfc_match.group(1).upper()
+                            _logger.info("CSF: RFC extraído via tag alternativo: %s", page_data["rfc"])
+                            break
 
             vals = {}
             if page_data.get("rfc"):
