@@ -12,7 +12,7 @@
 
     <menuitem id="menu_portal_pending_partners"
               name="Solicitudes Portal"
-              parent="mx_ped_operacion_menu_root"
+              parent="contacts.menu_contacts"
               action="action_portal_pending_partners"
               sequence="5"/>
 
