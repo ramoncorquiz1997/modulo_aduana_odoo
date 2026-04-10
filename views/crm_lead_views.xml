@@ -2,16 +2,13 @@
 <odoo>
   <data>
 
-    <!-- Desactiva el quick-create del kanban para abrir el formulario completo -->
-    <record id="crm_lead_view_kanban_inherit_aduana" model="ir.ui.view">
-      <field name="name">crm.lead.kanban.inherit.aduana</field>
-      <field name="model">crm.lead</field>
-      <field name="inherit_id" ref="crm.view_crm_lead_kanban"/>
-      <field name="arch" type="xml">
-        <kanban position="attributes">
-          <attribute name="quick_create">false</attribute>
-        </kanban>
-      </field>
+    <!-- Desactiva el quick-create del kanban: abre formulario completo al dar Nuevo -->
+    <record id="crm.crm_lead_action_pipeline" model="ir.actions.act_window">
+      <field name="context">{
+        "default_type": "opportunity",
+        "search_default_assigned_to_me": 1,
+        "quick_create": false
+      }</field>
     </record>
 
     <record id="crm_lead_view_form_inherit_mi_modulo_aduana" model="ir.ui.view">
