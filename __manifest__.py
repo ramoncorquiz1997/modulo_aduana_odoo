@@ -9,6 +9,7 @@
         "data/aduana_layout_registro_tipo_data.xml",
         "data/mx_ped_tipo_movimiento_data.xml",
         "data/mx_ped_rulepack_data.xml",
+        "data/mx_ped_layout_voce_data.xml",
         "security/aduana_groups.xml",
         "security/ir.model.access.csv",
         "views/mx_ped_consolidado_views.xml",
