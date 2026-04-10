@@ -5,9 +5,9 @@
     <!-- Desactiva el quick-create del kanban: abre formulario completo al dar Nuevo -->
     <record id="crm.crm_lead_action_pipeline" model="ir.actions.act_window">
       <field name="context">{
-        "default_type": "opportunity",
-        "search_default_assigned_to_me": 1,
-        "quick_create": false
+        'default_type': 'opportunity',
+        'search_default_assigned_to_me': 1,
+        'quick_create': False
       }</field>
     </record>
 
