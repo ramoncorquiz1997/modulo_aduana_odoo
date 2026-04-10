@@ -5759,21 +5759,7 @@ class MxPedOperacion(models.Model):
                 continue
 
             if code == "505":
-                # Solo se genera si la casilla "Enviar 505 de contingencia" está activa.
-                if not self._is_505_contingency_mode():
-                    continue
-                # El registro 505 solo debe salir de documentos comerciales.
-                docs_505 = self.documento_ids.filtered(
-                    lambda d: d.tipo in ("factura", "cove", "otro")
-                    and (d.registro_codigo or "").strip() not in {"514", "510", "557"}
-                ).sorted(lambda d: (d.es_documento_principal is not True, d.id))
-                if docs_505:
-                    for secuencia, documento in enumerate(docs_505, start=1):
-                        registros.append((0, 0, {
-                            "codigo": layout_reg.codigo,
-                            "secuencia": secuencia,
-                            "valores": self._build_505_valores(layout_reg, documento),
-                        }))
+                # El 505 se maneja siempre desde código (ver bloque post-loop).
                 continue
 
             if code == "501":
@@ -5807,6 +5793,24 @@ class MxPedOperacion(models.Model):
                     "secuencia": secuencia,
                     "valores": valores,
                 }))
+
+        # ── 505 contingencia: solo se inyecta si la casilla está activa ────────
+        if self._is_505_contingency_mode():
+            layout_reg_505 = self.layout_id.registro_ids.filtered(
+                lambda r: (r.codigo or "").strip() == "505"
+            )
+            if layout_reg_505:
+                layout_reg_505 = layout_reg_505.sorted(lambda r: r.orden or 0)[0]
+                docs_505 = self.documento_ids.filtered(
+                    lambda d: d.tipo in ("factura", "cove", "otro")
+                    and (d.registro_codigo or "").strip() not in {"514", "510", "557"}
+                ).sorted(lambda d: (d.es_documento_principal is not True, d.id))
+                for secuencia, documento in enumerate(docs_505, start=1):
+                    registros.append((0, 0, {
+                        "codigo": "505",
+                        "secuencia": secuencia,
+                        "valores": self._build_505_valores(layout_reg_505, documento),
+                    }))
 
         # Auto-inyección de registros con estructura fija (no dependen del layout).
         is_rectificacion = bool(self.es_rectificacion)
