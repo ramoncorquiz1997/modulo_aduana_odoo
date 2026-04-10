@@ -696,11 +696,23 @@ class ResPartner(models.Model):
         if partner.x_portal_invite_expiry and fields.Datetime.now() > partner.x_portal_invite_expiry:
             return {"error": "El link ha expirado. Solicita uno nuevo a la agencia."}
         partner.write({
-            "x_portal_password": password,
             "x_portal_status": "approved",
             "x_portal_invite_token": False,
             "x_portal_invite_expiry": False,
         })
+        # Crear/actualizar usuario sin pasar por el campo de texto plano
+        portal_group = self.env.ref("base.group_portal")
+        existing_user = self.env["res.users"].sudo().search([("partner_id", "=", partner.id)], limit=1)
+        if existing_user:
+            existing_user.sudo().write({"password": password})
+        else:
+            new_user = self.env["res.users"].sudo().with_context(no_reset_password=True).create({
+                "name": partner.name,
+                "login": partner.email,
+                "partner_id": partner.id,
+                "groups_id": [(6, 0, [portal_group.id])],
+            })
+            new_user.sudo().write({"password": password})
         return {"success": True, "rfc": partner.vat or "", "name": partner.name}
 
     @api.model
@@ -801,6 +813,7 @@ class ResPartner(models.Model):
 
         if self.x_portal_password:
             new_user.sudo().write({"password": self.x_portal_password})
+            self.sudo().write({"x_portal_password": False})
 
         self.write({"x_portal_status": "approved"})
         return {

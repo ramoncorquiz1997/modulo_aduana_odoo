@@ -26,6 +26,13 @@
       <field name="model">aduana.pedimento</field>
       <field name="arch" type="xml">
         <form string="Pedimento">
+          <header>
+            <button name="action_export_txt"
+                    string="Exportar TXT"
+                    type="object"
+                    class="btn-primary"
+                    invisible="not registro_tecnico_ids"/>
+          </header>
           <sheet>
             <group>
               <group string="Cabecera">

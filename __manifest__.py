@@ -3,7 +3,7 @@
     "version": "18.0.1.7.1",
     "category": "CRM",
     "summary": "Gestión de operaciones aduanales y pedimentos desde CRM",
-    "depends": ["crm", "mail", "base", "contacts","account"],
+    "depends": ["crm", "mail", "base", "contacts", "account", "portal"],
     "data": [
         "data/mail_template_portal_invite.xml",
         "data/aduana_layout_registro_tipo_data.xml",
@@ -36,6 +36,9 @@
         "views/mx_ped_layout_views.xml",
         "views/account_move_views.xml",
         "views/mx_only_cleanup_views.xml",
+        "views/aduana_dashboard_views.xml",
+        "views/aduana_setup_wizard_views.xml",
+        "views/portal_pedimentos.xml",
     ],
     "license": "LGPL-3",
     "application": False,

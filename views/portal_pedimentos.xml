@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <!-- Template principal: lista de expedientes del cliente -->
+    <template id="portal_mis_pedimentos" name="Mis Pedimentos">
+      <t t-call="web.layout">
+        <t t-set="title">Mis Pedimentos - Aduanex</t>
+        <div class="container py-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0">Mis Pedimentos</h2>
+            <small class="text-muted">
+              <t t-esc="partner.name"/>
+            </small>
+          </div>
+
+          <t t-if="not leads">
+            <div class="alert alert-info">
+              Aún no tienes expedientes aduanales registrados.
+              Contacta a tu agencia para iniciar una operación.
+            </div>
+          </t>
+
+          <t t-else="">
+            <div class="table-responsive">
+              <table class="table table-hover table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th>Referencia</th>
+                    <th>Tipo</th>
+                    <th>Régimen</th>
+                    <th>Aduana</th>
+                    <th>Estado pedimento</th>
+                    <th>Documentos</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <t t-foreach="leads" t-as="lead">
+                    <tr>
+                      <td>
+                        <strong>
+                          <t t-esc="lead.get('name', '-')"/>
+                        </strong>
+                      </td>
+                      <td>
+                        <t t-esc="lead.get('tipo_operacion', '-')"/>
+                      </td>
+                      <td>
+                        <t t-esc="lead.get('regimen', '-')"/>
+                      </td>
+                      <td>
+                        <t t-esc="lead.get('aduana', '-')"/>
+                      </td>
+                      <td>
+                        <span t-att-class="'badge ' + lead.get('status_badge', 'bg-secondary')">
+                          <t t-esc="lead.get('status_label', 'Sin estado')"/>
+                        </span>
+                      </td>
+                      <td>
+                        <t t-if="lead.get('docs_completos')">
+                          <span class="badge bg-success">Completos</span>
+                        </t>
+                        <t t-else="">
+                          <span class="badge bg-warning text-dark">Pendientes</span>
+                        </t>
+                      </td>
+                      <td>
+                        <t t-esc="lead.get('fecha', '-')"/>
+                      </td>
+                    </tr>
+                  </t>
+                </tbody>
+              </table>
+            </div>
+          </t>
+        </div>
+      </t>
+    </template>
+
+    <!-- Template de error/acceso denegado -->
+    <template id="portal_mis_pedimentos_error" name="Mis Pedimentos - Error">
+      <t t-call="web.layout">
+        <t t-set="title">Acceso denegado - Aduanex</t>
+        <div class="container py-5 text-center">
+          <h3 class="text-danger">Acceso no autorizado</h3>
+          <p class="text-muted">
+            Tu cuenta aún no ha sido aprobada por la agencia aduanal.
+            Recibirás una notificación cuando tu registro sea revisado.
+          </p>
+        </div>
+      </t>
+    </template>
+
+  </data>
+</odoo>

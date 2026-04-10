@@ -91,3 +91,64 @@ class PortalRegistrationController(http.Controller):
         except Exception:
             _logger.exception("Error en register_client endpoint")
             return {"error": "Error interno al procesar el registro. Inténtalo de nuevo."}
+
+
+class PortalClienteController(http.Controller):
+    """Vistas de portal para clientes aprobados."""
+
+    _STATUS_LABELS = {
+        "draft": ("Borrador", "bg-secondary"),
+        "ready": ("Listo", "bg-info"),
+        "generated": ("Generado", "bg-success"),
+        "error": ("Error", "bg-danger"),
+    }
+    _TIPO_LABELS = {
+        "importacion": "Importación",
+        "exportacion": "Exportación",
+    }
+    _REGIMEN_LABELS = {
+        "definitivo": "Definitivo",
+        "temporal": "Temporal",
+        "deposito_fiscal": "Depósito fiscal",
+        "transito": "Tránsito",
+    }
+
+    @http.route(
+        "/mis-pedimentos",
+        type="http",
+        auth="user",
+        methods=["GET"],
+        website=False,
+    )
+    def mis_pedimentos(self, **kwargs):
+        partner = request.env.user.partner_id
+        # Solo clientes aprobados
+        if partner.x_portal_status != "approved":
+            return request.render(
+                "modulo_aduana_odoo.portal_mis_pedimentos_error",
+                {"partner": partner},
+            )
+
+        leads = request.env["crm.lead"].sudo().search([
+            ("partner_id", "=", partner.id),
+        ], order="create_date desc", limit=100)
+
+        rows = []
+        for lead in leads:
+            status = lead.x_pedimento_status or "draft"
+            label, badge = self._STATUS_LABELS.get(status, (status, "bg-secondary"))
+            rows.append({
+                "name": lead.name or f"#{lead.id}",
+                "tipo_operacion": self._TIPO_LABELS.get(lead.x_tipo_operacion or "", lead.x_tipo_operacion or "-"),
+                "regimen": self._REGIMEN_LABELS.get(lead.x_regimen or "", lead.x_regimen or "-"),
+                "aduana": lead.x_aduana or "-",
+                "status_label": label,
+                "status_badge": badge,
+                "docs_completos": bool(lead.x_docs_completos) if hasattr(lead, "x_docs_completos") else False,
+                "fecha": str(lead.create_date.date()) if lead.create_date else "-",
+            })
+
+        return request.render(
+            "modulo_aduana_odoo.portal_mis_pedimentos",
+            {"partner": partner, "leads": rows},
+        )

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+import base64
 from odoo import api, fields, models, _
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 
 
 class AduanaPedimento(models.Model):
@@ -74,7 +75,7 @@ class AduanaPedimento(models.Model):
         return value
 
     def action_prepare_txt_payload(self):
-        """Esqueleto para futura exportacion TXT segun layout tecnico."""
+        """Construye el payload TXT estructurado segun layout tecnico."""
         self.ensure_one()
         lines = []
         for reg in self.registro_tecnico_ids.sorted(lambda r: (r.registro_tipo_id.orden, r.id)):
@@ -87,8 +88,66 @@ class AduanaPedimento(models.Model):
                 if value in (None, "") and field_def.default:
                     value = field_def.default
                 line_values[field_def.nombre_tecnico] = value
-            lines.append({"registro": reg.registro_tipo_id.codigo, "values": line_values})
+            lines.append({
+                "registro": reg.registro_tipo_id.codigo,
+                "values": line_values,
+                "campo_ids": reg.registro_tipo_id.campo_ids.sorted("secuencia"),
+            })
         return lines
+
+    def _format_txt_value(self, value, campo):
+        """Formatea un valor segun tipo de dato del campo."""
+        if value is None or value is False:
+            raw = ""
+        elif isinstance(value, bool):
+            raw = "1" if value else "0"
+        elif isinstance(value, float):
+            if campo.tipo_dato == "money":
+                raw = f"{value:.2f}"
+            else:
+                raw = str(int(value)) if value == int(value) else str(value)
+        else:
+            raw = str(value)
+        longitud = campo.longitud or 0
+        if longitud:
+            if campo.tipo_dato in ("int", "float", "money"):
+                raw = raw[:longitud].rjust(longitud)
+            else:
+                raw = raw[:longitud].ljust(longitud)
+        return raw
+
+    def action_export_txt(self):
+        """Exporta el pedimento en formato TXT pipe-delimitado segun layout tecnico."""
+        self.ensure_one()
+        if not self.registro_tecnico_ids:
+            raise UserError(_("No hay registros tecnicos capturados para exportar."))
+
+        payload_lines = self.action_prepare_txt_payload()
+        txt_lines = []
+        for line in payload_lines:
+            codigo = line["registro"]
+            values = line["values"]
+            campos = line["campo_ids"]
+            row = [self._format_txt_value(values.get(c.nombre_tecnico), c) for c in campos]
+            txt_lines.append(codigo + "|" + "|".join(row))
+
+        txt_content = "\n".join(txt_lines)
+        ref = (self.name or str(self.id)).replace("/", "_").replace(" ", "_")
+        filename = f"pedimento_{ref}.txt"
+
+        attachment = self.env["ir.attachment"].create({
+            "name": filename,
+            "type": "binary",
+            "datas": base64.b64encode(txt_content.encode("utf-8")),
+            "mimetype": "text/plain",
+            "res_model": self._name,
+            "res_id": self.id,
+        })
+        return {
+            "type": "ir.actions.act_url",
+            "url": f"/web/content/{attachment.id}?download=true",
+            "target": "self",
+        }
 
 
 class AduanaPartida(models.Model):

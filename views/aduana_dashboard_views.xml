@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+
+    <!-- ── Graph: operaciones por tipo y mes ─────────────────────────── -->
+    <record id="mx_ped_operacion_view_graph" model="ir.ui.view">
+      <field name="name">mx.ped.operacion.graph</field>
+      <field name="model">mx.ped.operacion</field>
+      <field name="arch" type="xml">
+        <graph string="Operaciones por tipo" type="bar" stacked="True">
+          <field name="tipo_operacion" type="col"/>
+          <field name="create_date" interval="month" type="row"/>
+        </graph>
+      </field>
+    </record>
+
+    <!-- ── Pivot: operaciones por tipo y mes ─────────────────────────── -->
+    <record id="mx_ped_operacion_view_pivot" model="ir.ui.view">
+      <field name="name">mx.ped.operacion.pivot</field>
+      <field name="model">mx.ped.operacion</field>
+      <field name="arch" type="xml">
+        <pivot string="Resumen de operaciones" display_quantity="True">
+          <field name="create_date" interval="month" type="row"/>
+          <field name="tipo_operacion" type="col"/>
+        </pivot>
+      </field>
+    </record>
+
+    <!-- ── List: últimas operaciones ─────────────────────────────────── -->
+    <record id="mx_ped_operacion_view_list_dashboard" model="ir.ui.view">
+      <field name="name">mx.ped.operacion.list.dashboard</field>
+      <field name="model">mx.ped.operacion</field>
+      <field name="arch" type="xml">
+        <list string="Operaciones" default_order="create_date desc">
+          <field name="name"/>
+          <field name="lead_id"/>
+          <field name="tipo_operacion"/>
+          <field name="clave_pedimento_id"/>
+          <field name="create_date" string="Fecha"/>
+          <field name="company_id" groups="base.group_multi_company"/>
+        </list>
+      </field>
+    </record>
+
+    <!-- ── Acción dashboard ───────────────────────────────────────────── -->
+    <record id="action_aduana_dashboard" model="ir.actions.act_window">
+      <field name="name">Dashboard Aduanal</field>
+      <field name="res_model">mx.ped.operacion</field>
+      <field name="view_mode">graph,pivot,list</field>
+      <field name="context">{
+        "search_default_group_tipo_operacion": 1
+      }</field>
+    </record>
+
+    <!-- ── Búsqueda con filtros y agrupadores predefinidos ────────────── -->
+    <record id="mx_ped_operacion_view_search_dashboard" model="ir.ui.view">
+      <field name="name">mx.ped.operacion.search.dashboard</field>
+      <field name="model">mx.ped.operacion</field>
+      <field name="arch" type="xml">
+        <search string="Buscar operaciones">
+          <field name="name" string="Referencia"/>
+          <field name="lead_id" string="Expediente"/>
+          <filter string="Importación" name="filter_importacion"
+                  domain="[('tipo_operacion','=','importacion')]"/>
+          <filter string="Exportación" name="filter_exportacion"
+                  domain="[('tipo_operacion','=','exportacion')]"/>
+          <separator/>
+          <filter string="Este mes" name="filter_mes_actual"
+                  domain="[('create_date','&gt;=', (context_today() + relativedelta(day=1)).strftime('%Y-%m-%d'))]"/>
+          <filter string="Este año" name="filter_anio_actual"
+                  domain="[('create_date','&gt;=', (context_today() + relativedelta(month=1, day=1)).strftime('%Y-%m-%d'))]"/>
+          <group expand="0" string="Agrupar por">
+            <filter string="Tipo de operación" name="group_tipo_operacion"
+                    context="{'group_by': 'tipo_operacion'}"/>
+            <filter string="Mes" name="group_mes"
+                    context="{'group_by': 'create_date:month'}"/>
+            <filter string="Empresa" name="group_company"
+                    context="{'group_by': 'company_id'}"
+                    groups="base.group_multi_company"/>
+          </group>
+        </search>
+      </field>
+    </record>
+
+    <!-- ── Menú Dashboard ─────────────────────────────────────────────── -->
+    <menuitem id="menu_aduana_dashboard"
+              name="Dashboard"
+              parent="mx_ped_operacion_menu_root"
+              action="action_aduana_dashboard"
+              sequence="1"/>
+
+  </data>
+</odoo>

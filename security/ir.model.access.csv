@@ -124,3 +124,4 @@ access_mx_ped_validacion_wizard,mx.ped.validacion.wizard,model_mx_ped_validacion
 access_mx_ped_validacion_wizard_admin,mx.ped.validacion.wizard.admin,model_mx_ped_validacion_wizard,base.group_system,1,1,1,1
 access_mx_ped_validacion_linea,mx.ped.validacion.linea,model_mx_ped_validacion_linea,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_validacion_linea_admin,mx.ped.validacion.linea.admin,model_mx_ped_validacion_linea,base.group_system,1,1,1,1
+access_aduana_setup_wizard,aduana.setup.wizard,model_aduana_setup_wizard,base.group_system,1,1,1,1
