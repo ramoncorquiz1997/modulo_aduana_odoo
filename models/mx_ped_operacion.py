@@ -5759,6 +5759,9 @@ class MxPedOperacion(models.Model):
                 continue
 
             if code == "505":
+                # Solo se genera si la casilla "Enviar 505 de contingencia" está activa.
+                if not self._is_505_contingency_mode():
+                    continue
                 # El registro 505 solo debe salir de documentos comerciales.
                 docs_505 = self.documento_ids.filtered(
                     lambda d: d.tipo in ("factura", "cove", "otro")
@@ -5771,7 +5774,7 @@ class MxPedOperacion(models.Model):
                             "secuencia": secuencia,
                             "valores": self._build_505_valores(layout_reg, documento),
                         }))
-                    continue
+                continue
 
             if code == "501":
                 registros.append((0, 0, {
