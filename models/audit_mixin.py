@@ -80,7 +80,10 @@ class AduanaAuditMixin(models.AbstractModel):
     def _audit_post_message(self, body):
         # Algunos modelos tecnicos no heredan mail.thread; en esos casos
         # la auditoria no debe romper create/write/unlink.
+        # Registros sin id real (nuevos no guardados) tampoco soportan message_post.
         for rec in self:
+            if not rec.id:
+                continue
             if "message_ids" not in rec._fields or not hasattr(rec, "message_post"):
                 continue
             rec.with_context(skip_aduana_audit=True).message_post(

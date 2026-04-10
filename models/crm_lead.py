@@ -928,7 +928,8 @@ class CrmLead(models.Model):
 
     def web_read(self, specification):
         # Al abrir un caso en formulario, refresca FIX en tiempo real.
-        if not self.env.context.get("skip_sync_tipo_cambio_banxico") and len(self) == 1:
+        # Se omite en registros nuevos (sin id) para evitar write durante onchange.
+        if not self.env.context.get("skip_sync_tipo_cambio_banxico") and len(self) == 1 and self.id:
             self._sync_tipo_cambio_banxico()
         return super().web_read(specification)
     
