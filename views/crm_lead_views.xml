@@ -11,6 +11,17 @@
       }</field>
     </record>
 
+    <record id="crm_lead_view_kanban_inherit_aduana" model="ir.ui.view">
+      <field name="name">crm.lead.kanban.inherit.aduana</field>
+      <field name="model">crm.lead</field>
+      <field name="inherit_id" ref="crm.view_crm_lead_kanban"/>
+      <field name="arch" type="xml">
+        <kanban position="attributes">
+          <attribute name="quick_create">0</attribute>
+        </kanban>
+      </field>
+    </record>
+
     <record id="crm_lead_view_form_inherit_mi_modulo_aduana" model="ir.ui.view">
       <field name="name">crm.lead.form.inherit.modulo_aduana_odoo.aduana</field>
       <field name="model">crm.lead</field>
