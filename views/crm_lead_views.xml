@@ -6,7 +6,7 @@
     <record id="crm_lead_view_kanban_inherit_aduana" model="ir.ui.view">
       <field name="name">crm.lead.kanban.inherit.aduana</field>
       <field name="model">crm.lead</field>
-      <field name="inherit_id" ref="crm.crm_lead_view_kanban"/>
+      <field name="inherit_id" ref="crm.view_crm_lead_kanban"/>
       <field name="arch" type="xml">
         <kanban position="attributes">
           <attribute name="quick_create">false</attribute>
