@@ -5777,6 +5777,17 @@ class MxPedOperacion(models.Model):
             if repeat_by_partida and not target_partidas:
                 continue
 
+            # Registros opcionales a nivel partida: solo se incluyen si tienen
+            # datos más allá de los 4 campos de identificación básicos.
+            # Sin esta guardia se generarían p.ej. 552 (vehículos) para
+            # partidas que no son automotrices, 553 sin permisos, etc.
+            _OPTIONAL_PARTIDA_CODES = {"552", "553", "554", "558"}
+            _PARTIDA_ID_KEYS = {
+                "clave_registro", "numero_pedimento",
+                "fraccion_arancelaria", "numero_partida",
+                "subdivision",
+            }
+
             for secuencia, partida in enumerate(target_partidas, start=1):
                 valores = {}
                 for campo in campos:
@@ -5787,6 +5798,13 @@ class MxPedOperacion(models.Model):
                     val = self._json_safe_layout_value(val)
                     if val not in (None, "", False):
                         valores[campo.nombre] = val
+
+                # Saltar registros opcionales de partida que no tienen datos
+                # propios (solo tienen los campos de identificación básicos).
+                if code in _OPTIONAL_PARTIDA_CODES:
+                    meaningful_keys = set(valores.keys()) - _PARTIDA_ID_KEYS
+                    if not meaningful_keys:
+                        continue
 
                 registros.append((0, 0, {
                     "codigo": layout_reg.codigo,

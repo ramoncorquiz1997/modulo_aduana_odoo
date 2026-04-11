@@ -111,6 +111,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">patente</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -119,6 +120,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -127,6 +129,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">aduana_clave</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -135,6 +138,7 @@
       <field name="tipo">N</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_tipo_operacion</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -143,6 +147,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">clave_pedimento</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -151,6 +156,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">aduana_seccion_entrada_salida</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -159,6 +165,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">participante_curp</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_9" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -167,6 +174,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">participante_rfc</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_10" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -175,6 +183,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">curp_agente</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_11" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -183,6 +192,7 @@
       <field name="tipo">N</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_tipo_cambio</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_12" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -192,6 +202,7 @@
       <field name="source_model">lead</field>
       <field name="source_field">x_incrementable_fletes</field>
       <field name="default">0</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_13" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -201,6 +212,7 @@
       <field name="source_model">lead</field>
       <field name="source_field">x_incrementable_seguros</field>
       <field name="default">0</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_14" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -210,6 +222,7 @@
       <field name="source_model">lead</field>
       <field name="source_field">x_incrementable_embalajes</field>
       <field name="default">0</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_15" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -219,6 +232,7 @@
       <field name="source_model">lead</field>
       <field name="source_field">x_incrementable_otros</field>
       <field name="default">0</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_17" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -228,6 +242,7 @@
       <field name="source_model">operacion</field>
       <field name="source_field">total_gross_weight</field>
       <field name="default">0</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_18" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -236,6 +251,7 @@
       <field name="tipo">N</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_medio_transporte_salida</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_19" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -244,6 +260,7 @@
       <field name="tipo">N</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_medio_transporte_arribo</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_20" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -252,6 +269,7 @@
       <field name="tipo">N</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_medio_transporte_entrada_salida</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_21" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -260,6 +278,7 @@
       <field name="tipo">N</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_origen_destino_mercancia</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_22" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -268,6 +287,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">importador</field>
       <field name="source_field">name</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_23" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -276,6 +296,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">importador</field>
       <field name="source_field">x_street_name</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_24" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -284,6 +305,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">importador</field>
       <field name="source_field">x_street_number_int</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_25" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -292,6 +314,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">importador</field>
       <field name="source_field">x_street_number_ext</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_26" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -300,6 +323,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">importador</field>
       <field name="source_field">zip</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_501_27" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -308,6 +332,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">importador</field>
       <field name="source_field">city</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_28" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -316,6 +341,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">importador</field>
       <field name="source_field">state_id</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_29" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -324,6 +350,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">importador</field>
       <field name="source_field">country_id</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_30" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -332,6 +359,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_rfc_cfdi_servicios</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_31" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -341,6 +369,7 @@
       <field name="source_model">lead</field>
       <field name="source_field">x_decrementable_fletes</field>
       <field name="default">0</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_32" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -350,6 +379,7 @@
       <field name="source_model">lead</field>
       <field name="source_field">x_decrementable_seguros</field>
       <field name="default">0</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_33" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -359,6 +389,7 @@
       <field name="source_model">lead</field>
       <field name="source_field">x_decrementable_carga</field>
       <field name="default">0</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_34" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -368,6 +399,7 @@
       <field name="source_model">lead</field>
       <field name="source_field">x_decrementable_descarga</field>
       <field name="default">0</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_35" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>
@@ -377,6 +409,7 @@
       <field name="source_model">lead</field>
       <field name="source_field">x_decrementable_otros</field>
       <field name="default">0</field>
+          <field name="requerido">False</field>
     </record>
 
     <!-- 502 Transporte (campos para builder) -->
@@ -392,6 +425,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">502</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_502_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_502"/>
@@ -400,6 +434,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_502_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_502"/>
@@ -408,6 +443,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">transportista</field>
       <field name="source_field">vat</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_502_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_502"/>
@@ -416,6 +452,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">transportista</field>
       <field name="source_field">x_curp</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_502_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_502"/>
@@ -424,6 +461,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">transportista</field>
       <field name="source_field">name</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_502_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_502"/>
@@ -432,6 +470,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">transportista</field>
       <field name="source_field">country_id</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_502_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_502"/>
@@ -440,6 +479,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_identificador_transporte</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_502_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_502"/>
@@ -448,6 +488,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">total_packages_line</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_502_9" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_502"/>
@@ -456,6 +497,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">transportista</field>
       <field name="source_field">street</field>
+          <field name="requerido">False</field>
     </record>
 
     <!-- 503 Guías -->
@@ -471,6 +513,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">503</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_503_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_503"/>
@@ -479,6 +522,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_503_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_503"/>
@@ -487,6 +531,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_guia_manifiesto</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_503_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_503"/>
@@ -495,6 +540,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_tipo_guia</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 504 Contenedores -->
@@ -510,6 +556,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">504</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_504_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_504"/>
@@ -518,6 +565,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_504_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_504"/>
@@ -526,6 +574,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_numero_contenedor</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_504_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_504"/>
@@ -534,6 +583,7 @@
       <field name="tipo">N</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_tipo_contenedor_id</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 505 CFDI o documento equivalente -->
@@ -549,6 +599,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">505</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_505_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -557,6 +608,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_505_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -565,6 +617,7 @@
       <field name="tipo">F</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_cfdi_fecha</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -573,6 +626,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_cfdi_uuid</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_505_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -581,6 +635,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_incoterm</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -589,6 +644,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">currency_id</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -597,6 +653,7 @@
       <field name="tipo">N</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_valor_factura</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -605,6 +662,7 @@
       <field name="tipo">N</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_valor_factura</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_9" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -613,6 +671,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">proveedor</field>
       <field name="source_field">country_id</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_11" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -621,6 +680,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">proveedor</field>
       <field name="source_field">vat</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_12" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -629,6 +689,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">proveedor</field>
       <field name="source_field">name</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_13" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -637,6 +698,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">proveedor</field>
       <field name="source_field">x_street_name</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_14" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -645,6 +707,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">proveedor</field>
       <field name="source_field">x_street_number_int</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_15" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -653,6 +716,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">proveedor</field>
       <field name="source_field">x_street_number_ext</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_16" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
@@ -661,12 +725,14 @@
       <field name="tipo">AN</field>
       <field name="source_model">proveedor</field>
       <field name="source_field">zip</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_505_17" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_505"/>
       <field name="orden">17</field>
       <field name="nombre">counterparty_city_505</field>
       <field name="tipo">AN</field>
+      <field name="requerido">False</field>
       <field name="source_model">proveedor</field>
       <field name="source_field">city</field>
     </record>
@@ -684,6 +750,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">506</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_506_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_506"/>
@@ -692,6 +759,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_506_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_506"/>
@@ -700,6 +768,7 @@
       <field name="tipo">N</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_tipo_fecha_506</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_506_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_506"/>
@@ -708,6 +777,7 @@
       <field name="tipo">F</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_fecha_506</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 507 Identificadores -->
@@ -723,6 +793,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">507</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_507_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_507"/>
@@ -731,6 +802,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_507_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_507"/>
@@ -739,6 +811,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_clave_identificador</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_507_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_507"/>
@@ -747,6 +820,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_complemento1_507</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_507_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_507"/>
@@ -755,6 +829,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_complemento2_507</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_507_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_507"/>
@@ -763,6 +838,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_complemento3_507</field>
+          <field name="requerido">False</field>
     </record>
 
     <!-- 509 Tasas nivel pedimento -->
@@ -778,6 +854,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">509</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_509_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_509"/>
@@ -786,24 +863,28 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_509_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_509"/>
       <field name="orden">3</field>
       <field name="nombre">clave_contribucion</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_509_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_509"/>
       <field name="orden">4</field>
       <field name="nombre">tasa</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_509_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_509"/>
       <field name="orden">5</field>
       <field name="nombre">tipo_tasa</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 510 Contribuciones nivel pedimento -->
@@ -819,6 +900,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">510</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_510_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_510"/>
@@ -827,24 +909,28 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_510_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_510"/>
       <field name="orden">3</field>
       <field name="nombre">clave_contribucion</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_510_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_510"/>
       <field name="orden">4</field>
       <field name="nombre">forma_pago</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_510_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_510"/>
       <field name="orden">5</field>
       <field name="nombre">importe</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 511 Observaciones nivel pedimento -->
@@ -860,6 +946,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">511</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_511_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_511"/>
@@ -868,12 +955,14 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_511_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_511"/>
       <field name="orden">3</field>
       <field name="nombre">secuencia</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_511_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_511"/>
@@ -882,6 +971,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">observaciones</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 512 Descargos -->
@@ -897,6 +987,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">512</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_512_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_512"/>
@@ -905,54 +996,63 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_512_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_512"/>
       <field name="orden">3</field>
       <field name="nombre">patente_original</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_512_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_512"/>
       <field name="orden">4</field>
       <field name="nombre">pedimento_original</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_512_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_512"/>
       <field name="orden">5</field>
       <field name="nombre">aduana_seccion_original</field>
       <field name="tipo">AN</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_512_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_512"/>
       <field name="orden">6</field>
       <field name="nombre">clave_documento_original</field>
       <field name="tipo">AN</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_512_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_512"/>
       <field name="orden">7</field>
       <field name="nombre">fecha_operacion_original</field>
       <field name="tipo">F</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_512_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_512"/>
       <field name="orden">8</field>
       <field name="nombre">fraccion_original</field>
       <field name="tipo">AN</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_512_9" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_512"/>
       <field name="orden">9</field>
       <field name="nombre">unidad_medida_original</field>
       <field name="tipo">N</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_512_10" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_512"/>
       <field name="orden">10</field>
       <field name="nombre">cantidad_umt_original</field>
       <field name="tipo">N</field>
+          <field name="requerido">False</field>
     </record>
 
     <!-- 513 Compensaciones -->
@@ -968,6 +1068,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">513</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_513_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_513"/>
@@ -976,42 +1077,49 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_513_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_513"/>
       <field name="orden">3</field>
       <field name="nombre">patente_original</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_513_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_513"/>
       <field name="orden">4</field>
       <field name="nombre">pedimento_original</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_513_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_513"/>
       <field name="orden">5</field>
       <field name="nombre">aduana_seccion_original</field>
       <field name="tipo">AN</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_513_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_513"/>
       <field name="orden">6</field>
       <field name="nombre">fecha_pago_original</field>
       <field name="tipo">F</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_513_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_513"/>
       <field name="orden">7</field>
       <field name="nombre">contribucion_compensada</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_513_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_513"/>
       <field name="orden">8</field>
       <field name="nombre">importe_compensado</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 514 Documentos Formas de Pago Virtuales -->
@@ -1027,6 +1135,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">514</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_514_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_514"/>
@@ -1035,48 +1144,56 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_514_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_514"/>
       <field name="orden">3</field>
       <field name="nombre">forma_pago</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_514_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_514"/>
       <field name="orden">4</field>
       <field name="nombre">dependencia_emisora</field>
       <field name="tipo">AN</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_514_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_514"/>
       <field name="orden">5</field>
       <field name="nombre">folio</field>
       <field name="tipo">AN</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_514_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_514"/>
       <field name="orden">6</field>
       <field name="nombre">fecha</field>
       <field name="tipo">F</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_514_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_514"/>
       <field name="orden">7</field>
       <field name="nombre">importe_total_amparado</field>
       <field name="tipo">N</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_514_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_514"/>
       <field name="orden">8</field>
       <field name="nombre">saldo_disponible</field>
       <field name="tipo">N</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_514_9" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_514"/>
       <field name="orden">9</field>
       <field name="nombre">importe_total_pagar</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 516 Candados -->
@@ -1092,6 +1209,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">516</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_516_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_516"/>
@@ -1100,6 +1218,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_516_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_516"/>
@@ -1108,6 +1227,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_identificador_transporte</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_516_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_516"/>
@@ -1116,6 +1236,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">lead</field>
       <field name="source_field">x_numero_candado</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 520 Destinatario -->
@@ -1131,6 +1252,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">520</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_520_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_520"/>
@@ -1139,6 +1261,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_520_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_520"/>
@@ -1147,6 +1270,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">cliente</field>
       <field name="source_field">vat</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_520_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_520"/>
@@ -1155,6 +1279,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">cliente</field>
       <field name="source_field">name</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_520_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_520"/>
@@ -1163,6 +1288,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">cliente</field>
       <field name="source_field">x_street_name</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_520_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_520"/>
@@ -1171,6 +1297,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">cliente</field>
       <field name="source_field">x_street_number_int</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_520_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_520"/>
@@ -1179,6 +1306,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">cliente</field>
       <field name="source_field">x_street_number_ext</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_520_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_520"/>
@@ -1187,6 +1315,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">cliente</field>
       <field name="source_field">zip</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_520_9" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_520"/>
@@ -1195,6 +1324,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">cliente</field>
       <field name="source_field">city</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_520_10" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_520"/>
@@ -1203,6 +1333,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">cliente</field>
       <field name="source_field">country_id</field>
+          <field name="requerido">False</field>
     </record>
 
     <!-- ════════════════════════════════════
@@ -1223,6 +1354,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">551</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_551_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_551"/>
@@ -1231,6 +1363,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_551_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_551"/>
@@ -1257,6 +1390,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">nico</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_551_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_551"/>
@@ -1272,7 +1406,7 @@
       <field name="orden">7</field>
       <field name="nombre">precio_unitario</field>
       <field name="tipo">N</field>
-      <field name="requerido">True</field>
+      <field name="requerido">False</field>
       <field name="source_model">partida</field>
       <field name="source_field">precio_unitario</field>
     </record>
@@ -1299,7 +1433,7 @@
       <field name="orden">10</field>
       <field name="nombre">valor_usd</field>
       <field name="tipo">N</field>
-      <field name="requerido">True</field>
+      <field name="requerido">False</field>
       <field name="source_model">partida</field>
       <field name="source_field">value_usd</field>
     </record>
@@ -1319,6 +1453,7 @@
       <field name="tipo">N</field>
       <field name="source_model">partida</field>
       <field name="source_field">unidad_comercial</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_551_13" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_551"/>
@@ -1336,6 +1471,7 @@
       <field name="tipo">N</field>
       <field name="source_model">partida</field>
       <field name="source_field">unidad_tarifa</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_551_16" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_551"/>
@@ -1345,6 +1481,7 @@
       <field name="source_model">lead</field>
       <field name="source_field">x_vinculacion</field>
       <field name="default">0</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_551_17" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_551"/>
@@ -1354,6 +1491,7 @@
       <field name="source_model">lead</field>
       <field name="source_field">x_metodo_valoracion</field>
       <field name="default">1</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_551_21" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_551"/>
@@ -1362,6 +1500,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">pais_origen_id</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_551_22" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_551"/>
@@ -1370,6 +1509,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">pais_vendedor_id</field>
+          <field name="requerido">False</field>
     </record>
 
     <!-- 552 Mercancías (VIN/Serie) -->
@@ -1385,6 +1525,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">552</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_552_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_552"/>
@@ -1393,6 +1534,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_552_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_552"/>
@@ -1401,6 +1543,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">fraccion_arancelaria</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_552_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_552"/>
@@ -1409,6 +1552,7 @@
       <field name="tipo">N</field>
       <field name="source_model">partida</field>
       <field name="source_field">numero_partida</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_552_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_552"/>
@@ -1417,6 +1561,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">x_vin</field>
+          <field name="requerido">False</field>
     </record>
 
     <!-- 553 Permisos -->
@@ -1432,6 +1577,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">553</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_553_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_553"/>
@@ -1440,6 +1586,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_553_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_553"/>
@@ -1448,6 +1595,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">fraccion_arancelaria</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_553_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_553"/>
@@ -1456,6 +1604,7 @@
       <field name="tipo">N</field>
       <field name="source_model">partida</field>
       <field name="source_field">numero_partida</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_553_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_553"/>
@@ -1464,6 +1613,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">permiso_ids</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_553_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_553"/>
@@ -1472,6 +1622,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">x_numero_permiso</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_553_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_553"/>
@@ -1480,6 +1631,7 @@
       <field name="tipo">N</field>
       <field name="source_model">partida</field>
       <field name="source_field">value_usd</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_553_9" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_553"/>
@@ -1488,6 +1640,7 @@
       <field name="tipo">N</field>
       <field name="source_model">partida</field>
       <field name="source_field">cantidad_tarifa</field>
+          <field name="requerido">False</field>
     </record>
 
     <!-- 554 Identificadores a nivel partida -->
@@ -1503,6 +1656,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">554</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_554_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_554"/>
@@ -1511,6 +1665,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_554_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_554"/>
@@ -1519,6 +1674,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">fraccion_arancelaria</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_554_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_554"/>
@@ -1527,6 +1683,7 @@
       <field name="tipo">N</field>
       <field name="source_model">partida</field>
       <field name="source_field">numero_partida</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_554_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_554"/>
@@ -1535,6 +1692,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">x_clave_identificador</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_554_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_554"/>
@@ -1543,6 +1701,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">x_comp1_554</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_554_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_554"/>
@@ -1551,6 +1710,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">x_comp2_554</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_554_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_554"/>
@@ -1559,6 +1719,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">x_comp3_554</field>
+          <field name="requerido">False</field>
     </record>
 
     <!-- 557 Contribuciones nivel partida -->
@@ -1574,6 +1735,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">557</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_557_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_557"/>
@@ -1582,6 +1744,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_557_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_557"/>
@@ -1590,6 +1753,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">fraccion_arancelaria</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_557_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_557"/>
@@ -1598,24 +1762,28 @@
       <field name="tipo">N</field>
       <field name="source_model">partida</field>
       <field name="source_field">numero_partida</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_557_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_557"/>
       <field name="orden">5</field>
       <field name="nombre">clave_contribucion</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_557_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_557"/>
       <field name="orden">6</field>
       <field name="nombre">forma_pago</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_557_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_557"/>
       <field name="orden">7</field>
       <field name="nombre">importe</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 558 Observaciones nivel partida -->
@@ -1631,6 +1799,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">558</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_558_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_558"/>
@@ -1639,6 +1808,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_558_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_558"/>
@@ -1647,6 +1817,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">fraccion_arancelaria</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_558_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_558"/>
@@ -1655,6 +1826,7 @@
       <field name="tipo">N</field>
       <field name="source_model">partida</field>
       <field name="source_field">numero_partida</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_558_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_558"/>
@@ -1663,6 +1835,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">partida</field>
       <field name="source_field">observaciones</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- ════════════════════════════════════
@@ -1682,6 +1855,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">701</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_701_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_701"/>
@@ -1690,6 +1864,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">patente</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_701_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_701"/>
@@ -1698,6 +1873,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_701_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_701"/>
@@ -1706,6 +1882,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">aduana_clave</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_701_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_701"/>
@@ -1714,6 +1891,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">clave_pedimento</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_701_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_701"/>
@@ -1722,6 +1900,7 @@
       <field name="tipo">F</field>
       <field name="source_model">operacion</field>
       <field name="source_field">fecha_pago</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_701_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_701"/>
@@ -1730,6 +1909,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">rect_pedimento_original</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_701_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_701"/>
@@ -1738,6 +1918,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">rect_patente_original</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_701_9" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_701"/>
@@ -1746,6 +1927,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">rect_aduana_original</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_701_10" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_701"/>
@@ -1754,6 +1936,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">rect_clave_pedimento_original</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_701_11" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_701"/>
@@ -1762,6 +1945,7 @@
       <field name="tipo">F</field>
       <field name="source_model">operacion</field>
       <field name="source_field">rect_fecha_pago_original</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 702 Diferencias de contribuciones -->
@@ -1777,6 +1961,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">702</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_702_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_702"/>
@@ -1785,24 +1970,28 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_702_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_702"/>
       <field name="orden">3</field>
       <field name="nombre">clave_contribucion</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_702_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_702"/>
       <field name="orden">4</field>
       <field name="nombre">clave_forma_pago</field>
       <field name="tipo">N</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_702_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_702"/>
       <field name="orden">5</field>
       <field name="nombre">importe_pago</field>
       <field name="tipo">N</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 800 Firma electrónica -->
@@ -1818,6 +2007,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">800</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_800_2" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_800"/>
@@ -1826,6 +2016,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">patente</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_800_3" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_800"/>
@@ -1834,6 +2025,7 @@
       <field name="tipo">N</field>
       <field name="source_model">operacion</field>
       <field name="source_field">pedimento_numero</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_800_4" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_800"/>
@@ -1842,6 +2034,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">aduana_clave</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_800_5" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_800"/>
@@ -1850,6 +2043,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">clave_pedimento</field>
+          <field name="requerido">True</field>
     </record>
     <record id="mx_layout_campo_800_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_800"/>
@@ -1858,6 +2052,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">operacion</field>
       <field name="source_field">curp_agente</field>
+          <field name="requerido">True</field>
     </record>
 
     <!-- 801 Fin de archivo -->
@@ -1874,6 +2069,7 @@
       <field name="nombre">clave_registro</field>
       <field name="tipo">N</field>
       <field name="default">801</field>
+          <field name="requerido">True</field>
     </record>
 
   </data>
