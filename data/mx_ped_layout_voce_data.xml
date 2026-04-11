@@ -1842,6 +1842,113 @@
          REGISTROS DE CONTROL / FIN
     ════════════════════════════════════ -->
 
+    <!-- 601 Datos Generales del Previo de Consolidado -->
+    <record id="mx_layout_reg_601" model="mx.ped.layout.registro">
+      <field name="layout_id" ref="mx_ped_layout_voce_v9"/>
+      <field name="codigo">601</field>
+      <field name="nombre">Datos Generales del Previo de Consolidado</field>
+      <field name="orden">88</field>
+    </record>
+
+    <record id="mx_layout_campo_601_1" model="mx.ped.layout.campo">
+      <field name="registro_id" ref="mx_layout_reg_601"/>
+      <field name="orden">1</field>
+      <field name="nombre">clave_registro</field>
+      <field name="tipo">N</field>
+      <field name="requerido">True</field>
+      <field name="default">601</field>
+    </record>
+    <record id="mx_layout_campo_601_2" model="mx.ped.layout.campo">
+      <field name="registro_id" ref="mx_layout_reg_601"/>
+      <field name="orden">2</field>
+      <field name="nombre">patente</field>
+      <field name="tipo">N</field>
+      <field name="requerido">True</field>
+      <field name="source_model">operacion</field>
+      <field name="source_field">patente</field>
+    </record>
+    <record id="mx_layout_campo_601_3" model="mx.ped.layout.campo">
+      <field name="registro_id" ref="mx_layout_reg_601"/>
+      <field name="orden">3</field>
+      <field name="nombre">numero_pedimento</field>
+      <field name="tipo">N</field>
+      <field name="requerido">True</field>
+      <field name="source_model">operacion</field>
+      <field name="source_field">pedimento_numero</field>
+    </record>
+    <record id="mx_layout_campo_601_4" model="mx.ped.layout.campo">
+      <field name="registro_id" ref="mx_layout_reg_601"/>
+      <field name="orden">4</field>
+      <field name="nombre">aduana_seccion_despacho</field>
+      <field name="tipo">AN</field>
+      <field name="requerido">True</field>
+      <field name="source_model">operacion</field>
+      <field name="source_field">aduana_clave</field>
+    </record>
+    <record id="mx_layout_campo_601_5" model="mx.ped.layout.campo">
+      <field name="registro_id" ref="mx_layout_reg_601"/>
+      <field name="orden">5</field>
+      <field name="nombre">clave_pedimento</field>
+      <field name="tipo">AN</field>
+      <field name="requerido">True</field>
+      <field name="source_model">operacion</field>
+      <field name="source_field">clave_pedimento</field>
+    </record>
+    <record id="mx_layout_campo_601_6" model="mx.ped.layout.campo">
+      <field name="registro_id" ref="mx_layout_reg_601"/>
+      <field name="orden">6</field>
+      <field name="nombre">tipo_operacion</field>
+      <field name="tipo">N</field>
+      <field name="requerido">True</field>
+      <field name="source_model">operacion</field>
+      <field name="source_field">tipo_operacion</field>
+    </record>
+    <record id="mx_layout_campo_601_7" model="mx.ped.layout.campo">
+      <field name="registro_id" ref="mx_layout_reg_601"/>
+      <field name="orden">7</field>
+      <field name="nombre">curp_importador_exportador</field>
+      <field name="tipo">AN</field>
+      <field name="requerido">False</field>
+      <field name="source_model">operacion</field>
+      <field name="source_field">participante_curp</field>
+    </record>
+    <record id="mx_layout_campo_601_8" model="mx.ped.layout.campo">
+      <field name="registro_id" ref="mx_layout_reg_601"/>
+      <field name="orden">8</field>
+      <field name="nombre">rfc_importador_exportador</field>
+      <field name="tipo">AN</field>
+      <field name="requerido">True</field>
+      <field name="source_model">operacion</field>
+      <field name="source_field">participante_rfc</field>
+    </record>
+    <record id="mx_layout_campo_601_9" model="mx.ped.layout.campo">
+      <field name="registro_id" ref="mx_layout_reg_601"/>
+      <field name="orden">9</field>
+      <field name="nombre">curp_agente</field>
+      <field name="tipo">AN</field>
+      <field name="requerido">True</field>
+      <field name="source_model">operacion</field>
+      <field name="source_field">curp_agente</field>
+    </record>
+    <record id="mx_layout_campo_601_10" model="mx.ped.layout.campo">
+      <field name="registro_id" ref="mx_layout_reg_601"/>
+      <field name="orden">10</field>
+      <field name="nombre">origen_destino</field>
+      <field name="tipo">N</field>
+      <field name="requerido">True</field>
+      <field name="source_model">lead</field>
+      <field name="source_field">x_origen_destino_mercancia</field>
+    </record>
+    <record id="mx_layout_campo_601_11" model="mx.ped.layout.campo">
+      <field name="registro_id" ref="mx_layout_reg_601"/>
+      <field name="orden">11</field>
+      <field name="nombre">rfc_cfdi_servicios</field>
+      <field name="tipo">AN</field>
+      <field name="requerido">False</field>
+      <field name="source_model">lead</field>
+      <field name="source_field">x_rfc_cfdi_servicios</field>
+    </record>
+
     <!-- 701 Rectificación -->
     <record id="mx_layout_reg_701" model="mx.ped.layout.registro">
       <field name="layout_id" ref="mx_ped_layout_voce_v9"/>
