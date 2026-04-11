@@ -5781,7 +5781,12 @@ class MxPedOperacion(models.Model):
             # datos más allá de los 4 campos de identificación básicos.
             # Sin esta guardia se generarían p.ej. 552 (vehículos) para
             # partidas que no son automotrices, 553 sin permisos, etc.
-            _OPTIONAL_PARTIDA_CODES = {"552", "553", "554", "558"}
+            _OPTIONAL_PARTIDA_CODES = {
+                "552", "553", "554", "558",   # rectificación opcionales
+                "555", "556",                  # cuentas garantía / tasas partida
+                "560",                         # partidas industria automotriz
+                "351", "352", "355", "358",    # T-MEC complementario
+            }
             _PARTIDA_ID_KEYS = {
                 "clave_registro", "numero_pedimento",
                 "fraccion_arancelaria", "numero_partida",
