@@ -154,6 +154,87 @@ class MxPedPartida(models.Model):
     )
     docs_reference = fields.Char(string="Referencia documentos")
     notes_regulatorias = fields.Text(string="Notas regulatorias")
+
+    # ── T-MEC / Complementario (registros 351 y 355) ─────────────────────────
+    tmec_valor_mercancia_no_originaria = fields.Float(
+        string="T-MEC: Valor mercancía no originaria",
+        digits=(16, 2),
+    )
+    tmec_monto_igi_no_originaria = fields.Float(
+        string="T-MEC: Monto IGI no originaria",
+        digits=(16, 2),
+    )
+    tmec_impuesto_total_importacion = fields.Float(
+        string="T-MEC: Impuesto total importación",
+        digits=(16, 2),
+    )
+    tmec_monto_exento = fields.Float(
+        string="T-MEC: Monto exento",
+        digits=(16, 2),
+    )
+    tmec_clave_contribucion = fields.Char(
+        string="T-MEC: Clave contribución (355)",
+        size=3,
+    )
+    tmec_importe_pagado = fields.Float(
+        string="T-MEC: Importe pagado (355)",
+        digits=(16, 2),
+    )
+    tmec_fecha_pago = fields.Date(
+        string="T-MEC: Fecha pago (355)",
+    )
+
+    # ── Cuentas Aduaneras de Garantía (registro 555) ──────────────────────────
+    cta_garantia_institucion = fields.Char(
+        string="Garantía: Institución emisora",
+        size=10,
+    )
+    cta_garantia_numero = fields.Char(
+        string="Garantía: Número de cuenta",
+        size=20,
+    )
+    cta_garantia_folio = fields.Char(
+        string="Garantía: Folio constancia",
+        size=20,
+    )
+    cta_garantia_fecha = fields.Date(
+        string="Garantía: Fecha constancia",
+    )
+    cta_garantia_tipo = fields.Char(
+        string="Garantía: Tipo de garantía",
+        size=2,
+    )
+    cta_garantia_valor_titulo = fields.Float(
+        string="Garantía: Valor unitario título",
+        digits=(16, 2),
+    )
+    cta_garantia_importe = fields.Float(
+        string="Garantía: Importe total",
+        digits=(16, 2),
+    )
+    cta_garantia_cantidad = fields.Float(
+        string="Garantía: Cantidad unidades",
+        digits=(16, 2),
+    )
+    cta_garantia_titulos = fields.Char(
+        string="Garantía: Títulos asignados",
+        size=30,
+    )
+
+    # ── Tasas por partida (registro 556) ─────────────────────────────────────
+    tasa_clave_contribucion = fields.Char(
+        string="Tasa: Clave contribución",
+        size=3,
+    )
+    tasa_valor = fields.Float(
+        string="Tasa: Valor",
+        digits=(16, 4),
+    )
+    tasa_tipo = fields.Char(
+        string="Tasa: Tipo de tasa",
+        size=2,
+    )
+
     forma_pago_sugerida_id = fields.Many2one(
         "mx.forma.pago",
         string="Forma de pago sugerida",

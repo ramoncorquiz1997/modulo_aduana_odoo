@@ -2187,6 +2187,8 @@
       <field name="nombre">valor_mercancia_no_originaria</field>
       <field name="tipo">N</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">tmec_valor_mercancia_no_originaria</field>
     </record>
     <record id="mx_layout_campo_351_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_351"/>
@@ -2194,6 +2196,8 @@
       <field name="nombre">monto_igi_no_originaria</field>
       <field name="tipo">N</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">tmec_monto_igi_no_originaria</field>
     </record>
     <record id="mx_layout_campo_351_9" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_351"/>
@@ -2201,6 +2205,8 @@
       <field name="nombre">impuesto_total_importacion</field>
       <field name="tipo">N</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">tmec_impuesto_total_importacion</field>
     </record>
     <record id="mx_layout_campo_351_10" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_351"/>
@@ -2217,6 +2223,8 @@
       <field name="nombre">monto_exento</field>
       <field name="tipo">N</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">tmec_monto_exento</field>
     </record>
 
     <!-- 352 Detalle de Importaciones EUA/CAN T-MEC por Partida -->
@@ -2337,6 +2345,8 @@
       <field name="nombre">clave_contribucion</field>
       <field name="tipo">AN</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">tmec_clave_contribucion</field>
     </record>
     <record id="mx_layout_campo_355_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_355"/>
@@ -2344,6 +2354,8 @@
       <field name="nombre">importe_pagado</field>
       <field name="tipo">N</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">tmec_importe_pagado</field>
     </record>
     <record id="mx_layout_campo_355_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_355"/>
@@ -2351,6 +2363,8 @@
       <field name="nombre">fecha_pago</field>
       <field name="tipo">F</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">tmec_fecha_pago</field>
     </record>
 
     <!-- 358 Observaciones por Partida Complementario -->
@@ -2550,6 +2564,8 @@
       <field name="nombre">institucion_emisora</field>
       <field name="tipo">AN</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">cta_garantia_institucion</field>
     </record>
     <record id="mx_layout_campo_555_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_555"/>
@@ -2557,6 +2573,8 @@
       <field name="nombre">numero_cuenta</field>
       <field name="tipo">AN</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">cta_garantia_numero</field>
     </record>
     <record id="mx_layout_campo_555_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_555"/>
@@ -2564,6 +2582,8 @@
       <field name="nombre">folio_constancia</field>
       <field name="tipo">AN</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">cta_garantia_folio</field>
     </record>
     <record id="mx_layout_campo_555_8" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_555"/>
@@ -2571,6 +2591,8 @@
       <field name="nombre">fecha_constancia</field>
       <field name="tipo">F</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">cta_garantia_fecha</field>
     </record>
     <record id="mx_layout_campo_555_9" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_555"/>
@@ -2578,6 +2600,8 @@
       <field name="nombre">tipo_garantia</field>
       <field name="tipo">AN</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">cta_garantia_tipo</field>
     </record>
     <record id="mx_layout_campo_555_10" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_555"/>
@@ -2585,6 +2609,8 @@
       <field name="nombre">valor_unitario_titulo</field>
       <field name="tipo">N</field>
       <field name="requerido">False</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">cta_garantia_valor_titulo</field>
     </record>
     <record id="mx_layout_campo_555_11" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_555"/>
@@ -2592,6 +2618,8 @@
       <field name="nombre">importe_total_garantia</field>
       <field name="tipo">N</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">cta_garantia_importe</field>
     </record>
     <record id="mx_layout_campo_555_12" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_555"/>
@@ -2599,6 +2627,8 @@
       <field name="nombre">cantidad_unidades</field>
       <field name="tipo">N</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">cta_garantia_cantidad</field>
     </record>
     <record id="mx_layout_campo_555_13" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_555"/>
@@ -2606,6 +2636,8 @@
       <field name="nombre">titulos_asignados</field>
       <field name="tipo">AN</field>
       <field name="requerido">False</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">cta_garantia_titulos</field>
     </record>
 
     <!-- 556 Tasas por Partida -->
@@ -2656,6 +2688,8 @@
       <field name="nombre">clave_contribucion</field>
       <field name="tipo">AN</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">tasa_clave_contribucion</field>
     </record>
     <record id="mx_layout_campo_556_6" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_556"/>
@@ -2663,6 +2697,8 @@
       <field name="nombre">tasa</field>
       <field name="tipo">N</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">tasa_valor</field>
     </record>
     <record id="mx_layout_campo_556_7" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_556"/>
@@ -2670,6 +2706,8 @@
       <field name="nombre">tipo_tasa</field>
       <field name="tipo">AN</field>
       <field name="requerido">True</field>
+      <field name="source_model">partida</field>
+      <field name="source_field">tasa_tipo</field>
     </record>
 
     <!-- 560 Partidas del Informe de Industria Automotriz (por partida) -->
