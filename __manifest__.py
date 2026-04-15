@@ -40,6 +40,9 @@
         "views/aduana_dashboard_views.xml",
         "views/aduana_setup_wizard_views.xml",
     ],
+    "external_dependencies": {
+        "python": ["requests", "PyPDF2", "reportlab"],
+    },
     "license": "LGPL-3",
     "application": False,
     "installable": True,

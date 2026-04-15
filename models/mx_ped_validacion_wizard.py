@@ -284,6 +284,102 @@ class MxPedValidacionWizard(models.TransientModel):
                         cat="partidas", seq=85,
                     )
 
+                # ── 6a. Cobertura de partidas en remesas ─────────────────
+                # Cada partida debe estar asignada a por lo menos una remesa.
+                # La suma de cantidades y valores asignados no debe exceder el
+                # total de la partida (los constraints del modelo ya lo impiden,
+                # pero verificamos aqui para darlo como error de validacion).
+                for partida in op.partida_ids:
+                    ref_p = _("Partida %s") % (partida.numero_partida or partida.id)
+                    asignaciones = partida.remesa_assignment_ids.filtered(
+                        lambda a: a.remesa_id.active
+                    )
+                    if not asignaciones:
+                        e(
+                            _("La partida no está asignada a ninguna remesa activa."),
+                            ref=ref_p, cat="partidas", seq=87,
+                        )
+                        continue
+
+                    total_asignado_qty = sum(a.quantity or 0.0 for a in asignaciones)
+                    total_asignado_usd = sum(a.value_usd or 0.0 for a in asignaciones)
+                    partida_qty = partida.quantity or 0.0
+                    partida_usd = partida.value_usd or 0.0
+
+                    if partida_qty > 0 and abs(total_asignado_qty - partida_qty) > 0.001:
+                        w(
+                            _("Cantidad asignada a remesas (%.6f) difiere de la cantidad de la partida (%.6f).") % (
+                                total_asignado_qty, partida_qty
+                            ),
+                            ref=ref_p, cat="partidas", seq=88,
+                        )
+                    if partida_usd > 0 and abs(total_asignado_usd - partida_usd) > 0.01:
+                        w(
+                            _("Valor USD asignado a remesas (%.2f) difiere del valor de la partida (%.2f).") % (
+                                total_asignado_usd, partida_usd
+                            ),
+                            ref=ref_p, cat="partidas", seq=89,
+                        )
+
+                # ── 6b. Balance 557 por remesa vs 510 del pedimento ──────
+                # Solo aplica en modo por_remesa. Verifica que la suma de los
+                # importes de contribucion prorrateados en todas las remesas
+                # cuadra con el total de 557 del pedimento, tipo por tipo.
+                # Una diferencia indica edicion manual de montos.
+                if op.modo_export_consolidado == "por_remesa":
+                    # Acumular importes prorrateados por tipo de contribucion
+                    suma_prorrateada: dict = {}   # key: tipo_str -> float
+                    for remesa in remesas:
+                        for rel in remesa.partida_rel_ids:
+                            partida = rel.partida_id
+                            if not partida:
+                                continue
+                            pv = partida.value_usd or 0.0
+                            qv = partida.quantity or 0.0
+                            rv = rel.value_usd or 0.0
+                            rq = rel.quantity or 0.0
+                            ratio = (rv / pv) if pv > 0 else ((rq / qv) if qv > 0 else 1.0)
+                            for contrib in partida.contribucion_ids.filtered(
+                                lambda c: c.operacion_id == op
+                            ):
+                                key = (
+                                    (contrib.tipo_contribucion or "").strip()
+                                    or str(contrib.contribucion_code or contrib.id)
+                                )
+                                suma_prorrateada[key] = (
+                                    suma_prorrateada.get(key, 0.0)
+                                    + round((contrib.importe or 0.0) * ratio, 2)
+                                )
+
+                    # Total real de 557 por tipo de contribucion
+                    suma_real: dict = {}
+                    for contrib in op.partida_contribucion_ids:
+                        key = (
+                            (contrib.tipo_contribucion or "").strip()
+                            or str(contrib.contribucion_code or contrib.id)
+                        )
+                        suma_real[key] = suma_real.get(key, 0.0) + (contrib.importe or 0.0)
+
+                    # Comparar tipo por tipo con tolerancia de 1 centavo por remesa
+                    tolerancia = len(remesas) * 0.01
+                    todos_los_tipos = set(suma_real) | set(suma_prorrateada)
+                    for tipo in sorted(todos_los_tipos):
+                        real = round(suma_real.get(tipo, 0.0), 2)
+                        prorrateado = round(suma_prorrateada.get(tipo, 0.0), 2)
+                        if abs(real - prorrateado) > tolerancia:
+                            e(
+                                _(
+                                    "Contribución %(tipo)s: la suma prorrateada en remesas (%(pro)s) "
+                                    "no cuadra con el total 557 del pedimento (%(real)s). "
+                                    "Posible edición manual de importes."
+                                ) % {
+                                    "tipo": tipo,
+                                    "pro": "%.2f" % prorrateado,
+                                    "real": "%.2f" % real,
+                                },
+                                cat="contribuciones", seq=60,
+                            )
+
         # Si no hay ningún problema, agregar línea de confirmación
         if not lineas:
             i(_("Validación completada sin problemas. La operación está lista para exportar."), cat="general", seq=1)

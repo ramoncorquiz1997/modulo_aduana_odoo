@@ -183,7 +183,7 @@ class MxPedOperacion(models.Model):
     ws_ambiente = fields.Selection(
         [("pruebas", "Pruebas"), ("produccion", "Produccion")],
         string="Ambiente WS",
-        default="produccion",
+        default="pruebas",
         required=True,
     )
     ws_credencial_id = fields.Many2one(
@@ -3428,6 +3428,80 @@ class MxPedOperacion(models.Model):
             })
         return registros
 
+    def _get_remesa_557_registros(self, remesa):
+        """Genera registros 557 pro-rateados por valor/cantidad para una remesa.
+
+        Cada contribucion de cada partida asignada a la remesa se incluye con
+        importe y base proporcionales a la fraccion de valor USD (o cantidad si
+        value_usd es cero) que corresponde a esta remesa respecto al total de
+        la partida.  La tasa porcentual se mantiene intacta.
+        """
+        self.ensure_one()
+        layout_reg = self._get_layout_registro("557")
+        if not layout_reg:
+            return []
+
+        registros = []
+        secuencia = 0
+        ordered_rel = remesa.partida_rel_ids.sorted(
+            lambda rel: (
+                (rel.partida_id.numero_partida or 0) if rel.partida_id else 0,
+                rel.sequence or 0,
+                rel.id,
+            )
+        )
+
+        for remesa_rel in ordered_rel:
+            partida = remesa_rel.partida_id
+            if not partida:
+                continue
+
+            # ── Calcular ratio de prorrateo ──────────────────────────────
+            total_value = partida.value_usd or 0.0
+            total_qty = partida.quantity or 0.0
+            remesa_value = remesa_rel.value_usd or 0.0
+            remesa_qty = remesa_rel.quantity or 0.0
+
+            if total_value > 0:
+                ratio = remesa_value / total_value
+            elif total_qty > 0:
+                ratio = remesa_qty / total_qty
+            else:
+                ratio = 1.0
+
+            # ── Una linea 557 por cada contribucion de esta partida ──────
+            contribs = partida.contribucion_ids.filtered(
+                lambda c: c.operacion_id == self
+            ).sorted(lambda c: (c.sequence or 0, c.id))
+
+            for contrib in contribs:
+                secuencia += 1
+                # Payload base usando la misma heuristica que el flujo normal
+                payload = self._build_sync_payload_from_layout(layout_reg, contrib, "557")
+
+                # Sobrescribir importe y base con los valores prorrateados.
+                # La tasa (porcentaje) no se proratea, es una propiedad de la
+                # fraccion arancelaria y aplica igual independientemente de la
+                # cantidad de cada remesa.
+                payload["importe"] = round((contrib.importe or 0.0) * ratio, 2)
+                if (contrib.base or 0.0) > 0:
+                    payload["base"] = round((contrib.base or 0.0) * ratio, 2)
+
+                # Garantizar fraccion y numero de partida correctos
+                payload["fraccion_arancelaria"] = (
+                    partida.fraccion_arancelaria
+                    or (partida.fraccion_id.code if partida.fraccion_id else "")
+                )
+                payload["numero_partida"] = partida.numero_partida or 0
+
+                registros.append({
+                    "codigo": "557",
+                    "secuencia": secuencia,
+                    "valores": payload,
+                })
+
+        return registros
+
     def _remesa_partida_override_value(self, campo, remesa_rel, base_val):
         self.ensure_one()
         partida = remesa_rel.partida_id
@@ -3462,7 +3536,6 @@ class MxPedOperacion(models.Model):
         if source_norm in value_mxn_tokens or ("valor" in token and "mxn" in token):
             return (remesa_rel.value_usd or 0.0) * tipo_cambio
 
-        # TODO: 557 por remesa requiere recalculo/prorrateo especifico; queda fuera de esta primera version.
         return base_val
 
     def _build_remesa_partida_payload(self, layout_reg, remesa_rel):
@@ -3511,6 +3584,7 @@ class MxPedOperacion(models.Model):
             if (reg.codigo or "").strip() not in excluded_codes
         ]
         remesa_regs = list(base_regs)
+        remesa_regs.extend(self._get_remesa_557_registros(remesa))
         remesa_regs.extend(self._get_remesa_514_registros(remesa))
         remesa_regs.extend(self._get_remesa_partida_registros(remesa, {"551", "552", "553", "554", "555", "556", "558"}))
         remesa_regs.sort(
@@ -3914,7 +3988,216 @@ class MxPedOperacion(models.Model):
         ped.agente = self._get_agente_data()
         return ped
 
+    # ── Proforma por remesa ───────────────────────────────────────────────
+
+    def _build_proforma_contribucion_remesa(self, contrib, ratio):
+        """Igual que _build_proforma_contribucion pero con importe prorrateado.
+
+        La tasa porcentual no cambia (es propiedad de la fraccion arancelaria);
+        solo el importe y la base se multiplican por el ratio de la remesa.
+        """
+        from .pedimento_proforma_v2 import Contribucion
+        return Contribucion(
+            clave=self._proforma_text(contrib.tipo_contribucion or contrib.contribucion_code),
+            tipo_tasa="",
+            tasa=self._proforma_text(contrib.tasa, decimals=6),
+            importe=self._proforma_text(round((contrib.importe or 0.0) * ratio, 2)),
+            forma_pago=self._proforma_text(contrib.forma_pago_code),
+        )
+
+    def _build_proforma_partida_remesa(self, partida, remesa_rel):
+        """Construye el bloque Partida con los valores propios de la remesa.
+
+        Cantidad y valor USD vienen de la asignacion de remesa (remesa_rel).
+        Las contribuciones 557 se prorratean con la misma logica que el TXT.
+        """
+        from .pedimento_proforma_v2 import Partida
+
+        total_value = partida.value_usd or 0.0
+        total_qty = partida.quantity or 0.0
+        remesa_value = remesa_rel.value_usd or 0.0
+        remesa_qty = remesa_rel.quantity or 0.0
+
+        if total_value > 0:
+            ratio = remesa_value / total_value
+        elif total_qty > 0:
+            ratio = remesa_qty / total_qty
+        else:
+            ratio = 1.0
+
+        tipo_cambio = self.lead_id.x_tipo_cambio or 0.0
+        valor_mxn = round(remesa_value * tipo_cambio, 2)
+
+        precio_unit = (
+            round(remesa_value / remesa_qty, 6) if remesa_qty else
+            (partida.precio_unitario or 0.0)
+        )
+
+        contribuciones = [
+            self._build_proforma_contribucion_remesa(c, ratio)
+            for c in partida.contribucion_ids.filtered(
+                lambda c: c.operacion_id == self
+            ).sorted(lambda c: (c.sequence or 0, c.id))
+        ]
+
+        return Partida(
+            secuencia=self._proforma_text(partida.numero_partida),
+            fraccion=self._proforma_text(partida.fraccion_arancelaria or partida.fraccion_id),
+            subdivision=self._proforma_text(partida.nico),
+            vinculacion="",
+            met_valoracion="",
+            umc=self._proforma_text(partida.uom_id),
+            cantidad_umc=self._proforma_text(remesa_qty, decimals=6),
+            umt=self._proforma_text(partida.unidad_tarifa or partida.unidad_comercial),
+            cantidad_umt=self._proforma_text(
+                round((partida.cantidad_tarifa or partida.cantidad_comercial or 0.0) * ratio, 5),
+                decimals=5,
+            ),
+            pais_venta=self._proforma_text(partida.pais_vendedor_id),
+            pais_origen=self._proforma_text(partida.pais_origen_id),
+            descripcion=(partida.descripcion or "").strip(),
+            val_aduana_usd=self._proforma_text(remesa_value),
+            imp_precio_pag=self._proforma_text(valor_mxn),
+            precio_pagado=self._proforma_text(valor_mxn),
+            precio_unit=self._proforma_text(precio_unit, decimals=6),
+            val_agregado=self._proforma_text(round((partida.valor_aduana or 0.0) * ratio, 2)),
+            marca="",
+            modelo="",
+            codigo_producto="",
+            contribuciones=contribuciones,
+            identificadores=[],
+            observaciones=(partida.observaciones or partida.notes_regulatorias or "").strip(),
+        )
+
+    def _build_proforma_pedimento_remesa(self, remesa):
+        """Construye el dataclass Pedimento para una remesa especifica.
+
+        Parte del pedimento completo (_build_proforma_pedimento) y sobreescribe:
+        - Partidas: solo las asignadas a esta remesa, con valores prorrateados.
+        - Contribuciones 557: prorrateadas.
+        - Transportista/placas/candados: datos propios de la remesa.
+        - Valor USD / Valor aduana: suma de la remesa.
+        - Fecha entrada: fecha de la remesa.
+        - Observaciones: las del pedimento + las de la remesa.
+        - num_pedimento: incluye el folio de la remesa para identificarla.
+        """
+        # Construimos la base del pedimento completo y luego sobreescribimos
+        ped = self._build_proforma_pedimento()
+
+        # ── Identificacion de la remesa ──────────────────────────────────
+        folio_remesa = (remesa.folio or remesa.name or "Remesa").strip()
+        ped.num_pedimento = (
+            (ped.num_pedimento + " / " if ped.num_pedimento else "") + folio_remesa
+        )
+
+        # ── Totales propios de la remesa ─────────────────────────────────
+        total_value_usd = sum(rel.value_usd or 0.0 for rel in remesa.partida_rel_ids)
+        tipo_cambio = self.lead_id.x_tipo_cambio or 0.0
+        total_value_mxn = round(total_value_usd * tipo_cambio, 2)
+
+        # Ratio global de la remesa sobre el pedimento (para peso bruto)
+        pedimento_value_usd = sum(
+            p.value_usd or 0.0 for p in self.partida_ids
+        ) or 1.0
+        ratio_global = total_value_usd / pedimento_value_usd
+
+        ped.valor_dolares = self._proforma_text(total_value_usd)
+        ped.valor_aduana = self._proforma_text(total_value_mxn)
+        ped.precio_pagado_valor_comercial = self._proforma_text(total_value_mxn)
+        ped.peso_bruto = self._proforma_text(
+            round((self.total_gross_weight or 0.0) * ratio_global, 3), decimals=3
+        )
+
+        # ── Contribuciones 557 prorrateadas a nivel pedimento ────────────
+        # Se recalculan sumando los prorrateados de cada partida de esta remesa
+        contribs_por_tipo: dict = {}
+        ordered_rel = remesa.partida_rel_ids.sorted(
+            lambda r: ((r.partida_id.numero_partida or 0) if r.partida_id else 0, r.id)
+        )
+        for rel in ordered_rel:
+            partida = rel.partida_id
+            if not partida:
+                continue
+            pv = partida.value_usd or 0.0
+            qv = partida.quantity or 0.0
+            rv = rel.value_usd or 0.0
+            rq = rel.quantity or 0.0
+            ratio = (rv / pv) if pv > 0 else ((rq / qv) if qv > 0 else 1.0)
+            for contrib in partida.contribucion_ids.filtered(lambda c: c.operacion_id == self):
+                key = contrib.tipo_contribucion or str(contrib.contribucion_code)
+                entry = contribs_por_tipo.setdefault(key, {
+                    "contrib": contrib,
+                    "importe": 0.0,
+                })
+                entry["importe"] += round((contrib.importe or 0.0) * ratio, 2)
+
+        from .pedimento_proforma_v2 import Contribucion
+        contribuciones_remesa = [
+            Contribucion(
+                clave=self._proforma_text(v["contrib"].tipo_contribucion or v["contrib"].contribucion_code),
+                tipo_tasa="",
+                tasa=self._proforma_text(v["contrib"].tasa, decimals=6),
+                importe=self._proforma_text(round(v["importe"], 2)),
+                forma_pago=self._proforma_text(v["contrib"].forma_pago_code),
+            )
+            for v in contribs_por_tipo.values()
+        ]
+        ped.tasas = contribuciones_remesa
+        ped.contribuciones_liq = contribuciones_remesa
+        total_liq = sum(v["importe"] for v in contribs_por_tipo.values())
+        ped.total_efectivo = self._proforma_text(round(total_liq, 2))
+        ped.total_total = self._proforma_text(round(total_liq, 2))
+
+        # ── Transportista de la remesa ───────────────────────────────────
+        transportista = remesa.transportista_id
+        if transportista:
+            ped.transportista_nombre = self._proforma_text(transportista.name)
+            ped.transportista_rfc = self._proforma_text(transportista.vat or "")
+            ped.transportista_curp = self._proforma_text(
+                transportista.x_curp if hasattr(transportista, "x_curp") else ""
+            )
+            ped.transportista_domicilio = self._proforma_partner_address(transportista)
+
+        # ── Fecha y datos logisticos de la remesa ────────────────────────
+        if remesa.fecha_remesa:
+            ped.fecha_entrada = self._proforma_date(remesa.fecha_remesa)
+
+        if remesa.candados:
+            ped.candado1 = self._proforma_text(remesa.candados)
+            ped.candado2 = ""
+
+        if remesa.contenedor:
+            from .pedimento_proforma_v2 import Contenedor
+            ped.contenedores = [Contenedor(numero=remesa.contenedor, tipo="")]
+
+        if remesa.placas:
+            ped.transporte_id = self._proforma_text(remesa.placas)
+
+        # ── Acuse de presentacion de la remesa ───────────────────────────
+        if remesa.acuse_presentacion:
+            ped.codigo_aceptacion = self._proforma_text(remesa.acuse_presentacion)
+
+        # ── Observaciones: pedimento + remesa ────────────────────────────
+        obs_parts = [p for p in [self.observaciones or "", remesa.observaciones or ""] if p.strip()]
+        ped.observaciones = " | ".join(obs_parts)
+
+        # ── Partidas: solo las de esta remesa, valores prorrateados ──────
+        ped.partidas = [
+            self._build_proforma_partida_remesa(rel.partida_id, rel)
+            for rel in ordered_rel
+            if rel.partida_id
+        ]
+
+        return ped
+
     def action_export_proforma(self):
+        """Exporta la proforma en PDF.
+
+        - Pedimento normal o consolidado modo 'pedimento_final': un solo PDF.
+        - Consolidado modo 'por_remesa': ZIP con un PDF por remesa, cada uno
+          con los valores (cantidades, importes, contribuciones) prorrateados
+          segun la fraccion asignada a esa remesa.
+        """
         self.ensure_one()
         self._auto_refresh_generated_registros()
         self._sync_registro_ids_from_tecnicos()
@@ -3924,12 +4207,52 @@ class MxPedOperacion(models.Model):
 
         from .pedimento_proforma_v2 import PedimentoPDF
 
+        pedimento_ref = re.sub(
+            r"[^A-Za-z0-9_-]+", "",
+            (self.pedimento_numero or self.name or "").strip(),
+        )
+
+        # ── Consolidado por remesa: ZIP con un PDF por remesa ────────────
+        if self.es_consolidado and self.modo_export_consolidado == "por_remesa":
+            remesas = self.remesa_ids.filtered("active").sorted(
+                lambda r: (r.sequence or 0, r.id)
+            )
+            if not remesas:
+                raise UserError(_("No hay remesas activas para exportar."))
+
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+                for remesa in remesas:
+                    ped = self._build_proforma_pedimento_remesa(remesa)
+                    pdf_bytes = PedimentoPDF(ped).build()
+                    # Nombre del archivo: pedimento_remesaFOLIO.pdf
+                    folio_token = re.sub(
+                        r"[^A-Za-z0-9_-]+", "_",
+                        (remesa.folio or remesa.name or f"remesa_{remesa.sequence or remesa.id}").strip(),
+                    ).strip("._-") or f"remesa_{remesa.id}"
+                    pdf_name = f"proforma_{pedimento_ref}_{folio_token}.pdf"
+                    zf.writestr(pdf_name, pdf_bytes)
+
+            zip_name = f"proformas_{pedimento_ref or self.id}.zip"
+            attachment = self.env["ir.attachment"].create({
+                "name": zip_name,
+                "type": "binary",
+                "datas": base64.b64encode(zip_buffer.getvalue()),
+                "mimetype": "application/zip",
+                "res_model": self._name,
+                "res_id": self.id,
+            })
+            return {
+                "type": "ir.actions.act_url",
+                "url": f"/web/content/{attachment.id}?download=true",
+                "target": "self",
+            }
+
+        # ── Pedimento normal o consolidado 'pedimento_final': un PDF ─────
         ped = self._build_proforma_pedimento()
         pdf_bytes = PedimentoPDF(ped).build()
 
-        pedimento_ref = re.sub(r"[^A-Za-z0-9_-]+", "", (self.pedimento_numero or self.name or "").strip())
         pdf_name = "proforma_%s.pdf" % (pedimento_ref or self.id)
-
         attachment = self.env["ir.attachment"].create({
             "name": pdf_name,
             "type": "binary",
@@ -5785,7 +6108,7 @@ class MxPedOperacion(models.Model):
                 "552", "553", "554", "558",   # rectificación opcionales
                 "555", "556",                  # cuentas garantía / tasas partida
                 "560",                         # partidas industria automotriz
-                "351", "352", "355", "358",    # T-MEC complementario
+                "351", "352", "353", "355", "358",  # T-MEC complementario
             }
             _PARTIDA_ID_KEYS = {
                 "clave_registro", "numero_pedimento",
