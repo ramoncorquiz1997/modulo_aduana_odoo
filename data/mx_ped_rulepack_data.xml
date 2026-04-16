@@ -213,4 +213,546 @@
     <field name="tipo_movimiento_id" ref="mx_ped_tipo_movimiento_8"/>
     <field name="payload_json" eval="{'allowed': ['5', '6', '8', '9', '13', '14', '16', '18', '21']}"/>
   </record>
+
+  <!-- ============================================================
+       CONDITION RULES – Estructura de registros por escenario
+       Estas reglas le dicen al motor qué registros son
+       obligatorios / opcionales / prohibidos según el tipo
+       de pedimento, operación y régimen.
+       ============================================================ -->
+
+  <!-- ── UNIVERSALES (todos los escenarios) ─────────────────── -->
+
+  <record id="mx_cond_500_universal" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">500 Cabecera – obligatorio siempre</field>
+    <field name="priority">500</field>
+    <field name="escenario_code">any</field>
+    <field name="registro_codigo">500</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <!-- ── NORMAL – Importación definitiva ───────────────────── -->
+
+  <record id="mx_cond_normal_imp_501" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Normal Imp – 501 Datos pedimento</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">importacion</field>
+    <field name="registro_codigo">501</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <record id="mx_cond_normal_imp_557" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Normal Imp – 557 Contribuciones por partida</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">importacion</field>
+    <field name="registro_codigo">557</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_normal_imp_800" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Normal Imp – 800 Facturas (encabezado)</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">importacion</field>
+    <field name="registro_codigo">800</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_normal_imp_801" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Normal Imp – 801 Partidas de factura</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">importacion</field>
+    <field name="registro_codigo">801</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_normal_imp_509" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Normal Imp – 509 Contribuciones globales (opcional)</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">importacion</field>
+    <field name="registro_codigo">509</field>
+    <field name="policy">optional</field>
+    <field name="min_occurs">0</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_normal_imp_514" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Normal Imp – 514 Documentos (opcional)</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">importacion</field>
+    <field name="registro_codigo">514</field>
+    <field name="policy">optional</field>
+    <field name="min_occurs">0</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <!-- ── NORMAL – Exportación definitiva ───────────────────── -->
+
+  <record id="mx_cond_normal_exp_501" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Normal Exp – 501 Datos pedimento</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">exportacion</field>
+    <field name="registro_codigo">501</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <record id="mx_cond_normal_exp_800" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Normal Exp – 800 Facturas</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">exportacion</field>
+    <field name="registro_codigo">800</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_normal_exp_801" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Normal Exp – 801 Partidas de factura</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">exportacion</field>
+    <field name="registro_codigo">801</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <!-- ── NORMAL – Temporal (IMMEX / depósito fiscal) ─────── -->
+
+  <record id="mx_cond_temporal_imp_501" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Temporal Imp – 501 Datos pedimento</field>
+    <field name="priority">450</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">importacion</field>
+    <field name="regimen">temporal</field>
+    <field name="registro_codigo">501</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <record id="mx_cond_temporal_imp_507" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Temporal Imp – 507 Identificadores (opcional)</field>
+    <field name="priority">450</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">importacion</field>
+    <field name="regimen">temporal</field>
+    <field name="registro_codigo">507</field>
+    <field name="policy">optional</field>
+    <field name="min_occurs">0</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_temporal_imp_557" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Temporal Imp – 557 Contribuciones por partida</field>
+    <field name="priority">450</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">importacion</field>
+    <field name="regimen">temporal</field>
+    <field name="registro_codigo">557</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_temporal_imp_800" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Temporal Imp – 800 Facturas</field>
+    <field name="priority">450</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">importacion</field>
+    <field name="regimen">temporal</field>
+    <field name="registro_codigo">800</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_temporal_imp_801" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Temporal Imp – 801 Partidas de factura</field>
+    <field name="priority">450</field>
+    <field name="escenario_code">normal</field>
+    <field name="tipo_operacion">importacion</field>
+    <field name="regimen">temporal</field>
+    <field name="registro_codigo">801</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <!-- ── TRÁNSITO ───────────────────────────────────────────── -->
+
+  <record id="mx_cond_transito_501" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Tránsito – 501 Datos pedimento</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">transito</field>
+    <field name="registro_codigo">501</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <record id="mx_cond_transito_800" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Tránsito – 800 Facturas</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">transito</field>
+    <field name="registro_codigo">800</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_transito_801" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Tránsito – 801 Partidas de factura</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">transito</field>
+    <field name="registro_codigo">801</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_transito_502_opt" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Tránsito – 502 Transportes (opcional)</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">transito</field>
+    <field name="registro_codigo">502</field>
+    <field name="policy">optional</field>
+    <field name="min_occurs">0</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <!-- ── ELIMINACIÓN / DESISTIMIENTO ────────────────────────── -->
+
+  <record id="mx_cond_edy_557_forbidden" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Eliminación/Desist – 557 prohibido</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">eliminacion_desistimiento</field>
+    <field name="registro_codigo">557</field>
+    <field name="policy">forbidden</field>
+  </record>
+
+  <record id="mx_cond_edy_509_forbidden" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Eliminación/Desist – 509 prohibido</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">eliminacion_desistimiento</field>
+    <field name="registro_codigo">509</field>
+    <field name="policy">forbidden</field>
+  </record>
+
+  <record id="mx_cond_edy_510_forbidden" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Eliminación/Desist – 510 prohibido</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">eliminacion_desistimiento</field>
+    <field name="registro_codigo">510</field>
+    <field name="policy">forbidden</field>
+  </record>
+
+  <!-- ── COMPLEMENTARIO ─────────────────────────────────────── -->
+  <!-- Estructura VOCE v9.0: 500→301→302→506→507→508→509→510→511→512→513→514→351→352→355→358→800→801 -->
+  <!-- NOTA: 501 NO aparece en la estructura complementario. 557 tampoco (no hay partidas). -->
+
+  <record id="mx_cond_comp_301" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Complementario – 301 Datos Generales CT</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">complementario</field>
+    <field name="registro_codigo">301</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <record id="mx_cond_comp_302" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Complementario – 302 Prueba Suficiente (opcional)</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">complementario</field>
+    <field name="registro_codigo">302</field>
+    <field name="policy">optional</field>
+    <field name="min_occurs">0</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_comp_510" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Complementario – 510 Contribuciones pedimento</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">complementario</field>
+    <field name="registro_codigo">510</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_comp_557_forbidden" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Complementario – 557 prohibido (no hay partidas)</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">complementario</field>
+    <field name="registro_codigo">557</field>
+    <field name="policy">forbidden</field>
+  </record>
+
+  <record id="mx_cond_comp_501_forbidden" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Complementario – 501 prohibido (no aplica en CT)</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">complementario</field>
+    <field name="registro_codigo">501</field>
+    <field name="policy">forbidden</field>
+  </record>
+
+  <record id="mx_cond_comp_800" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Complementario – 800 Firma Electrónica</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">complementario</field>
+    <field name="registro_codigo">800</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <record id="mx_cond_comp_801" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Complementario – 801 Fin de Archivo</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">complementario</field>
+    <field name="registro_codigo">801</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <!-- ── RECTIFICACIÓN ──────────────────────────────────────── -->
+
+  <record id="mx_cond_rect_501" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Rectificación – 501 Datos pedimento</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">rectificacion</field>
+    <field name="registro_codigo">501</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <record id="mx_cond_rect_701" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Rectificación – 701 Encabezado rect.</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">rectificacion</field>
+    <field name="registro_codigo">701</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <record id="mx_cond_rect_800" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Rectificación – 800 Facturas</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">rectificacion</field>
+    <field name="registro_codigo">800</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_rect_801" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Rectificación – 801 Partidas de factura</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">rectificacion</field>
+    <field name="registro_codigo">801</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <!-- ── DESPACHO ANTICIPADO ────────────────────────────────── -->
+  <!-- Estructura VOCE v9.0: SOLO 500→512→801 (muy reducido, se confirma con Mov 8) -->
+  <!-- 501 y 800 NO están en la estructura oficial de Despacho Anticipado -->
+
+  <record id="mx_cond_da_501_forbidden" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Despacho anticipado – 501 prohibido</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">despacho_anticipado</field>
+    <field name="registro_codigo">501</field>
+    <field name="policy">forbidden</field>
+  </record>
+
+  <record id="mx_cond_da_557_forbidden" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Despacho anticipado – 557 prohibido</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">despacho_anticipado</field>
+    <field name="registro_codigo">557</field>
+    <field name="policy">forbidden</field>
+  </record>
+
+  <record id="mx_cond_da_800_forbidden" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Despacho anticipado – 800 prohibido</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">despacho_anticipado</field>
+    <field name="registro_codigo">800</field>
+    <field name="policy">forbidden</field>
+  </record>
+
+  <record id="mx_cond_da_512" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Despacho anticipado – 512 Descargos (opcional)</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">despacho_anticipado</field>
+    <field name="registro_codigo">512</field>
+    <field name="policy">optional</field>
+    <field name="min_occurs">0</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_da_801" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Despacho anticipado – 801 Fin de Archivo</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">despacho_anticipado</field>
+    <field name="registro_codigo">801</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <!-- ── GLOBAL COMPLEMENTARIO ─────────────────────────────── -->
+  <!-- Estructura VOCE v9.0: 500→501→506→507→510→511→513→514→512→551→557→800→801 -->
+
+  <record id="mx_cond_gc_501" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Global Complementario – 501 Datos pedimento</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">global_complementario</field>
+    <field name="registro_codigo">501</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <record id="mx_cond_gc_510" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Global Complementario – 510 Contribuciones pedimento</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">global_complementario</field>
+    <field name="registro_codigo">510</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_gc_557" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Global Complementario – 557 Contribuciones por partida</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">global_complementario</field>
+    <field name="registro_codigo">557</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">0</field>
+  </record>
+
+  <record id="mx_cond_gc_800" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Global Complementario – 800 Firma Electrónica</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">global_complementario</field>
+    <field name="registro_codigo">800</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <record id="mx_cond_gc_801" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Global Complementario – 801 Fin de Archivo</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">global_complementario</field>
+    <field name="registro_codigo">801</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
+  <!-- ── CONFIRMACIÓN DE PAGO ───────────────────────────────── -->
+  <!-- Estructura VOCE v9.0: SOLO 500→801 -->
+  <!-- Movimiento 8: confirma el pago de un Despacho Anticipado previo -->
+
+  <record id="mx_cond_cp_501_forbidden" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Confirmación pago – 501 prohibido</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">confirmacion_pago</field>
+    <field name="registro_codigo">501</field>
+    <field name="policy">forbidden</field>
+  </record>
+
+  <record id="mx_cond_cp_557_forbidden" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Confirmación pago – 557 prohibido</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">confirmacion_pago</field>
+    <field name="registro_codigo">557</field>
+    <field name="policy">forbidden</field>
+  </record>
+
+  <record id="mx_cond_cp_801" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Confirmación pago – 801 Fin de Archivo</field>
+    <field name="priority">400</field>
+    <field name="escenario_code">confirmacion_pago</field>
+    <field name="registro_codigo">801</field>
+    <field name="policy">required</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+
 </odoo>

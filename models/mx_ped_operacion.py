@@ -857,10 +857,18 @@ class MxPedOperacion(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
-        trigger_fields = {"fecha_operacion", "tipo_operacion", "regimen", "clave_pedimento_id", "tipo_movimiento"}
+        trigger_fields = {"fecha_operacion", "tipo_operacion", "regimen", "clave_pedimento_id", "tipo_movimiento", "tipo_movimiento_id", "es_rectificacion"}
         refresh_fields = {
             "layout_id",
             "lead_id",
+            # Cambios en la clasificación del pedimento regeneran todos los registros
+            # para que el layout y las condition rules del rulepack apliquen correctamente.
+            "tipo_movimiento",
+            "tipo_movimiento_id",
+            "tipo_operacion",
+            "regimen",
+            "clave_pedimento_id",
+            "es_rectificacion",
             "incoterm",
             "send_505_contingency",
             "aduana_seccion_despacho_id",
@@ -932,9 +940,13 @@ class MxPedOperacion(models.Model):
             "semaforo": lead.x_semaforo or False,
             "observaciones": lead.x_incidente_text or False,
             "avc_transportista_id": lead.x_transportista_id or False,
+            # Rectificación: datos del pedimento original
+            "es_rectificacion": lead.x_es_rectificacion or False,
+            "rect_pedimento_original": lead.x_rect_pedimento_original or False,
+            "rect_fecha_pago_original": lead.x_rect_fecha_pago_original or False,
         }
         for field_name, value in defaults.items():
-            if not self[field_name]:
+            if field_name in self._fields and not self[field_name]:
                 self[field_name] = value
 
     @api.onchange("aduana_seccion_despacho_id")
