@@ -2332,7 +2332,7 @@
       <field name="layout_id" ref="mx_ped_layout_voce_v9"/>
       <field name="codigo">353</field>
       <field name="nombre">Determinacion y/o pago T-MEC/Decision/TLCAELC</field>
-      <field name="orden">7.5</field>
+      <field name="orden">8</field>
     </record>
     <record id="mx_layout_campo_353_1" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_353"/>
@@ -2393,7 +2393,7 @@
       <field name="layout_id" ref="mx_ped_layout_voce_v9"/>
       <field name="codigo">355</field>
       <field name="nombre">Pago de Contribuciones T-MEC por Partida</field>
-      <field name="orden">8</field>
+      <field name="orden">9</field>
     </record>
     <record id="mx_layout_campo_355_1" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_355"/>
@@ -2470,7 +2470,7 @@
       <field name="layout_id" ref="mx_ped_layout_voce_v9"/>
       <field name="codigo">358</field>
       <field name="nombre">Observaciones por Partida Complementario</field>
-      <field name="orden">9</field>
+      <field name="orden">10</field>
     </record>
     <record id="mx_layout_campo_358_1" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_358"/>
