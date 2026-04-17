@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
+<odoo>
+  <data noupdate="1">
   <record id="mx_ped_rulepack_default_2026" model="mx.ped.rulepack">
     <field name="name">Rulepack SAT 2026</field>
     <field name="code">SAT_2026_BASE</field>
@@ -754,12 +755,7 @@
     <field name="min_occurs">1</field>
     <field name="max_occurs">1</field>
   </record>
-
-
-
-
-
-
+  </data>
 
   <!-- ============================================================
        FIELD RULES - Campos obligatorios por registro (Anexo 22)
