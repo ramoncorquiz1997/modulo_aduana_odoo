@@ -264,6 +264,13 @@ class CrmLead(models.Model):
         help="Clave Ap?ndice 3 Anexo 22 para entrada/salida a territorio nacional.",
     )
     x_origen_destino_mercancia = fields.Char(string="Origen/Destino mercancía (cve)")
+    x_origen_destino_id = fields.Many2one(
+        "aduana.catalogo.pais",
+        string="Origen/Destino mercancía",
+        domain="[('active','=',True)]",
+        help="Selecciona el país de destino (importación) u origen (exportación) según Apéndice 15 Anexo 22.",
+        ondelete="restrict",
+    )
 
     x_medio_transporte_salida_id = fields.Many2one(
         "aduana.catalogo.medio_transporte",

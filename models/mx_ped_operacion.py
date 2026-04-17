@@ -4990,6 +4990,14 @@ class MxPedOperacion(models.Model):
         if source_norm in ("tipomovimiento", "xtipomovimiento"):
             return self._get_tipo_movimiento_effective() or ""
 
+        # Origen/destino: usa Many2one al catálogo de países → devuelve saai_m3 (2 dígitos)
+        if source_norm in ("origendestino", "xorigendestino", "xorigendestinomercancia"):
+            pais = getattr(lead, "x_origen_destino_id", False) if lead else False
+            if pais:
+                return (pais.saai_m3 or "").strip()
+            # fallback al campo Char anterior para registros ya existentes
+            return (getattr(lead, "x_origen_destino_mercancia", "") or "").strip()
+
         if source_model == "operacion":
             return self._record_value_for_field(self, source)
         if source in {"total_packages_line", "total_gross_weight", "total_net_weight"}:

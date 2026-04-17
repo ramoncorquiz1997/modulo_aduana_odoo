@@ -127,7 +127,7 @@
                 <field name="x_medio_transporte_salida_id"/>
                 <field name="x_medio_transporte_arribo_id"/>
                 <field name="x_medio_transporte_entrada_salida_id"/>
-                <field name="x_origen_destino_mercancia"/>
+                <field name="x_origen_destino_id"/>
                 <field name="x_pais_origen_id"/>
                 <field name="x_pais_destino_id"/>
                 <field name="x_lugar_carga"/>
