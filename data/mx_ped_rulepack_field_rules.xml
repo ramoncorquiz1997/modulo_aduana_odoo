@@ -1,1921 +1,1919 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo>
-  <data noupdate="0">
+<odoo noupdate="0">
 
-    <!-- ============================================================
-         FIELD RULES - Campos obligatorios por registro (Anexo 22)
-         noupdate=0: siempre se actualizan desde este XML.
-         ============================================================ -->
+  <!-- ============================================================
+       FIELD RULES - Campos obligatorios por registro (Anexo 22)
+       noupdate=0: siempre se actualizan desde este XML.
+       ============================================================ -->
 
-    <!-- Borrar y recrear todas las field rules para forzar actualizacion -->
-    <delete id="mx_field_rule_500_tipo_movimiento"/>
-    <delete id="mx_field_rule_500_patente"/>
-    <delete id="mx_field_rule_500_aduana_seccion_despacho"/>
-    <delete id="mx_field_rule_501_patente"/>
-    <delete id="mx_field_rule_601_patente"/>
-    <delete id="mx_field_rule_301_patente"/>
-    <delete id="mx_field_rule_515_patente"/>
-    <delete id="mx_field_rule_701_patente"/>
-    <delete id="mx_field_rule_501_aduana_seccion_despacho"/>
-    <delete id="mx_field_rule_601_aduana_seccion_despacho"/>
-    <delete id="mx_field_rule_515_aduana_seccion_despacho"/>
-    <delete id="mx_field_rule_501_tipo_operacion"/>
-    <delete id="mx_field_rule_501_clave_pedimento"/>
-    <delete id="mx_field_rule_501_aduana_seccion_entrada_salida"/>
-    <delete id="mx_field_rule_501_rfc_importador_exportador"/>
-    <delete id="mx_field_rule_501_curp_agente"/>
-    <delete id="mx_field_rule_501_tipo_cambio"/>
-    <delete id="mx_field_rule_501_medio_transporte_entrada_salida"/>
-    <delete id="mx_field_rule_501_origen_destino"/>
-    <delete id="mx_field_rule_501_nombre_importador_exportador"/>
-    <delete id="mx_field_rule_501_num_int_importador_exportador"/>
-    <delete id="mx_field_rule_501_num_ext_importador_exportador"/>
-    <delete id="mx_field_rule_501_cp_importador_exportador"/>
-    <delete id="mx_field_rule_502_nombre_transportista"/>
-    <delete id="mx_field_rule_502_pais_transporte"/>
-    <delete id="mx_field_rule_502_identificador_transporte"/>
-    <delete id="mx_field_rule_503_identificador_guia"/>
-    <delete id="mx_field_rule_504_numero_contenedor"/>
-    <delete id="mx_field_rule_504_tipo_contenedor"/>
-    <delete id="mx_field_rule_505_folio"/>
-    <delete id="mx_field_rule_506_tipo_fecha"/>
-    <delete id="mx_field_rule_506_fecha"/>
-    <delete id="mx_field_rule_507_clave_identificador"/>
-    <delete id="mx_field_rule_509_clave_contribucion"/>
-    <delete id="mx_field_rule_509_tasa"/>
-    <delete id="mx_field_rule_509_tipo_tasa"/>
-    <delete id="mx_field_rule_510_clave_contribucion"/>
-    <delete id="mx_field_rule_510_forma_pago"/>
-    <delete id="mx_field_rule_510_importe"/>
-    <delete id="mx_field_rule_511_secuencia"/>
-    <delete id="mx_field_rule_511_observaciones"/>
-    <delete id="mx_field_rule_512_patente_original"/>
-    <delete id="mx_field_rule_512_pedimento_original"/>
-    <delete id="mx_field_rule_512_aduana_seccion_original"/>
-    <delete id="mx_field_rule_512_clave_documento_original"/>
-    <delete id="mx_field_rule_512_fecha_operacion_original"/>
-    <delete id="mx_field_rule_513_patente_original"/>
-    <delete id="mx_field_rule_513_pedimento_original"/>
-    <delete id="mx_field_rule_513_aduana_seccion_original"/>
-    <delete id="mx_field_rule_513_fecha_pago_original"/>
-    <delete id="mx_field_rule_513_contribucion_compensada"/>
-    <delete id="mx_field_rule_513_importe_compensado"/>
-    <delete id="mx_field_rule_514_forma_pago"/>
-    <delete id="mx_field_rule_514_dependencia_emisora"/>
-    <delete id="mx_field_rule_514_folio"/>
-    <delete id="mx_field_rule_514_importe_total_pagar"/>
-    <delete id="mx_field_rule_516_identificador_transporte"/>
-    <delete id="mx_field_rule_516_numero_candado"/>
-    <delete id="mx_field_rule_520_nombre_destinatario"/>
-    <delete id="mx_field_rule_520_cp_destinatario"/>
-    <delete id="mx_field_rule_520_municipio_destinatario"/>
-    <delete id="mx_field_rule_551_descripcion"/>
-    <delete id="mx_field_rule_551_valor_aduana"/>
-    <delete id="mx_field_rule_551_valor_comercial"/>
-    <delete id="mx_field_rule_551_cantidad_umc"/>
-    <delete id="mx_field_rule_551_umc"/>
-    <delete id="mx_field_rule_551_cantidad_umt"/>
-    <delete id="mx_field_rule_551_umt"/>
-    <delete id="mx_field_rule_553_clave_permiso"/>
-    <delete id="mx_field_rule_554_clave_identificador"/>
-    <delete id="mx_field_rule_557_clave_contribucion"/>
-    <delete id="mx_field_rule_557_forma_pago"/>
-    <delete id="mx_field_rule_557_importe"/>
-    <delete id="mx_field_rule_558_observaciones_partida"/>
-    <delete id="mx_field_rule_601_clave_pedimento"/>
-    <delete id="mx_field_rule_601_tipo_operacion"/>
-    <delete id="mx_field_rule_601_rfc_importador_exportador"/>
-    <delete id="mx_field_rule_601_curp_agente"/>
-    <delete id="mx_field_rule_601_origen_destino"/>
-    <delete id="mx_field_rule_301_aduana_despacho"/>
-    <delete id="mx_field_rule_301_clave_pedimento"/>
-    <delete id="mx_field_rule_301_tipo_cambio"/>
-    <delete id="mx_field_rule_301_rfc_exportador"/>
-    <delete id="mx_field_rule_301_nombre_exportador"/>
-    <delete id="mx_field_rule_301_curp_agente"/>
-    <delete id="mx_field_rule_301_rfc_agente_cfdi"/>
-    <delete id="mx_field_rule_302_pedimento_eua_can"/>
-    <delete id="mx_field_rule_302_prueba_suficiente"/>
-    <delete id="mx_field_rule_302_fecha_documento"/>
-    <delete id="mx_field_rule_351_subdivision"/>
-    <delete id="mx_field_rule_351_valor_mercancia_no_originaria"/>
-    <delete id="mx_field_rule_351_monto_igi_no_originaria"/>
-    <delete id="mx_field_rule_351_impuesto_total_importacion"/>
-    <delete id="mx_field_rule_351_tipo_moneda"/>
-    <delete id="mx_field_rule_351_monto_exento"/>
-    <delete id="mx_field_rule_352_unidad_medida_tarifa_eua_can"/>
-    <delete id="mx_field_rule_352_cantidad_umt_eua_can"/>
-    <delete id="mx_field_rule_355_clave_contribucion"/>
-    <delete id="mx_field_rule_355_importe_pago"/>
-    <delete id="mx_field_rule_358_observaciones"/>
-    <delete id="mx_field_rule_515_curp_agente"/>
-    <delete id="mx_field_rule_515_clave_pedimento"/>
-    <delete id="mx_field_rule_515_aduana_seccion_entrada"/>
-    <delete id="mx_field_rule_515_rfc_empresa"/>
-    <delete id="mx_field_rule_515_tipo_cambio"/>
-    <delete id="mx_field_rule_555_institucion_emisora"/>
-    <delete id="mx_field_rule_555_numero_cuenta"/>
-    <delete id="mx_field_rule_555_folio_constancia"/>
-    <delete id="mx_field_rule_555_fecha_constancia"/>
-    <delete id="mx_field_rule_555_tipo_garantia"/>
-    <delete id="mx_field_rule_555_importe_total_garantia"/>
-    <delete id="mx_field_rule_555_cantidad_unidades"/>
-    <delete id="mx_field_rule_556_clave_contribucion"/>
-    <delete id="mx_field_rule_556_tasa"/>
-    <delete id="mx_field_rule_556_tipo_tasa"/>
-    <delete id="mx_field_rule_560_importe_precio"/>
-    <delete id="mx_field_rule_560_valor_usd"/>
-    <delete id="mx_field_rule_560_cantidad_umc"/>
-    <delete id="mx_field_rule_560_umc"/>
-    <delete id="mx_field_rule_560_cantidad_umt"/>
-    <delete id="mx_field_rule_560_umt"/>
-    <delete id="mx_field_rule_560_pais_origen"/>
-    <delete id="mx_field_rule_560_pais_vendedor"/>
-    <delete id="mx_field_rule_701_aduana_despacho"/>
-    <delete id="mx_field_rule_701_clave_pedimento_rectificar"/>
-    <delete id="mx_field_rule_701_fecha_pago"/>
-    <delete id="mx_field_rule_701_pedimento_original"/>
-    <delete id="mx_field_rule_701_patente_original"/>
-    <delete id="mx_field_rule_701_aduana_original"/>
-    <delete id="mx_field_rule_701_clave_pedimento_original"/>
-    <delete id="mx_field_rule_701_fecha_operacion_original"/>
-    <delete id="mx_field_rule_702_clave_contribucion"/>
-    <delete id="mx_field_rule_702_importe_pago"/>
+  <!-- Borrar y recrear todas las field rules para forzar actualizacion -->
+  <delete id="mx_field_rule_500_tipo_movimiento"/>
+  <delete id="mx_field_rule_500_patente"/>
+  <delete id="mx_field_rule_500_aduana_seccion_despacho"/>
+  <delete id="mx_field_rule_501_patente"/>
+  <delete id="mx_field_rule_601_patente"/>
+  <delete id="mx_field_rule_301_patente"/>
+  <delete id="mx_field_rule_515_patente"/>
+  <delete id="mx_field_rule_701_patente"/>
+  <delete id="mx_field_rule_501_aduana_seccion_despacho"/>
+  <delete id="mx_field_rule_601_aduana_seccion_despacho"/>
+  <delete id="mx_field_rule_515_aduana_seccion_despacho"/>
+  <delete id="mx_field_rule_501_tipo_operacion"/>
+  <delete id="mx_field_rule_501_clave_pedimento"/>
+  <delete id="mx_field_rule_501_aduana_seccion_entrada_salida"/>
+  <delete id="mx_field_rule_501_rfc_importador_exportador"/>
+  <delete id="mx_field_rule_501_curp_agente"/>
+  <delete id="mx_field_rule_501_tipo_cambio"/>
+  <delete id="mx_field_rule_501_medio_transporte_entrada_salida"/>
+  <delete id="mx_field_rule_501_origen_destino"/>
+  <delete id="mx_field_rule_501_nombre_importador_exportador"/>
+  <delete id="mx_field_rule_501_num_int_importador_exportador"/>
+  <delete id="mx_field_rule_501_num_ext_importador_exportador"/>
+  <delete id="mx_field_rule_501_cp_importador_exportador"/>
+  <delete id="mx_field_rule_502_nombre_transportista"/>
+  <delete id="mx_field_rule_502_pais_transporte"/>
+  <delete id="mx_field_rule_502_identificador_transporte"/>
+  <delete id="mx_field_rule_503_identificador_guia"/>
+  <delete id="mx_field_rule_504_numero_contenedor"/>
+  <delete id="mx_field_rule_504_tipo_contenedor"/>
+  <delete id="mx_field_rule_505_folio"/>
+  <delete id="mx_field_rule_506_tipo_fecha"/>
+  <delete id="mx_field_rule_506_fecha"/>
+  <delete id="mx_field_rule_507_clave_identificador"/>
+  <delete id="mx_field_rule_509_clave_contribucion"/>
+  <delete id="mx_field_rule_509_tasa"/>
+  <delete id="mx_field_rule_509_tipo_tasa"/>
+  <delete id="mx_field_rule_510_clave_contribucion"/>
+  <delete id="mx_field_rule_510_forma_pago"/>
+  <delete id="mx_field_rule_510_importe"/>
+  <delete id="mx_field_rule_511_secuencia"/>
+  <delete id="mx_field_rule_511_observaciones"/>
+  <delete id="mx_field_rule_512_patente_original"/>
+  <delete id="mx_field_rule_512_pedimento_original"/>
+  <delete id="mx_field_rule_512_aduana_seccion_original"/>
+  <delete id="mx_field_rule_512_clave_documento_original"/>
+  <delete id="mx_field_rule_512_fecha_operacion_original"/>
+  <delete id="mx_field_rule_513_patente_original"/>
+  <delete id="mx_field_rule_513_pedimento_original"/>
+  <delete id="mx_field_rule_513_aduana_seccion_original"/>
+  <delete id="mx_field_rule_513_fecha_pago_original"/>
+  <delete id="mx_field_rule_513_contribucion_compensada"/>
+  <delete id="mx_field_rule_513_importe_compensado"/>
+  <delete id="mx_field_rule_514_forma_pago"/>
+  <delete id="mx_field_rule_514_dependencia_emisora"/>
+  <delete id="mx_field_rule_514_folio"/>
+  <delete id="mx_field_rule_514_importe_total_pagar"/>
+  <delete id="mx_field_rule_516_identificador_transporte"/>
+  <delete id="mx_field_rule_516_numero_candado"/>
+  <delete id="mx_field_rule_520_nombre_destinatario"/>
+  <delete id="mx_field_rule_520_cp_destinatario"/>
+  <delete id="mx_field_rule_520_municipio_destinatario"/>
+  <delete id="mx_field_rule_551_descripcion"/>
+  <delete id="mx_field_rule_551_valor_aduana"/>
+  <delete id="mx_field_rule_551_valor_comercial"/>
+  <delete id="mx_field_rule_551_cantidad_umc"/>
+  <delete id="mx_field_rule_551_umc"/>
+  <delete id="mx_field_rule_551_cantidad_umt"/>
+  <delete id="mx_field_rule_551_umt"/>
+  <delete id="mx_field_rule_553_clave_permiso"/>
+  <delete id="mx_field_rule_554_clave_identificador"/>
+  <delete id="mx_field_rule_557_clave_contribucion"/>
+  <delete id="mx_field_rule_557_forma_pago"/>
+  <delete id="mx_field_rule_557_importe"/>
+  <delete id="mx_field_rule_558_observaciones_partida"/>
+  <delete id="mx_field_rule_601_clave_pedimento"/>
+  <delete id="mx_field_rule_601_tipo_operacion"/>
+  <delete id="mx_field_rule_601_rfc_importador_exportador"/>
+  <delete id="mx_field_rule_601_curp_agente"/>
+  <delete id="mx_field_rule_601_origen_destino"/>
+  <delete id="mx_field_rule_301_aduana_despacho"/>
+  <delete id="mx_field_rule_301_clave_pedimento"/>
+  <delete id="mx_field_rule_301_tipo_cambio"/>
+  <delete id="mx_field_rule_301_rfc_exportador"/>
+  <delete id="mx_field_rule_301_nombre_exportador"/>
+  <delete id="mx_field_rule_301_curp_agente"/>
+  <delete id="mx_field_rule_301_rfc_agente_cfdi"/>
+  <delete id="mx_field_rule_302_pedimento_eua_can"/>
+  <delete id="mx_field_rule_302_prueba_suficiente"/>
+  <delete id="mx_field_rule_302_fecha_documento"/>
+  <delete id="mx_field_rule_351_subdivision"/>
+  <delete id="mx_field_rule_351_valor_mercancia_no_originaria"/>
+  <delete id="mx_field_rule_351_monto_igi_no_originaria"/>
+  <delete id="mx_field_rule_351_impuesto_total_importacion"/>
+  <delete id="mx_field_rule_351_tipo_moneda"/>
+  <delete id="mx_field_rule_351_monto_exento"/>
+  <delete id="mx_field_rule_352_unidad_medida_tarifa_eua_can"/>
+  <delete id="mx_field_rule_352_cantidad_umt_eua_can"/>
+  <delete id="mx_field_rule_355_clave_contribucion"/>
+  <delete id="mx_field_rule_355_importe_pago"/>
+  <delete id="mx_field_rule_358_observaciones"/>
+  <delete id="mx_field_rule_515_curp_agente"/>
+  <delete id="mx_field_rule_515_clave_pedimento"/>
+  <delete id="mx_field_rule_515_aduana_seccion_entrada"/>
+  <delete id="mx_field_rule_515_rfc_empresa"/>
+  <delete id="mx_field_rule_515_tipo_cambio"/>
+  <delete id="mx_field_rule_555_institucion_emisora"/>
+  <delete id="mx_field_rule_555_numero_cuenta"/>
+  <delete id="mx_field_rule_555_folio_constancia"/>
+  <delete id="mx_field_rule_555_fecha_constancia"/>
+  <delete id="mx_field_rule_555_tipo_garantia"/>
+  <delete id="mx_field_rule_555_importe_total_garantia"/>
+  <delete id="mx_field_rule_555_cantidad_unidades"/>
+  <delete id="mx_field_rule_556_clave_contribucion"/>
+  <delete id="mx_field_rule_556_tasa"/>
+  <delete id="mx_field_rule_556_tipo_tasa"/>
+  <delete id="mx_field_rule_560_importe_precio"/>
+  <delete id="mx_field_rule_560_valor_usd"/>
+  <delete id="mx_field_rule_560_cantidad_umc"/>
+  <delete id="mx_field_rule_560_umc"/>
+  <delete id="mx_field_rule_560_cantidad_umt"/>
+  <delete id="mx_field_rule_560_umt"/>
+  <delete id="mx_field_rule_560_pais_origen"/>
+  <delete id="mx_field_rule_560_pais_vendedor"/>
+  <delete id="mx_field_rule_701_aduana_despacho"/>
+  <delete id="mx_field_rule_701_clave_pedimento_rectificar"/>
+  <delete id="mx_field_rule_701_fecha_pago"/>
+  <delete id="mx_field_rule_701_pedimento_original"/>
+  <delete id="mx_field_rule_701_patente_original"/>
+  <delete id="mx_field_rule_701_aduana_original"/>
+  <delete id="mx_field_rule_701_clave_pedimento_original"/>
+  <delete id="mx_field_rule_701_fecha_operacion_original"/>
+  <delete id="mx_field_rule_702_clave_contribucion"/>
+  <delete id="mx_field_rule_702_importe_pago"/>
 
 
-    <!-- Registro 501 -->
-    <record id="mx_field_rule_501_tipo_operacion" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - Tipo de operacion (importacion/exportacion)</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_501_clave_pedimento" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - Clave de pedimento</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_501_aduana_seccion_entrada_salida" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - Aduana y seccion de entrada o salida</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_501_rfc_importador_exportador" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - RFC del importador/exportador</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_9"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_501_curp_agente" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - CURP del agente aduanal</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_10"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_501_tipo_cambio" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - Tipo de cambio</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_11"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_501_medio_transporte_entrada_salida" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - Medio de transporte de entrada/salida</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_20"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_501_origen_destino" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - Pais de origen o destino</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_21"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_501_nombre_importador_exportador" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - Nombre del importador/exportador</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_22"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_501_num_int_importador_exportador" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - Num. interior domicilio importador/exportador</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_24"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_501_num_ext_importador_exportador" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - Num. exterior domicilio importador/exportador</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_25"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_501_cp_importador_exportador" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 501 - Codigo postal del importador/exportador</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
-      <field name="registro_codigo">501</field>
-      <field name="field_id" ref="mx_layout_campo_501_26"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 501 -->
+  <record id="mx_field_rule_501_tipo_operacion" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - Tipo de operacion (importacion/exportacion)</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_501_clave_pedimento" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - Clave de pedimento</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_501_aduana_seccion_entrada_salida" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - Aduana y seccion de entrada o salida</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_501_rfc_importador_exportador" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - RFC del importador/exportador</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_9"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_501_curp_agente" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - CURP del agente aduanal</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_10"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_501_tipo_cambio" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - Tipo de cambio</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_11"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_501_medio_transporte_entrada_salida" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - Medio de transporte de entrada/salida</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_20"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_501_origen_destino" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - Pais de origen o destino</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_21"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_501_nombre_importador_exportador" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - Nombre del importador/exportador</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_22"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_501_num_int_importador_exportador" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - Num. interior domicilio importador/exportador</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_24"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_501_num_ext_importador_exportador" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - Num. exterior domicilio importador/exportador</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_25"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_501_cp_importador_exportador" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 501 - Codigo postal del importador/exportador</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_501"/>
+    <field name="registro_codigo">501</field>
+    <field name="field_id" ref="mx_layout_campo_501_26"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 502 -->
-    <record id="mx_field_rule_502_nombre_transportista" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 502 - Nombre del transportista</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_502"/>
-      <field name="registro_codigo">502</field>
-      <field name="field_id" ref="mx_layout_campo_502_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_502_pais_transporte" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 502 - Pais del transportista</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_502"/>
-      <field name="registro_codigo">502</field>
-      <field name="field_id" ref="mx_layout_campo_502_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_502_identificador_transporte" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 502 - Identificador del medio de transporte</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_502"/>
-      <field name="registro_codigo">502</field>
-      <field name="field_id" ref="mx_layout_campo_502_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 502 -->
+  <record id="mx_field_rule_502_nombre_transportista" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 502 - Nombre del transportista</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_502"/>
+    <field name="registro_codigo">502</field>
+    <field name="field_id" ref="mx_layout_campo_502_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_502_pais_transporte" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 502 - Pais del transportista</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_502"/>
+    <field name="registro_codigo">502</field>
+    <field name="field_id" ref="mx_layout_campo_502_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_502_identificador_transporte" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 502 - Identificador del medio de transporte</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_502"/>
+    <field name="registro_codigo">502</field>
+    <field name="field_id" ref="mx_layout_campo_502_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 503 -->
-    <record id="mx_field_rule_503_identificador_guia" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 503 - Identificador de guia o manifiesto</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_503"/>
-      <field name="registro_codigo">503</field>
-      <field name="field_id" ref="mx_layout_campo_503_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 503 -->
+  <record id="mx_field_rule_503_identificador_guia" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 503 - Identificador de guia o manifiesto</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_503"/>
+    <field name="registro_codigo">503</field>
+    <field name="field_id" ref="mx_layout_campo_503_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 504 -->
-    <record id="mx_field_rule_504_numero_contenedor" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 504 - Numero del contenedor</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_504"/>
-      <field name="registro_codigo">504</field>
-      <field name="field_id" ref="mx_layout_campo_504_3"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_504_tipo_contenedor" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 504 - Tipo de contenedor</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_504"/>
-      <field name="registro_codigo">504</field>
-      <field name="field_id" ref="mx_layout_campo_504_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 504 -->
+  <record id="mx_field_rule_504_numero_contenedor" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 504 - Numero del contenedor</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_504"/>
+    <field name="registro_codigo">504</field>
+    <field name="field_id" ref="mx_layout_campo_504_3"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_504_tipo_contenedor" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 504 - Tipo de contenedor</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_504"/>
+    <field name="registro_codigo">504</field>
+    <field name="field_id" ref="mx_layout_campo_504_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 505 -->
-    <record id="mx_field_rule_505_folio" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 505 - Folio</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_505"/>
-      <field name="registro_codigo">505</field>
-      <field name="field_id" ref="mx_layout_campo_505_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 505 -->
+  <record id="mx_field_rule_505_folio" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 505 - Folio</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_505"/>
+    <field name="registro_codigo">505</field>
+    <field name="field_id" ref="mx_layout_campo_505_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 506 -->
-    <record id="mx_field_rule_506_tipo_fecha" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 506 - Tipo de fecha</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_506"/>
-      <field name="registro_codigo">506</field>
-      <field name="field_id" ref="mx_layout_campo_506_3"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_506_fecha" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 506 - Fecha</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_506"/>
-      <field name="registro_codigo">506</field>
-      <field name="field_id" ref="mx_layout_campo_506_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 506 -->
+  <record id="mx_field_rule_506_tipo_fecha" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 506 - Tipo de fecha</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_506"/>
+    <field name="registro_codigo">506</field>
+    <field name="field_id" ref="mx_layout_campo_506_3"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_506_fecha" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 506 - Fecha</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_506"/>
+    <field name="registro_codigo">506</field>
+    <field name="field_id" ref="mx_layout_campo_506_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 507 -->
-    <record id="mx_field_rule_507_clave_identificador" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 507 - Clave de identificador</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_507"/>
-      <field name="registro_codigo">507</field>
-      <field name="field_id" ref="mx_layout_campo_507_3"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 507 -->
+  <record id="mx_field_rule_507_clave_identificador" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 507 - Clave de identificador</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_507"/>
+    <field name="registro_codigo">507</field>
+    <field name="field_id" ref="mx_layout_campo_507_3"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 509 -->
-    <record id="mx_field_rule_509_clave_contribucion" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 509 - Clave de contribucion</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_509"/>
-      <field name="registro_codigo">509</field>
-      <field name="field_id" ref="mx_layout_campo_509_3"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_509_tasa" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 509 - Tasa</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_509"/>
-      <field name="registro_codigo">509</field>
-      <field name="field_id" ref="mx_layout_campo_509_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_509_tipo_tasa" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 509 - Tipo de tasa</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_509"/>
-      <field name="registro_codigo">509</field>
-      <field name="field_id" ref="mx_layout_campo_509_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 509 -->
+  <record id="mx_field_rule_509_clave_contribucion" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 509 - Clave de contribucion</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_509"/>
+    <field name="registro_codigo">509</field>
+    <field name="field_id" ref="mx_layout_campo_509_3"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_509_tasa" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 509 - Tasa</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_509"/>
+    <field name="registro_codigo">509</field>
+    <field name="field_id" ref="mx_layout_campo_509_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_509_tipo_tasa" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 509 - Tipo de tasa</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_509"/>
+    <field name="registro_codigo">509</field>
+    <field name="field_id" ref="mx_layout_campo_509_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 510 -->
-    <record id="mx_field_rule_510_clave_contribucion" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 510 - Clave de contribucion</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_510"/>
-      <field name="registro_codigo">510</field>
-      <field name="field_id" ref="mx_layout_campo_510_3"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_510_forma_pago" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 510 - Forma de pago</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_510"/>
-      <field name="registro_codigo">510</field>
-      <field name="field_id" ref="mx_layout_campo_510_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_510_importe" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 510 - Importe</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_510"/>
-      <field name="registro_codigo">510</field>
-      <field name="field_id" ref="mx_layout_campo_510_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 510 -->
+  <record id="mx_field_rule_510_clave_contribucion" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 510 - Clave de contribucion</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_510"/>
+    <field name="registro_codigo">510</field>
+    <field name="field_id" ref="mx_layout_campo_510_3"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_510_forma_pago" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 510 - Forma de pago</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_510"/>
+    <field name="registro_codigo">510</field>
+    <field name="field_id" ref="mx_layout_campo_510_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_510_importe" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 510 - Importe</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_510"/>
+    <field name="registro_codigo">510</field>
+    <field name="field_id" ref="mx_layout_campo_510_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 511 -->
-    <record id="mx_field_rule_511_secuencia" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 511 - Secuencia</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_511"/>
-      <field name="registro_codigo">511</field>
-      <field name="field_id" ref="mx_layout_campo_511_3"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_511_observaciones" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 511 - Observaciones</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_511"/>
-      <field name="registro_codigo">511</field>
-      <field name="field_id" ref="mx_layout_campo_511_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 511 -->
+  <record id="mx_field_rule_511_secuencia" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 511 - Secuencia</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_511"/>
+    <field name="registro_codigo">511</field>
+    <field name="field_id" ref="mx_layout_campo_511_3"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_511_observaciones" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 511 - Observaciones</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_511"/>
+    <field name="registro_codigo">511</field>
+    <field name="field_id" ref="mx_layout_campo_511_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 512 -->
-    <record id="mx_field_rule_512_patente_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 512 - Patente del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_512"/>
-      <field name="registro_codigo">512</field>
-      <field name="field_id" ref="mx_layout_campo_512_3"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_512_pedimento_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 512 - Numero del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_512"/>
-      <field name="registro_codigo">512</field>
-      <field name="field_id" ref="mx_layout_campo_512_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_512_aduana_seccion_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 512 - Aduana/seccion del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_512"/>
-      <field name="registro_codigo">512</field>
-      <field name="field_id" ref="mx_layout_campo_512_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_512_clave_documento_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 512 - Clave del documento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_512"/>
-      <field name="registro_codigo">512</field>
-      <field name="field_id" ref="mx_layout_campo_512_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_512_fecha_operacion_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 512 - Fecha de operacion del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_512"/>
-      <field name="registro_codigo">512</field>
-      <field name="field_id" ref="mx_layout_campo_512_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 512 -->
+  <record id="mx_field_rule_512_patente_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 512 - Patente del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_512"/>
+    <field name="registro_codigo">512</field>
+    <field name="field_id" ref="mx_layout_campo_512_3"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_512_pedimento_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 512 - Numero del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_512"/>
+    <field name="registro_codigo">512</field>
+    <field name="field_id" ref="mx_layout_campo_512_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_512_aduana_seccion_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 512 - Aduana/seccion del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_512"/>
+    <field name="registro_codigo">512</field>
+    <field name="field_id" ref="mx_layout_campo_512_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_512_clave_documento_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 512 - Clave del documento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_512"/>
+    <field name="registro_codigo">512</field>
+    <field name="field_id" ref="mx_layout_campo_512_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_512_fecha_operacion_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 512 - Fecha de operacion del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_512"/>
+    <field name="registro_codigo">512</field>
+    <field name="field_id" ref="mx_layout_campo_512_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 513 -->
-    <record id="mx_field_rule_513_patente_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 513 - Patente del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
-      <field name="registro_codigo">513</field>
-      <field name="field_id" ref="mx_layout_campo_513_3"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_513_pedimento_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 513 - Numero del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
-      <field name="registro_codigo">513</field>
-      <field name="field_id" ref="mx_layout_campo_513_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_513_aduana_seccion_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 513 - Aduana/seccion del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
-      <field name="registro_codigo">513</field>
-      <field name="field_id" ref="mx_layout_campo_513_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_513_fecha_pago_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 513 - Fecha de pago del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
-      <field name="registro_codigo">513</field>
-      <field name="field_id" ref="mx_layout_campo_513_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_513_contribucion_compensada" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 513 - Contribucion compensada</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
-      <field name="registro_codigo">513</field>
-      <field name="field_id" ref="mx_layout_campo_513_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_513_importe_compensado" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 513 - Importe compensado</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
-      <field name="registro_codigo">513</field>
-      <field name="field_id" ref="mx_layout_campo_513_8"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 513 -->
+  <record id="mx_field_rule_513_patente_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 513 - Patente del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
+    <field name="registro_codigo">513</field>
+    <field name="field_id" ref="mx_layout_campo_513_3"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_513_pedimento_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 513 - Numero del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
+    <field name="registro_codigo">513</field>
+    <field name="field_id" ref="mx_layout_campo_513_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_513_aduana_seccion_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 513 - Aduana/seccion del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
+    <field name="registro_codigo">513</field>
+    <field name="field_id" ref="mx_layout_campo_513_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_513_fecha_pago_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 513 - Fecha de pago del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
+    <field name="registro_codigo">513</field>
+    <field name="field_id" ref="mx_layout_campo_513_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_513_contribucion_compensada" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 513 - Contribucion compensada</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
+    <field name="registro_codigo">513</field>
+    <field name="field_id" ref="mx_layout_campo_513_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_513_importe_compensado" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 513 - Importe compensado</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_513"/>
+    <field name="registro_codigo">513</field>
+    <field name="field_id" ref="mx_layout_campo_513_8"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 514 -->
-    <record id="mx_field_rule_514_forma_pago" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 514 - Forma de pago</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_514"/>
-      <field name="registro_codigo">514</field>
-      <field name="field_id" ref="mx_layout_campo_514_3"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_514_dependencia_emisora" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 514 - Dependencia emisora del documento</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_514"/>
-      <field name="registro_codigo">514</field>
-      <field name="field_id" ref="mx_layout_campo_514_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_514_folio" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 514 - Folio</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_514"/>
-      <field name="registro_codigo">514</field>
-      <field name="field_id" ref="mx_layout_campo_514_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_514_importe_total_pagar" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 514 - Importe total a pagar</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_514"/>
-      <field name="registro_codigo">514</field>
-      <field name="field_id" ref="mx_layout_campo_514_9"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 514 -->
+  <record id="mx_field_rule_514_forma_pago" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 514 - Forma de pago</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_514"/>
+    <field name="registro_codigo">514</field>
+    <field name="field_id" ref="mx_layout_campo_514_3"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_514_dependencia_emisora" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 514 - Dependencia emisora del documento</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_514"/>
+    <field name="registro_codigo">514</field>
+    <field name="field_id" ref="mx_layout_campo_514_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_514_folio" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 514 - Folio</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_514"/>
+    <field name="registro_codigo">514</field>
+    <field name="field_id" ref="mx_layout_campo_514_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_514_importe_total_pagar" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 514 - Importe total a pagar</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_514"/>
+    <field name="registro_codigo">514</field>
+    <field name="field_id" ref="mx_layout_campo_514_9"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 516 -->
-    <record id="mx_field_rule_516_identificador_transporte" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 516 - Identificador del medio de transporte</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_516"/>
-      <field name="registro_codigo">516</field>
-      <field name="field_id" ref="mx_layout_campo_516_3"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_516_numero_candado" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 516 - Numero de candado</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_516"/>
-      <field name="registro_codigo">516</field>
-      <field name="field_id" ref="mx_layout_campo_516_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 516 -->
+  <record id="mx_field_rule_516_identificador_transporte" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 516 - Identificador del medio de transporte</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_516"/>
+    <field name="registro_codigo">516</field>
+    <field name="field_id" ref="mx_layout_campo_516_3"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_516_numero_candado" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 516 - Numero de candado</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_516"/>
+    <field name="registro_codigo">516</field>
+    <field name="field_id" ref="mx_layout_campo_516_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 520 -->
-    <record id="mx_field_rule_520_nombre_destinatario" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 520 - Nombre del destinatario</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_520"/>
-      <field name="registro_codigo">520</field>
-      <field name="field_id" ref="mx_layout_campo_520_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_520_cp_destinatario" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 520 - Codigo postal del destinatario</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_520"/>
-      <field name="registro_codigo">520</field>
-      <field name="field_id" ref="mx_layout_campo_520_8"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_520_municipio_destinatario" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 520 - Municipio del destinatario</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_520"/>
-      <field name="registro_codigo">520</field>
-      <field name="field_id" ref="mx_layout_campo_520_9"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 520 -->
+  <record id="mx_field_rule_520_nombre_destinatario" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 520 - Nombre del destinatario</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_520"/>
+    <field name="registro_codigo">520</field>
+    <field name="field_id" ref="mx_layout_campo_520_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_520_cp_destinatario" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 520 - Codigo postal del destinatario</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_520"/>
+    <field name="registro_codigo">520</field>
+    <field name="field_id" ref="mx_layout_campo_520_8"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_520_municipio_destinatario" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 520 - Municipio del destinatario</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_520"/>
+    <field name="registro_codigo">520</field>
+    <field name="field_id" ref="mx_layout_campo_520_9"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 551 -->
-    <record id="mx_field_rule_551_descripcion" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 551 - Descripcion de la mercancia</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
-      <field name="registro_codigo">551</field>
-      <field name="field_id" ref="mx_layout_campo_551_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_551_valor_aduana" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 551 - Valor en aduana (USD)</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
-      <field name="registro_codigo">551</field>
-      <field name="field_id" ref="mx_layout_campo_551_8"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_551_valor_comercial" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 551 - Valor comercial</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
-      <field name="registro_codigo">551</field>
-      <field name="field_id" ref="mx_layout_campo_551_9"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_551_cantidad_umc" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 551 - Cantidad en unidad de medida comercial</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
-      <field name="registro_codigo">551</field>
-      <field name="field_id" ref="mx_layout_campo_551_11"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_551_umc" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 551 - Unidad de medida comercial</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
-      <field name="registro_codigo">551</field>
-      <field name="field_id" ref="mx_layout_campo_551_12"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_551_cantidad_umt" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 551 - Cantidad en unidad de medida de tarifa</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
-      <field name="registro_codigo">551</field>
-      <field name="field_id" ref="mx_layout_campo_551_13"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_551_umt" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 551 - Unidad de medida de tarifa</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
-      <field name="registro_codigo">551</field>
-      <field name="field_id" ref="mx_layout_campo_551_14"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 551 -->
+  <record id="mx_field_rule_551_descripcion" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 551 - Descripcion de la mercancia</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
+    <field name="registro_codigo">551</field>
+    <field name="field_id" ref="mx_layout_campo_551_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_551_valor_aduana" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 551 - Valor en aduana (USD)</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
+    <field name="registro_codigo">551</field>
+    <field name="field_id" ref="mx_layout_campo_551_8"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_551_valor_comercial" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 551 - Valor comercial</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
+    <field name="registro_codigo">551</field>
+    <field name="field_id" ref="mx_layout_campo_551_9"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_551_cantidad_umc" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 551 - Cantidad en unidad de medida comercial</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
+    <field name="registro_codigo">551</field>
+    <field name="field_id" ref="mx_layout_campo_551_11"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_551_umc" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 551 - Unidad de medida comercial</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
+    <field name="registro_codigo">551</field>
+    <field name="field_id" ref="mx_layout_campo_551_12"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_551_cantidad_umt" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 551 - Cantidad en unidad de medida de tarifa</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
+    <field name="registro_codigo">551</field>
+    <field name="field_id" ref="mx_layout_campo_551_13"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_551_umt" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 551 - Unidad de medida de tarifa</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_551"/>
+    <field name="registro_codigo">551</field>
+    <field name="field_id" ref="mx_layout_campo_551_14"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 553 -->
-    <record id="mx_field_rule_553_clave_permiso" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 553 - Clave del permiso</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_553"/>
-      <field name="registro_codigo">553</field>
-      <field name="field_id" ref="mx_layout_campo_553_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 553 -->
+  <record id="mx_field_rule_553_clave_permiso" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 553 - Clave del permiso</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_553"/>
+    <field name="registro_codigo">553</field>
+    <field name="field_id" ref="mx_layout_campo_553_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 554 -->
-    <record id="mx_field_rule_554_clave_identificador" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 554 - Clave de identificador</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_554"/>
-      <field name="registro_codigo">554</field>
-      <field name="field_id" ref="mx_layout_campo_554_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 554 -->
+  <record id="mx_field_rule_554_clave_identificador" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 554 - Clave de identificador</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_554"/>
+    <field name="registro_codigo">554</field>
+    <field name="field_id" ref="mx_layout_campo_554_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 557 -->
-    <record id="mx_field_rule_557_clave_contribucion" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 557 - Clave de contribucion</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_557"/>
-      <field name="registro_codigo">557</field>
-      <field name="field_id" ref="mx_layout_campo_557_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_557_forma_pago" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 557 - Forma de pago</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_557"/>
-      <field name="registro_codigo">557</field>
-      <field name="field_id" ref="mx_layout_campo_557_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_557_importe" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 557 - Importe</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_557"/>
-      <field name="registro_codigo">557</field>
-      <field name="field_id" ref="mx_layout_campo_557_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 557 -->
+  <record id="mx_field_rule_557_clave_contribucion" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 557 - Clave de contribucion</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_557"/>
+    <field name="registro_codigo">557</field>
+    <field name="field_id" ref="mx_layout_campo_557_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_557_forma_pago" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 557 - Forma de pago</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_557"/>
+    <field name="registro_codigo">557</field>
+    <field name="field_id" ref="mx_layout_campo_557_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_557_importe" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 557 - Importe</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_557"/>
+    <field name="registro_codigo">557</field>
+    <field name="field_id" ref="mx_layout_campo_557_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 558 -->
-    <record id="mx_field_rule_558_observaciones_partida" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 558 - Observaciones de la partida</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_558"/>
-      <field name="registro_codigo">558</field>
-      <field name="field_id" ref="mx_layout_campo_558_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 558 -->
+  <record id="mx_field_rule_558_observaciones_partida" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 558 - Observaciones de la partida</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_558"/>
+    <field name="registro_codigo">558</field>
+    <field name="field_id" ref="mx_layout_campo_558_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 601 -->
-    <record id="mx_field_rule_601_clave_pedimento" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 601 - Clave de pedimento</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_601"/>
-      <field name="registro_codigo">601</field>
-      <field name="field_id" ref="mx_layout_campo_601_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_601_tipo_operacion" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 601 - Tipo de operacion (importacion/exportacion)</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_601"/>
-      <field name="registro_codigo">601</field>
-      <field name="field_id" ref="mx_layout_campo_601_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_601_rfc_importador_exportador" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 601 - RFC del importador/exportador</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_601"/>
-      <field name="registro_codigo">601</field>
-      <field name="field_id" ref="mx_layout_campo_601_8"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_601_curp_agente" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 601 - CURP del agente aduanal</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_601"/>
-      <field name="registro_codigo">601</field>
-      <field name="field_id" ref="mx_layout_campo_601_9"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_601_origen_destino" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 601 - Pais de origen o destino</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_601"/>
-      <field name="registro_codigo">601</field>
-      <field name="field_id" ref="mx_layout_campo_601_10"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 601 -->
+  <record id="mx_field_rule_601_clave_pedimento" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 601 - Clave de pedimento</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_601"/>
+    <field name="registro_codigo">601</field>
+    <field name="field_id" ref="mx_layout_campo_601_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_601_tipo_operacion" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 601 - Tipo de operacion (importacion/exportacion)</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_601"/>
+    <field name="registro_codigo">601</field>
+    <field name="field_id" ref="mx_layout_campo_601_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_601_rfc_importador_exportador" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 601 - RFC del importador/exportador</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_601"/>
+    <field name="registro_codigo">601</field>
+    <field name="field_id" ref="mx_layout_campo_601_8"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_601_curp_agente" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 601 - CURP del agente aduanal</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_601"/>
+    <field name="registro_codigo">601</field>
+    <field name="field_id" ref="mx_layout_campo_601_9"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_601_origen_destino" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 601 - Pais de origen o destino</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_601"/>
+    <field name="registro_codigo">601</field>
+    <field name="field_id" ref="mx_layout_campo_601_10"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 301 -->
-    <record id="mx_field_rule_301_aduana_despacho" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 301 - Aduana de despacho</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
-      <field name="registro_codigo">301</field>
-      <field name="field_id" ref="mx_layout_campo_301_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_301_clave_pedimento" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 301 - Clave de pedimento</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
-      <field name="registro_codigo">301</field>
-      <field name="field_id" ref="mx_layout_campo_301_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_301_tipo_cambio" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 301 - Tipo de cambio</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
-      <field name="registro_codigo">301</field>
-      <field name="field_id" ref="mx_layout_campo_301_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_301_rfc_exportador" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 301 - RFC del exportador</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
-      <field name="registro_codigo">301</field>
-      <field name="field_id" ref="mx_layout_campo_301_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_301_nombre_exportador" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 301 - Nombre del exportador</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
-      <field name="registro_codigo">301</field>
-      <field name="field_id" ref="mx_layout_campo_301_9"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_301_curp_agente" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 301 - CURP del agente aduanal</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
-      <field name="registro_codigo">301</field>
-      <field name="field_id" ref="mx_layout_campo_301_10"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_301_rfc_agente_cfdi" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 301 - RFC del agente para CFDI</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
-      <field name="registro_codigo">301</field>
-      <field name="field_id" ref="mx_layout_campo_301_11"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 301 -->
+  <record id="mx_field_rule_301_aduana_despacho" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 301 - Aduana de despacho</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
+    <field name="registro_codigo">301</field>
+    <field name="field_id" ref="mx_layout_campo_301_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_301_clave_pedimento" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 301 - Clave de pedimento</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
+    <field name="registro_codigo">301</field>
+    <field name="field_id" ref="mx_layout_campo_301_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_301_tipo_cambio" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 301 - Tipo de cambio</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
+    <field name="registro_codigo">301</field>
+    <field name="field_id" ref="mx_layout_campo_301_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_301_rfc_exportador" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 301 - RFC del exportador</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
+    <field name="registro_codigo">301</field>
+    <field name="field_id" ref="mx_layout_campo_301_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_301_nombre_exportador" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 301 - Nombre del exportador</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
+    <field name="registro_codigo">301</field>
+    <field name="field_id" ref="mx_layout_campo_301_9"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_301_curp_agente" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 301 - CURP del agente aduanal</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
+    <field name="registro_codigo">301</field>
+    <field name="field_id" ref="mx_layout_campo_301_10"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_301_rfc_agente_cfdi" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 301 - RFC del agente para CFDI</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_301"/>
+    <field name="registro_codigo">301</field>
+    <field name="field_id" ref="mx_layout_campo_301_11"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 302 -->
-    <record id="mx_field_rule_302_pedimento_eua_can" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 302 - Numero de pedimento EUA/CAN</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_302"/>
-      <field name="registro_codigo">302</field>
-      <field name="field_id" ref="mx_layout_campo_302_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_302_prueba_suficiente" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 302 - Prueba suficiente T-MEC</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_302"/>
-      <field name="registro_codigo">302</field>
-      <field name="field_id" ref="mx_layout_campo_302_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_302_fecha_documento" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 302 - Fecha del documento T-MEC</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_302"/>
-      <field name="registro_codigo">302</field>
-      <field name="field_id" ref="mx_layout_campo_302_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 302 -->
+  <record id="mx_field_rule_302_pedimento_eua_can" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 302 - Numero de pedimento EUA/CAN</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_302"/>
+    <field name="registro_codigo">302</field>
+    <field name="field_id" ref="mx_layout_campo_302_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_302_prueba_suficiente" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 302 - Prueba suficiente T-MEC</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_302"/>
+    <field name="registro_codigo">302</field>
+    <field name="field_id" ref="mx_layout_campo_302_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_302_fecha_documento" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 302 - Fecha del documento T-MEC</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_302"/>
+    <field name="registro_codigo">302</field>
+    <field name="field_id" ref="mx_layout_campo_302_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 351 -->
-    <record id="mx_field_rule_351_subdivision" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 351 - Subdivision de la fraccion</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
-      <field name="registro_codigo">351</field>
-      <field name="field_id" ref="mx_layout_campo_351_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_351_valor_mercancia_no_originaria" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 351 - Valor de mercancia no originaria</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
-      <field name="registro_codigo">351</field>
-      <field name="field_id" ref="mx_layout_campo_351_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_351_monto_igi_no_originaria" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 351 - Monto IGI mercancia no originaria</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
-      <field name="registro_codigo">351</field>
-      <field name="field_id" ref="mx_layout_campo_351_8"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_351_impuesto_total_importacion" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 351 - Impuesto total de importacion</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
-      <field name="registro_codigo">351</field>
-      <field name="field_id" ref="mx_layout_campo_351_9"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_351_tipo_moneda" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 351 - Tipo de moneda</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
-      <field name="registro_codigo">351</field>
-      <field name="field_id" ref="mx_layout_campo_351_10"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_351_monto_exento" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 351 - Monto exento</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
-      <field name="registro_codigo">351</field>
-      <field name="field_id" ref="mx_layout_campo_351_11"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 351 -->
+  <record id="mx_field_rule_351_subdivision" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 351 - Subdivision de la fraccion</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
+    <field name="registro_codigo">351</field>
+    <field name="field_id" ref="mx_layout_campo_351_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_351_valor_mercancia_no_originaria" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 351 - Valor de mercancia no originaria</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
+    <field name="registro_codigo">351</field>
+    <field name="field_id" ref="mx_layout_campo_351_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_351_monto_igi_no_originaria" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 351 - Monto IGI mercancia no originaria</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
+    <field name="registro_codigo">351</field>
+    <field name="field_id" ref="mx_layout_campo_351_8"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_351_impuesto_total_importacion" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 351 - Impuesto total de importacion</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
+    <field name="registro_codigo">351</field>
+    <field name="field_id" ref="mx_layout_campo_351_9"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_351_tipo_moneda" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 351 - Tipo de moneda</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
+    <field name="registro_codigo">351</field>
+    <field name="field_id" ref="mx_layout_campo_351_10"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_351_monto_exento" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 351 - Monto exento</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_351"/>
+    <field name="registro_codigo">351</field>
+    <field name="field_id" ref="mx_layout_campo_351_11"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 352 -->
-    <record id="mx_field_rule_352_unidad_medida_tarifa_eua_can" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 352 - Unidad de medida de tarifa EUA/CAN</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_352"/>
-      <field name="registro_codigo">352</field>
-      <field name="field_id" ref="mx_layout_campo_352_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_352_cantidad_umt_eua_can" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 352 - Cantidad UMT EUA/CAN</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_352"/>
-      <field name="registro_codigo">352</field>
-      <field name="field_id" ref="mx_layout_campo_352_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 352 -->
+  <record id="mx_field_rule_352_unidad_medida_tarifa_eua_can" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 352 - Unidad de medida de tarifa EUA/CAN</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_352"/>
+    <field name="registro_codigo">352</field>
+    <field name="field_id" ref="mx_layout_campo_352_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_352_cantidad_umt_eua_can" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 352 - Cantidad UMT EUA/CAN</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_352"/>
+    <field name="registro_codigo">352</field>
+    <field name="field_id" ref="mx_layout_campo_352_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 355 -->
-    <record id="mx_field_rule_355_clave_contribucion" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 355 - Clave de contribucion</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_355"/>
-      <field name="registro_codigo">355</field>
-      <field name="field_id" ref="mx_layout_campo_355_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_355_importe_pago" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 355 - Importe de pago</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_355"/>
-      <field name="registro_codigo">355</field>
-      <field name="field_id" ref="mx_layout_campo_355_8"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 355 -->
+  <record id="mx_field_rule_355_clave_contribucion" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 355 - Clave de contribucion</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_355"/>
+    <field name="registro_codigo">355</field>
+    <field name="field_id" ref="mx_layout_campo_355_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_355_importe_pago" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 355 - Importe de pago</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_355"/>
+    <field name="registro_codigo">355</field>
+    <field name="field_id" ref="mx_layout_campo_355_8"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 358 -->
-    <record id="mx_field_rule_358_observaciones" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 358 - Observaciones</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_358"/>
-      <field name="registro_codigo">358</field>
-      <field name="field_id" ref="mx_layout_campo_358_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 358 -->
+  <record id="mx_field_rule_358_observaciones" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 358 - Observaciones</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_358"/>
+    <field name="registro_codigo">358</field>
+    <field name="field_id" ref="mx_layout_campo_358_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 515 -->
-    <record id="mx_field_rule_515_curp_agente" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 515 - CURP del agente aduanal</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_515"/>
-      <field name="registro_codigo">515</field>
-      <field name="field_id" ref="mx_layout_campo_515_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_515_clave_pedimento" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 515 - Clave de pedimento</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_515"/>
-      <field name="registro_codigo">515</field>
-      <field name="field_id" ref="mx_layout_campo_515_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_515_aduana_seccion_entrada" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 515 - Aduana/seccion de entrada</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_515"/>
-      <field name="registro_codigo">515</field>
-      <field name="field_id" ref="mx_layout_campo_515_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_515_rfc_empresa" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 515 - RFC de la empresa</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_515"/>
-      <field name="registro_codigo">515</field>
-      <field name="field_id" ref="mx_layout_campo_515_8"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_515_tipo_cambio" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 515 - Tipo de cambio</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_515"/>
-      <field name="registro_codigo">515</field>
-      <field name="field_id" ref="mx_layout_campo_515_9"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 515 -->
+  <record id="mx_field_rule_515_curp_agente" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 515 - CURP del agente aduanal</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_515"/>
+    <field name="registro_codigo">515</field>
+    <field name="field_id" ref="mx_layout_campo_515_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_515_clave_pedimento" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 515 - Clave de pedimento</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_515"/>
+    <field name="registro_codigo">515</field>
+    <field name="field_id" ref="mx_layout_campo_515_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_515_aduana_seccion_entrada" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 515 - Aduana/seccion de entrada</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_515"/>
+    <field name="registro_codigo">515</field>
+    <field name="field_id" ref="mx_layout_campo_515_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_515_rfc_empresa" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 515 - RFC de la empresa</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_515"/>
+    <field name="registro_codigo">515</field>
+    <field name="field_id" ref="mx_layout_campo_515_8"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_515_tipo_cambio" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 515 - Tipo de cambio</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_515"/>
+    <field name="registro_codigo">515</field>
+    <field name="field_id" ref="mx_layout_campo_515_9"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 555 -->
-    <record id="mx_field_rule_555_institucion_emisora" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 555 - Institucion emisora</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
-      <field name="registro_codigo">555</field>
-      <field name="field_id" ref="mx_layout_campo_555_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_555_numero_cuenta" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 555 - Numero de cuenta aduanera</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
-      <field name="registro_codigo">555</field>
-      <field name="field_id" ref="mx_layout_campo_555_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_555_folio_constancia" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 555 - Folio de la constancia</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
-      <field name="registro_codigo">555</field>
-      <field name="field_id" ref="mx_layout_campo_555_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_555_fecha_constancia" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 555 - Fecha de la constancia</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
-      <field name="registro_codigo">555</field>
-      <field name="field_id" ref="mx_layout_campo_555_8"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_555_tipo_garantia" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 555 - Tipo de garantia</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
-      <field name="registro_codigo">555</field>
-      <field name="field_id" ref="mx_layout_campo_555_9"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_555_importe_total_garantia" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 555 - Importe total de la garantia</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
-      <field name="registro_codigo">555</field>
-      <field name="field_id" ref="mx_layout_campo_555_11"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_555_cantidad_unidades" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 555 - Cantidad de unidades</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
-      <field name="registro_codigo">555</field>
-      <field name="field_id" ref="mx_layout_campo_555_12"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 555 -->
+  <record id="mx_field_rule_555_institucion_emisora" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 555 - Institucion emisora</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
+    <field name="registro_codigo">555</field>
+    <field name="field_id" ref="mx_layout_campo_555_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_555_numero_cuenta" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 555 - Numero de cuenta aduanera</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
+    <field name="registro_codigo">555</field>
+    <field name="field_id" ref="mx_layout_campo_555_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_555_folio_constancia" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 555 - Folio de la constancia</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
+    <field name="registro_codigo">555</field>
+    <field name="field_id" ref="mx_layout_campo_555_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_555_fecha_constancia" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 555 - Fecha de la constancia</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
+    <field name="registro_codigo">555</field>
+    <field name="field_id" ref="mx_layout_campo_555_8"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_555_tipo_garantia" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 555 - Tipo de garantia</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
+    <field name="registro_codigo">555</field>
+    <field name="field_id" ref="mx_layout_campo_555_9"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_555_importe_total_garantia" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 555 - Importe total de la garantia</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
+    <field name="registro_codigo">555</field>
+    <field name="field_id" ref="mx_layout_campo_555_11"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_555_cantidad_unidades" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 555 - Cantidad de unidades</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_555"/>
+    <field name="registro_codigo">555</field>
+    <field name="field_id" ref="mx_layout_campo_555_12"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 556 -->
-    <record id="mx_field_rule_556_clave_contribucion" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 556 - Clave de contribucion</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_556"/>
-      <field name="registro_codigo">556</field>
-      <field name="field_id" ref="mx_layout_campo_556_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_556_tasa" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 556 - Tasa</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_556"/>
-      <field name="registro_codigo">556</field>
-      <field name="field_id" ref="mx_layout_campo_556_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_556_tipo_tasa" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 556 - Tipo de tasa</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_556"/>
-      <field name="registro_codigo">556</field>
-      <field name="field_id" ref="mx_layout_campo_556_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 556 -->
+  <record id="mx_field_rule_556_clave_contribucion" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 556 - Clave de contribucion</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_556"/>
+    <field name="registro_codigo">556</field>
+    <field name="field_id" ref="mx_layout_campo_556_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_556_tasa" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 556 - Tasa</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_556"/>
+    <field name="registro_codigo">556</field>
+    <field name="field_id" ref="mx_layout_campo_556_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_556_tipo_tasa" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 556 - Tipo de tasa</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_556"/>
+    <field name="registro_codigo">556</field>
+    <field name="field_id" ref="mx_layout_campo_556_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 560 -->
-    <record id="mx_field_rule_560_importe_precio" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 560 - Importe del precio</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
-      <field name="registro_codigo">560</field>
-      <field name="field_id" ref="mx_layout_campo_560_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_560_valor_usd" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 560 - Valor en USD</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
-      <field name="registro_codigo">560</field>
-      <field name="field_id" ref="mx_layout_campo_560_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_560_cantidad_umc" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 560 - Cantidad en unidad de medida comercial</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
-      <field name="registro_codigo">560</field>
-      <field name="field_id" ref="mx_layout_campo_560_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_560_umc" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 560 - Unidad de medida comercial</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
-      <field name="registro_codigo">560</field>
-      <field name="field_id" ref="mx_layout_campo_560_8"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_560_cantidad_umt" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 560 - Cantidad en unidad de medida de tarifa</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
-      <field name="registro_codigo">560</field>
-      <field name="field_id" ref="mx_layout_campo_560_9"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_560_umt" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 560 - Unidad de medida de tarifa</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
-      <field name="registro_codigo">560</field>
-      <field name="field_id" ref="mx_layout_campo_560_10"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_560_pais_origen" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 560 - Pais de origen</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
-      <field name="registro_codigo">560</field>
-      <field name="field_id" ref="mx_layout_campo_560_11"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_560_pais_vendedor" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 560 - Pais del vendedor</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">partida</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
-      <field name="registro_codigo">560</field>
-      <field name="field_id" ref="mx_layout_campo_560_12"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 560 -->
+  <record id="mx_field_rule_560_importe_precio" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 560 - Importe del precio</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
+    <field name="registro_codigo">560</field>
+    <field name="field_id" ref="mx_layout_campo_560_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_560_valor_usd" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 560 - Valor en USD</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
+    <field name="registro_codigo">560</field>
+    <field name="field_id" ref="mx_layout_campo_560_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_560_cantidad_umc" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 560 - Cantidad en unidad de medida comercial</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
+    <field name="registro_codigo">560</field>
+    <field name="field_id" ref="mx_layout_campo_560_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_560_umc" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 560 - Unidad de medida comercial</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
+    <field name="registro_codigo">560</field>
+    <field name="field_id" ref="mx_layout_campo_560_8"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_560_cantidad_umt" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 560 - Cantidad en unidad de medida de tarifa</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
+    <field name="registro_codigo">560</field>
+    <field name="field_id" ref="mx_layout_campo_560_9"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_560_umt" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 560 - Unidad de medida de tarifa</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
+    <field name="registro_codigo">560</field>
+    <field name="field_id" ref="mx_layout_campo_560_10"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_560_pais_origen" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 560 - Pais de origen</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
+    <field name="registro_codigo">560</field>
+    <field name="field_id" ref="mx_layout_campo_560_11"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_560_pais_vendedor" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 560 - Pais del vendedor</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">partida</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_560"/>
+    <field name="registro_codigo">560</field>
+    <field name="field_id" ref="mx_layout_campo_560_12"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 701 -->
-    <record id="mx_field_rule_701_aduana_despacho" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 701 - Aduana de despacho</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
-      <field name="registro_codigo">701</field>
-      <field name="field_id" ref="mx_layout_campo_701_4"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_701_clave_pedimento_rectificar" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 701 - Clave del pedimento a rectificar</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
-      <field name="registro_codigo">701</field>
-      <field name="field_id" ref="mx_layout_campo_701_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_701_fecha_pago" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 701 - Fecha de pago</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
-      <field name="registro_codigo">701</field>
-      <field name="field_id" ref="mx_layout_campo_701_6"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_701_pedimento_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 701 - Numero del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
-      <field name="registro_codigo">701</field>
-      <field name="field_id" ref="mx_layout_campo_701_7"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_701_patente_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 701 - Patente del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
-      <field name="registro_codigo">701</field>
-      <field name="field_id" ref="mx_layout_campo_701_8"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_701_aduana_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 701 - Aduana del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
-      <field name="registro_codigo">701</field>
-      <field name="field_id" ref="mx_layout_campo_701_9"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_701_clave_pedimento_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 701 - Clave del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
-      <field name="registro_codigo">701</field>
-      <field name="field_id" ref="mx_layout_campo_701_10"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_701_fecha_operacion_original" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 701 - Fecha de operacion del pedimento original</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
-      <field name="registro_codigo">701</field>
-      <field name="field_id" ref="mx_layout_campo_701_11"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 701 -->
+  <record id="mx_field_rule_701_aduana_despacho" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 701 - Aduana de despacho</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
+    <field name="registro_codigo">701</field>
+    <field name="field_id" ref="mx_layout_campo_701_4"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_701_clave_pedimento_rectificar" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 701 - Clave del pedimento a rectificar</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
+    <field name="registro_codigo">701</field>
+    <field name="field_id" ref="mx_layout_campo_701_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_701_fecha_pago" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 701 - Fecha de pago</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
+    <field name="registro_codigo">701</field>
+    <field name="field_id" ref="mx_layout_campo_701_6"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_701_pedimento_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 701 - Numero del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
+    <field name="registro_codigo">701</field>
+    <field name="field_id" ref="mx_layout_campo_701_7"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_701_patente_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 701 - Patente del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
+    <field name="registro_codigo">701</field>
+    <field name="field_id" ref="mx_layout_campo_701_8"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_701_aduana_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 701 - Aduana del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
+    <field name="registro_codigo">701</field>
+    <field name="field_id" ref="mx_layout_campo_701_9"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_701_clave_pedimento_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 701 - Clave del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
+    <field name="registro_codigo">701</field>
+    <field name="field_id" ref="mx_layout_campo_701_10"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_701_fecha_operacion_original" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 701 - Fecha de operacion del pedimento original</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_701"/>
+    <field name="registro_codigo">701</field>
+    <field name="field_id" ref="mx_layout_campo_701_11"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-    <!-- Registro 702 -->
-    <record id="mx_field_rule_702_clave_contribucion" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 702 - Clave de contribucion</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_702"/>
-      <field name="registro_codigo">702</field>
-      <field name="field_id" ref="mx_layout_campo_702_3"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
-    <record id="mx_field_rule_702_importe_pago" model="mx.ped.rulepack.condition.rule">
-      <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
-      <field name="name">Reg. 702 - Importe de pago</field>
-      <field name="priority">300</field>
-      <field name="target_type">field</field>
-      <field name="policy">require_field</field>
-      <field name="scope">pedimento</field>
-      <field name="registro_tipo_id" ref="mx_layout_reg_702"/>
-      <field name="registro_codigo">702</field>
-      <field name="field_id" ref="mx_layout_campo_702_5"/>
-      <field name="escenario_code">any</field>
-      <field name="min_occurs">1</field>
-      <field name="max_occurs">1</field>
-    </record>
+  <!-- Registro 702 -->
+  <record id="mx_field_rule_702_clave_contribucion" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 702 - Clave de contribucion</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_702"/>
+    <field name="registro_codigo">702</field>
+    <field name="field_id" ref="mx_layout_campo_702_3"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
+  <record id="mx_field_rule_702_importe_pago" model="mx.ped.rulepack.condition.rule">
+    <field name="rulepack_id" ref="mx_ped_rulepack_default_2026"/>
+    <field name="name">Reg. 702 - Importe de pago</field>
+    <field name="priority">300</field>
+    <field name="target_type">field</field>
+    <field name="policy">require_field</field>
+    <field name="scope">pedimento</field>
+    <field name="registro_tipo_id" ref="mx_layout_reg_702"/>
+    <field name="registro_codigo">702</field>
+    <field name="field_id" ref="mx_layout_campo_702_5"/>
+    <field name="escenario_code">any</field>
+    <field name="min_occurs">1</field>
+    <field name="max_occurs">1</field>
+  </record>
 
-  </data>
 </odoo>
