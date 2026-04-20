@@ -69,7 +69,6 @@ class MxPedConsolidadoRemesaPartida(models.Model):
             partida = rec.partida_id
             if not partida:
                 continue
-            # Solo considera asignaciones en remesas activas; pruebas archivadas no deben bloquear nuevas capturas.
             domain = [("partida_id", "=", partida.id), ("remesa_id.active", "=", True)]
             siblings = self.search(domain)
             total_qty = sum(siblings.mapped("quantity"))
