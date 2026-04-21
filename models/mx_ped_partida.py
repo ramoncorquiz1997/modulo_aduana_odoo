@@ -235,13 +235,7 @@ class MxPedPartida(models.Model):
     )
 
     # ── Tasas por partida (registro 556) ─────────────────────────────────────
-    contribucion_ids = fields.One2many(
-        "mx.ped.partida.tasa",
-        "partida_id",
-        string="Tasas (556)",
-        copy=True,
-    )
-    # Campos legacy mantenidos por compatibilidad con datos existentes.
+    # Campos legacy — el 556 se genera desde partida_contribucion_ids (557) en la operación.
     tasa_clave_contribucion = fields.Char(string="Tasa: Clave contribución (legacy)", size=3)
     tasa_valor = fields.Float(string="Tasa: Valor (legacy)", digits=(16, 4))
     tasa_tipo = fields.Char(string="Tasa: Tipo de tasa (legacy)", size=2)
@@ -457,38 +451,6 @@ class MxPedPartida(models.Model):
             rec.nom_ids = [(6, 0, fraccion.nom_default_ids.ids)]
             rec.permiso_ids = [(6, 0, fraccion.permiso_default_ids.ids)]
             rec.rrna_ids = [(6, 0, fraccion.rrna_default_ids.ids)]
-            rec._sync_contribuciones_from_fraccion()
-
-    def _sync_contribuciones_from_fraccion(self):
-        """Auto-rellena contribucion_ids desde fraccion.contribucion_extra_ids.
-        Solo aplica si la fracción tiene contribuciones configuradas; si no,
-        no modifica lo que el agente haya capturado manualmente.
-        """
-        self.ensure_one()
-        fraccion = self.fraccion_id
-        if not fraccion or not fraccion.contribucion_extra_ids:
-            return
-        tipo_op = (
-            self.operacion_id.tipo_operacion
-            or (self.env.context.get("default_tipo_operacion"))
-            or "importacion"
-        )
-        contribs = fraccion.contribucion_extra_ids.filtered(
-            lambda c: c.tipo_operacion == tipo_op and c.active
-        )
-        if not contribs:
-            return
-        _modo_to_tipo = {"porcentaje": "AD", "cuota_fija": "SP"}
-        lines = [
-            (0, 0, {
-                "contribucion_id": c.contribucion_id.id,
-                "tasa": c.tasa,
-                "tipo_tasa": _modo_to_tipo.get(c.modo_calculo, "AD"),
-                "sequence": idx * 10,
-            })
-            for idx, c in enumerate(contribs.sorted(lambda c: c.id), start=1)
-        ]
-        self.contribucion_ids = [(5, 0, 0)] + lines
 
     @api.onchange("nico_id")
     def _onchange_nico_id(self):
@@ -531,10 +493,6 @@ class MxPedPartida(models.Model):
                 default_doc = rec._get_default_factura_documento()
                 if default_doc:
                     rec.with_context(skip_auto_generated_refresh=True).write({"factura_documento_id": default_doc.id})
-            # Auto-rellenar contribuciones desde la fracción si aún no tiene ninguna
-            # (caso típico: creación programática desde sync del lead).
-            if rec.fraccion_id and not rec.contribucion_ids:
-                rec.with_context(skip_auto_generated_refresh=True)._sync_contribuciones_from_fraccion()
         if not self.env.context.get("skip_auto_generated_refresh"):
             records.mapped("operacion_id")._auto_refresh_generated_registros()
         return records
@@ -557,44 +515,3 @@ class MxPedPartida(models.Model):
         if not self.env.context.get("skip_auto_generated_refresh"):
             operaciones._auto_refresh_generated_registros()
         return res
-
-
-class MxPedPartidaTasa(models.Model):
-    _name = "mx.ped.partida.tasa"
-    _description = "Partida - Tasa arancelaria (Registro 556)"
-    _order = "sequence, id"
-
-    partida_id = fields.Many2one(
-        "mx.ped.partida", required=True, ondelete="cascade", index=True
-    )
-    operacion_id = fields.Many2one(
-        "mx.ped.operacion",
-        related="partida_id.operacion_id",
-        store=True,
-        readonly=True,
-        index=True,
-    )
-    sequence = fields.Integer(default=10)
-    contribucion_id = fields.Many2one(
-        "aduana.catalogo.contribucion",
-        string="Contribución",
-        required=True,
-        ondelete="restrict",
-        domain="[('active','=',True)]",
-    )
-    tasa = fields.Float(
-        string="Tasa / cuota",
-        digits=(16, 6),
-        help="Porcentaje (ad valorem) o cuota fija según tipo de tasa.",
-    )
-    tipo_tasa = fields.Selection(
-        [
-            ("AD", "AD - Ad valorem"),
-            ("SP", "SP - Específica"),
-            ("MT", "MT - Monto total"),
-            ("MX", "MX - Mixta"),
-        ],
-        string="Tipo de tasa",
-        default="AD",
-        required=True,
-    )

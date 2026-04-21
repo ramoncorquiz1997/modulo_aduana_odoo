@@ -225,17 +225,7 @@
                       <field name="notes_regulatorias"/>
                       <field name="forma_pago_sugerida_id"/>
                     </group>
-                    <group string="Contribuciones / Tasas (Reg. 556)" invisible="not parent.show_advanced_info" col="1">
-                      <field name="contribucion_ids" nolabel="1">
-                        <list editable="bottom">
-                          <field name="sequence" optional="hide"/>
-                          <field name="contribucion_id"/>
-                          <field name="tasa"/>
-                          <field name="tipo_tasa"/>
-                        </list>
-                      </field>
-                    </group>
-                    <group string="Impuestos estimados" invisible="not parent.show_advanced_info">
+<group string="Impuestos estimados" invisible="not parent.show_advanced_info">
                       <field name="igi_rate" readonly="1"/>
                       <field name="iva_rate" readonly="1"/>
                       <field name="igi_estimado"/>

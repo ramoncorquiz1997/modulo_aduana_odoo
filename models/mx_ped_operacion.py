@@ -2288,7 +2288,7 @@ class MxPedOperacion(models.Model):
         # 556 = tasas por partida (solo si la fracción tiene contribuciones),
         # 353/351/355/358 = T-MEC/TLCUEM (solo si se usan tratados).
         has_source_optional = {
-            "556": any(p.contribucion_ids for p in self.partida_ids),
+            "556": bool(self.partida_contribucion_ids),
             "351": any(p.tmec_valor_mercancia_no_originaria for p in self.partida_ids),
             "353": any(p.tmec_valor_mercancia_no_originaria for p in self.partida_ids),
             "355": any(p.tmec_clave_contribucion for p in self.partida_ids),
@@ -6334,21 +6334,35 @@ class MxPedOperacion(models.Model):
     # ============================================================
 
     def _get_556_contribucion_lines(self):
-        """Un dict por cada (partida, contribucion) — un 556 por tasa por partida."""
+        """Un 556 por contribucion por partida, derivado de partida_contribucion_ids (557).
+        El 556 es un subconjunto del 557: misma clave y tasa, sin base ni importe.
+        Se agrupa por (partida, contribucion) para evitar duplicados si hay varias
+        líneas de la misma contribución en una partida.
+        """
         self.ensure_one()
+        seen = set()
         lines = []
-        for partida in self.partida_ids.sorted(lambda p: (p.numero_partida or 0, p.id)):
-            fraccion = (partida.fraccion_arancelaria or "").strip()
+        sorted_contribs = self.partida_contribucion_ids.sorted(
+            lambda l: ((l.partida_id.numero_partida or 0) if l.partida_id else 0, l.sequence or 0, l.id)
+        )
+        for contrib in sorted_contribs:
+            partida = contrib.partida_id
+            if not partida:
+                continue
+            fraccion = (partida.fraccion_arancelaria or partida.fraccion_id.code or "").strip()
             numero_partida = partida.numero_partida or 0
-            for contrib in partida.contribucion_ids.sorted(lambda c: (c.sequence, c.id)):
-                clave = contrib.contribucion_id.code or 0
-                lines.append({
-                    "fraccion": fraccion,
-                    "numero_partida": numero_partida,
-                    "clave_contribucion": str(clave) if clave else "",
-                    "tasa": contrib.tasa or 0.0,
-                    "tipo_tasa": contrib.tipo_tasa or "AD",
-                })
+            clave = contrib.contribucion_id.code or 0
+            key = (numero_partida, clave)
+            if key in seen:
+                continue
+            seen.add(key)
+            lines.append({
+                "fraccion": fraccion,
+                "numero_partida": numero_partida,
+                "clave_contribucion": str(clave) if clave else "",
+                "tasa": contrib.tasa or 0.0,
+                "tipo_tasa": contrib.tipo_tasa or "AD",
+            })
         return lines
 
     def _build_556_valores_direct(self, line):
