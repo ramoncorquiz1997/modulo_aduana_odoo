@@ -2616,12 +2616,23 @@ class MxPedOperacion(models.Model):
     def _validate_field_rules_on_registros(self):
         """Valida require_field sobre el set real que se exportara."""
         self.ensure_one()
+        # Para eliminación/desistimiento (mov 2/3) el acuse electrónico lo
+        # asigna el SAAI *después* de presentar el TXT inicial. Se omite su
+        # validación para permitir la exportación sin acuse la primera vez.
+        mov = self._get_tipo_movimiento_effective()
+        skip_acuse = mov in {"2", "3"}
         for reg in self.registro_ids:
             code = (reg.codigo or "").strip()
             if not code:
                 continue
             partida_num = self._extract_partida_number(reg.valores)
-            self._apply_field_rules_to_vals(code, reg.valores or {}, partida_num=partida_num, validate_only=True)
+            try:
+                self._apply_field_rules_to_vals(code, reg.valores or {}, partida_num=partida_num, validate_only=True)
+            except (ValidationError, UserError) as exc:
+                if skip_acuse and "acuse" in str(exc.args[0]).lower():
+                    # El acuse se llenará después de que el SAAI valide el TXT.
+                    continue
+                raise
 
     def _rule_sort_key(self, item):
         return (
