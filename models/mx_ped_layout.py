@@ -28,7 +28,7 @@ class MxPedLayout(models.Model):
     record_separator = fields.Char(
         string="Separador de registros",
         default="\n",
-        help="Usado para separar registros en el TXT.",
+        help="Usado para separar registros en el TXT. Usa \\n para salto de línea.",
     )
     file_name_pattern = fields.Char(
         string="Patrón de nombre de archivo",
@@ -41,6 +41,31 @@ class MxPedLayout(models.Model):
         string="Registros",
         copy=True,
     )
+
+    def _normalize_separators(self, vals):
+        """Convierte secuencias de escape literales a caracteres reales."""
+        if "record_separator" in vals and vals["record_separator"]:
+            vals["record_separator"] = (
+                vals["record_separator"]
+                .replace("\\n", "\n")
+                .replace("\\r", "\r")
+                .replace("\\t", "\t")
+            )
+        return vals
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        return super().create([self._normalize_separators(v) for v in vals_list])
+
+    def write(self, vals):
+        return super().write(self._normalize_separators(vals))
+
+    def init(self):
+        """Migración en caliente: corrige separadores literales \\n en layouts existentes."""
+        self.env.cr.execute(
+            r"UPDATE mx_ped_layout SET record_separator = E'\n' "
+            r"WHERE record_separator = '\n'"
+        )
 
 
 class MxPedLayoutRegistro(models.Model):

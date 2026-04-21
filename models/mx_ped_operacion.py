@@ -3651,7 +3651,7 @@ class MxPedOperacion(models.Model):
                     lines.append(self._build_txt_line(layout_reg, reg.valores, partida_num=partida_num))
                 else:
                     lines.append(self._build_txt_line_pipe_direct(reg.codigo, reg.valores))
-        sep = self.layout_id.record_separator or "\n"
+        sep = self._get_record_separator()
         return sep.join(lines)
 
     def action_validar_operacion(self):
@@ -3666,6 +3666,17 @@ class MxPedOperacion(models.Model):
             "view_mode": "form",
             "target": "new",
         }
+
+    def _get_record_separator(self):
+        """Devuelve el separador de registros normalizado como carácter real.
+        Si el layout guarda la secuencia literal \\n (2 chars) en lugar del
+        carácter newline real, lo convierte para que el TXT tenga saltos de
+        línea correctos y splitlines() funcione en el parser de proforma.
+        """
+        raw = (self.layout_id.record_separator if self.layout_id else None) or "\n"
+        # Normaliza secuencias de escape literales (ej. "\\n" → "\n")
+        raw = raw.replace("\\n", "\n").replace("\\r", "\r").replace("\\t", "\t")
+        return raw
 
     def action_export_txt(self):
         self.ensure_one()
@@ -3718,7 +3729,7 @@ class MxPedOperacion(models.Model):
             else:
                 lines.append(self._build_txt_line_pipe_direct(reg.codigo, reg.valores))
 
-        sep = self.layout_id.record_separator or "\n"
+        sep = self._get_record_separator()
         txt_data = sep.join(lines)
         attachment = self.env["ir.attachment"].create({
             "name": self._build_txt_filename(),
@@ -3759,7 +3770,7 @@ class MxPedOperacion(models.Model):
             else:
                 lines.append(self._build_txt_line_pipe_direct(reg.codigo, reg.valores))
 
-        sep = self.layout_id.record_separator or "\n"
+        sep = self._get_record_separator()
         txt_data = sep.join(lines)
 
         # ── Datos del agente desde la operación/compañía ──

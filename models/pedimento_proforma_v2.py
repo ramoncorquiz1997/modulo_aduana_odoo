@@ -195,6 +195,11 @@ def parse_txt(txt: str) -> Pedimento:
     ped = Pedimento()
     partida_actual: Optional[Partida] = None
 
+    # Normaliza separadores: convierte literales \\n a newline real por si el
+    # layout almacenó la secuencia de escape como texto (2 chars) en vez del
+    # carácter real. Luego splitlines() siempre encontrará los saltos de línea.
+    txt = txt.replace("\\n", "\n").replace("\\r", "\r")
+
     for linea in txt.strip().splitlines():
         linea = linea.strip()
         if not linea:
