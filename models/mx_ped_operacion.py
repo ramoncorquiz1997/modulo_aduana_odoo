@@ -2233,7 +2233,12 @@ class MxPedOperacion(models.Model):
                 })
 
         if "557" in layout_regs:
-            partida_contribs = self.partida_contribucion_ids.sorted(
+            # 557 solo se genera cuando hay importe real > 0.
+            # Para contribuciones exentas (tasa 0%, importe 0) el registro 557 no
+            # debe aparecer per lineamiento — la tasa exenta se declara en 556.
+            partida_contribs = self.partida_contribucion_ids.filtered(
+                lambda l: (l.importe or 0.0) > 0
+            ).sorted(
                 lambda l: ((l.partida_id.numero_partida or 0) if l.partida_id else 0, l.sequence or 0, l.id)
             )
             for idx, line in enumerate(partida_contribs, start=1):
