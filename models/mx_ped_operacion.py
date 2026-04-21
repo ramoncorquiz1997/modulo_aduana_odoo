@@ -2585,6 +2585,11 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         effective = dict(vals_dict or {})
         rules = self._get_field_rules_for_record(codigo_registro, partida_num=partida_num)
+        # Para eliminación/desistimiento (mov 2/3) el acuse electrónico lo
+        # asigna el SAAI tras presentar el TXT. Se omiten las reglas require_field
+        # que lo exigen para permitir la exportación/validación inicial.
+        mov = self._get_tipo_movimiento_effective()
+        skip_acuse_require = mov in {"2", "3"}
         for rule in rules:
             field_name = (rule.field_id.nombre or "").strip() if rule.field_id else ""
             if not field_name:
@@ -2600,10 +2605,17 @@ class MxPedOperacion(models.Model):
                     effective[field_name] = rule.default_value
             elif policy == "require_field":
                 if self._is_empty_rule_value(current):
-                    raise ValidationError(
-                        _("Regla %s: registro %s campo %s es obligatorio.")
-                        % (rule.name or rule.id, str(codigo_registro or "").zfill(3), field_name)
-                    )
+                    # Omitir el error de acuse para eliminación/desistimiento:
+                    # el campo puede venir vacío en la exportación inicial.
+                    if skip_acuse_require and "acuse" in field_name.lower():
+                        pass
+                    elif skip_acuse_require and "acuse" in (rule.name or "").lower():
+                        pass
+                    else:
+                        raise ValidationError(
+                            _("Regla %s: registro %s campo %s es obligatorio.")
+                            % (rule.name or rule.id, str(codigo_registro or "").zfill(3), field_name)
+                        )
             elif policy == "warn_field":
                 # Hook no bloqueante: se conserva para futura trazabilidad de advertencias.
                 pass
