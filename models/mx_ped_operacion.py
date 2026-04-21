@@ -1055,6 +1055,10 @@ class MxPedOperacion(models.Model):
 
     @api.constrains("tipo_movimiento", "acuse_validacion", "clave_pedimento_id")
     def _check_acuse_validacion(self):
+        # Saltear durante creación desde wizard de desistimiento/eliminación:
+        # el acuse lo retorna el SAAI después de presentar el TXT, no antes.
+        if self.env.context.get("creating_desistimiento"):
+            return
         for rec in self:
             stage_rules = rec._get_process_stage_rules("pre_validate")
             for rule in stage_rules:

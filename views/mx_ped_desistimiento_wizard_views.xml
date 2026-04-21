@@ -47,8 +47,8 @@
                      colspan="4"/>
               <field name="nueva_fecha_operacion"/>
               <field name="nuevo_acuse_validacion"
-                     placeholder="00000000"
-                     help="Opcional al crear. Se puede completar después de la presentación ante el SAAI."/>
+                     placeholder="00000000 (opcional — lo genera el SAAI al presentar)"
+                     help="El acuse de 8 dígitos lo entrega el SAAI cuando presentas el TXT. Puedes crear el pedimento sin él y llenarlo después en la pestaña 'Cancelación / Desistimiento (800)' del nuevo pedimento."/>
             </group>
 
             <group string="Motivo de cancelación (registro 800)" col="1">
@@ -61,10 +61,14 @@
             <!-- ── Advertencia final ─────────────────────────────────────────── -->
             <div class="alert alert-warning mb-0">
               <i class="fa fa-exclamation-triangle me-2"/>
-              Al confirmar se creará un <strong>nuevo pedimento</strong> de
-              tipo movimiento 2 o 3 con los registros 500, 800 y 801.
-              El pedimento original <em>no se modifica</em> — queda como
-              referencia en tu expediente.
+              <strong>Flujo de trabajo:</strong>
+              Al confirmar se crea el nuevo pedimento (registros 500, 800 y 801).
+              El pedimento original <em>no se modifica</em>.
+              <br/>
+              Si aún no tienes el acuse, créalo sin él → exporta el TXT →
+              preséntalo al SAAI → cuando el SAAI te devuelva el acuse,
+              ve al nuevo pedimento, tab <strong>"Cancelación / Desistimiento (800)"</strong>
+              → campo <strong>"Acuse de validación"</strong>, llénalo y vuelve a exportar.
             </div>
 
           </sheet>

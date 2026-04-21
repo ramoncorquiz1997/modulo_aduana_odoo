@@ -147,7 +147,8 @@ class MxPedDesistimientoWizard(models.TransientModel):
         }
 
         new_op = self.env["mx.ped.operacion"].with_context(
-            skip_auto_generated_refresh=True
+            skip_auto_generated_refresh=True,
+            creating_desistimiento=True,   # salta constraint acuse en create
         ).create(vals)
 
         # Carga los registros desde el Lead.
