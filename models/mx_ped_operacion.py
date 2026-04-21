@@ -178,7 +178,7 @@ class MxPedOperacion(models.Model):
         store=True,
         readonly=True,
     )
-    acuse_validacion = fields.Char(string="Acuse electronico validacion")
+    acuse_validacion = fields.Char(string="Acuse electronico validacion", size=8)
     curp_agente = fields.Char(string="CURP agente/apoderado")
     ws_ambiente = fields.Selection(
         [("pruebas", "Pruebas"), ("produccion", "Produccion")],
@@ -1060,6 +1060,11 @@ class MxPedOperacion(models.Model):
         if self.env.context.get("creating_desistimiento"):
             return
         for rec in self:
+            # Para eliminación (mov 2) y desistimiento (mov 3) el acuse es
+            # asignado por el SAAI *después* de presentar el TXT inicial.
+            # No se valida aquí; la validación ocurre al exportar.
+            if rec.tipo_movimiento in ("2", "3"):
+                continue
             stage_rules = rec._get_process_stage_rules("pre_validate")
             for rule in stage_rules:
                 payload = rule.payload_json or {}
@@ -2406,7 +2411,13 @@ class MxPedOperacion(models.Model):
     def _validate_confirmacion_pago_formas(self):
         self.ensure_one()
         self._validate_cancel_desist_structure()
-        self._run_process_stage_checks("pre_validate")
+        # Para eliminación (mov 2) y desistimiento (mov 3) el único pre_validate
+        # relevante es la estructura 500/800/801 (ya validada arriba).
+        # El acuse es asignado por el SAAI tras presentar el TXT, así que no
+        # se exige aquí; el usuario lo registra luego.
+        mov = self._get_tipo_movimiento_effective()
+        if mov not in {"2", "3"}:
+            self._run_process_stage_checks("pre_validate")
         self._validate_508_cuenta_aduanera_rules()
         self._validate_513_compensacion_rules()
         self._validate_514_virtual_rules()

@@ -58,8 +58,8 @@
                      colspan="4"/>
               <field name="nueva_fecha_operacion"/>
               <field name="nuevo_acuse_validacion"
-                     placeholder="00000000"
-                     help="Se toma automáticamente del pedimento original. Modifícalo solo si el acuse del desistimiento/eliminación es diferente al del pedimento original."/>
+                     placeholder="(vacío — el SAAI lo asigna al validar el TXT)"
+                     help="Déjalo vacío. El pedimento de eliminación/desistimiento recibe su propio acuse del SAAI DESPUÉS de presentar el TXT. Una vez que el SAAI te devuelva el código de 8 dígitos, ve al nuevo pedimento y llénalo directamente ahí."/>
             </group>
 
             <group string="Motivo de cancelación (registro 800)" col="1">

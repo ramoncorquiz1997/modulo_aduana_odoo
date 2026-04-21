@@ -101,6 +101,10 @@ class MxPedValidacionWizard(models.TransientModel):
         w = lambda msg, ref=None, cat="general", seq=10: self._add(lineas, "advertencia", cat, msg, ref, seq)
         i = lambda msg, ref=None, cat="general", seq=10: self._add(lineas, "info", cat, msg, ref, seq)
 
+        # Determina si es un pedimento de cancelación (eliminación o desistimiento).
+        # Para estos tipos la estructura válida es 500/800/801 sin partidas.
+        is_cancel_desist = op._get_tipo_movimiento_effective() in {"2", "3"}
+
         # ── 1. DATOS GENERALES ──────────────────────────────────────────
         if not op.layout_id:
             e(_("Falta seleccionar el Layout técnico."), cat="general", seq=10)
@@ -131,9 +135,10 @@ class MxPedValidacionWizard(models.TransientModel):
 
         # ── 2. PARTIDAS ─────────────────────────────────────────────────
         partidas = op.partida_ids
-        if not partidas:
+        if not partidas and not is_cancel_desist:
+            # Eliminación/desistimiento nunca tienen partidas — es lo correcto.
             e(_("La operación no tiene partidas capturadas."), cat="partidas", seq=10)
-        else:
+        if partidas and not is_cancel_desist:
             for p in partidas:
                 ref = _("Partida %s") % (p.numero_partida or p.id)
                 if not p.fraccion_id:
@@ -253,6 +258,32 @@ class MxPedValidacionWizard(models.TransientModel):
             e(_("No hay estructura ni rulepack configurado — no se puede generar el archivo TXT."), cat="estructura", seq=10)
         elif not op.registro_ids:
             w(_("No hay registros técnicos generados. Use 'Preparar estructura' para generarlos."), cat="estructura", seq=20)
+        elif is_cancel_desist:
+            # Para eliminación/desistimiento solo se valida la estructura mínima 500/800/801.
+            # La validación completa de rulepack (que exige 502, partidas, etc.) no aplica.
+            try:
+                op._validate_cancel_desist_structure()
+            except (UserError, ValidationError) as exc:
+                for linea_msg in str(exc.args[0]).split("\n"):
+                    linea_msg = linea_msg.strip()
+                    if linea_msg:
+                        e(linea_msg, cat="estructura", seq=30)
+            # Validar campos de registro 800/801 pero tratar acuse vacío como advertencia,
+            # ya que el SAAI lo asigna después de presentar el TXT.
+            try:
+                op._validate_field_rules_on_registros()
+            except (UserError, ValidationError) as exc:
+                for linea_msg in str(exc.args[0]).split("\n"):
+                    linea_msg = linea_msg.strip()
+                    if not linea_msg:
+                        continue
+                    if "acuse" in linea_msg.lower():
+                        w(
+                            linea_msg + _(" — puede dejarse vacío ahora y llenarse después de que el SAAI valide el TXT."),
+                            cat="estructura", seq=35,
+                        )
+                    else:
+                        e(linea_msg, cat="estructura", seq=35)
         else:
             # Intentar la validación real de estructura y capturar sus errores
             try:
