@@ -79,3 +79,64 @@ class MxPedOperacionIdentificador(models.Model):
         if not self.env.context.get("skip_auto_generated_refresh"):
             ops._auto_refresh_generated_registros()
         return res
+
+
+class MxPedPartidaIdentificador(models.Model):
+    _name = "mx.ped.partida.identificador"
+    _description = "Partida - Identificador (nivel P, Apendice 8)"
+    _order = "sequence, id"
+
+    partida_id = fields.Many2one("mx.ped.partida", required=True, ondelete="cascade", index=True)
+    operacion_id = fields.Many2one(
+        "mx.ped.operacion",
+        related="partida_id.operacion_id",
+        store=True,
+        readonly=True,
+        index=True,
+    )
+    sequence = fields.Integer(default=10)
+    identificador_id = fields.Many2one(
+        "mx.ped.identificador",
+        string="Identificador",
+        required=True,
+        domain="[('nivel','=','P'), ('active','=',True)]",
+        ondelete="restrict",
+    )
+    code = fields.Char(string="Clave", related="identificador_id.code", store=True, readonly=True)
+    complemento1 = fields.Char(string="Complemento 1", size=20)
+    complemento2 = fields.Char(string="Complemento 2", size=30)
+    complemento3 = fields.Char(string="Complemento 3", size=40)
+    notes = fields.Char(string="Notas")
+
+    @api.constrains("identificador_id", "complemento1", "complemento2", "complemento3")
+    def _check_required_complements(self):
+        for rec in self:
+            ident = rec.identificador_id
+            if not ident:
+                continue
+            if ident.req_comp1 and not (rec.complemento1 or "").strip():
+                raise ValidationError("El identificador requiere complemento 1.")
+            if ident.req_comp2 and not (rec.complemento2 or "").strip():
+                raise ValidationError("El identificador requiere complemento 2.")
+            if ident.req_comp3 and not (rec.complemento3 or "").strip():
+                raise ValidationError("El identificador requiere complemento 3.")
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            records.mapped("operacion_id")._auto_refresh_generated_registros()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            self.mapped("operacion_id")._auto_refresh_generated_registros()
+        return res
+
+    def unlink(self):
+        ops = self.mapped("operacion_id")
+        res = super().unlink()
+        if not self.env.context.get("skip_auto_generated_refresh"):
+            ops._auto_refresh_generated_registros()
+        return res

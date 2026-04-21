@@ -70,3 +70,6 @@ Clave para Many2one:
 
 ## CHANGE LOG 18.0.1.7.3
 - El numero interior no debe de ser requerido nunca, porque puede que la direccion no la tenga
+
+## CHANGE LOG 18.0.1.7.4
+-Manejo de identificadores a nivel partida

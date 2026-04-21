@@ -247,6 +247,12 @@ class MxPedPartida(models.Model):
         string="Contribuciones partida (557)",
         copy=True,
     )
+    identificador_ids = fields.One2many(
+        "mx.ped.partida.identificador",
+        "partida_id",
+        string="Identificadores partida",
+        copy=True,
+    )
     iva_estimado = fields.Monetary(
         string="IVA estimado",
         currency_field="currency_id",

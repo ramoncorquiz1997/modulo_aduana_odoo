@@ -558,6 +558,12 @@ class MxPedOperacion(models.Model):
         string="Identificadores de operacion",
         copy=True,
     )
+    partida_identificador_ids = fields.One2many(
+        "mx.ped.partida.identificador",
+        "operacion_id",
+        string="Identificadores de partida",
+        copy=True,
+    )
     cuenta_aduanera_ids = fields.One2many(
         "mx.ped.operacion.cuenta.aduanera",
         "operacion_id",
@@ -3905,7 +3911,10 @@ class MxPedOperacion(models.Model):
             modelo="",
             codigo_producto="",
             contribuciones=contribuciones,
-            identificadores=[],
+            identificadores=[
+                self._build_proforma_identificador(line)
+                for line in partida.identificador_ids.sorted(lambda l: (l.sequence or 0, l.id))
+            ],
             observaciones=(partida.observaciones or partida.notes_regulatorias or "").strip(),
         )
 
@@ -4077,7 +4086,10 @@ class MxPedOperacion(models.Model):
             modelo="",
             codigo_producto="",
             contribuciones=contribuciones,
-            identificadores=[],
+            identificadores=[
+                self._build_proforma_identificador(line)
+                for line in partida.identificador_ids.sorted(lambda l: (l.sequence or 0, l.id))
+            ],
             observaciones=(partida.observaciones or partida.notes_regulatorias or "").strip(),
         )
 

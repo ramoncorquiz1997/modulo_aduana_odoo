@@ -479,7 +479,7 @@
                 </field>
               </page>
               <page string="Identificadores">
-                <group string="Identificadores de operación">
+                <group string="Identificadores de operación (nivel pedimento)">
                   <field name="identificador_pedimento_ids" context="{'default_operacion_id': id}">
                     <list editable="bottom">
                       <field name="sequence" optional="hide"/>
@@ -492,6 +492,32 @@
                     </list>
                     <form string="Identificador de operación">
                       <group>
+                        <field name="sequence"/>
+                        <field name="identificador_id"/>
+                        <field name="code" readonly="1"/>
+                        <field name="complemento1"/>
+                        <field name="complemento2"/>
+                        <field name="complemento3"/>
+                        <field name="notes"/>
+                      </group>
+                    </form>
+                  </field>
+                </group>
+                <group string="Identificadores por partida (nivel P)">
+                  <field name="partida_identificador_ids" context="{'default_operacion_id': id}">
+                    <list editable="bottom">
+                      <field name="partida_id" domain="[('operacion_id','=',parent.id)]"/>
+                      <field name="sequence" optional="hide"/>
+                      <field name="identificador_id"/>
+                      <field name="code" readonly="1"/>
+                      <field name="complemento1"/>
+                      <field name="complemento2"/>
+                      <field name="complemento3"/>
+                      <field name="notes"/>
+                    </list>
+                    <form string="Identificador de partida">
+                      <group>
+                        <field name="partida_id" domain="[('operacion_id','=',operacion_id)]"/>
                         <field name="sequence"/>
                         <field name="identificador_id"/>
                         <field name="code" readonly="1"/>
