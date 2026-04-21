@@ -1659,11 +1659,10 @@ class MxPedOperacion(models.Model):
                     contrib_id = contribucion.id if contribucion else False
                 else:
                     tax_code, amount, rate, contrib_id = item
-                # IGI e IVA son contribuciones de declaración obligatoria cuando existe
-                # un registro de tasa en la fracción, aunque la tasa sea 0% (exento).
-                # DTA, PRV, IEPS y extras solo se incluyen cuando hay importe o tasa > 0.
-                is_primary_mandatory = tax_code in {"IGI", "IVA"} and bool(tasa)
-                if is_primary_mandatory or amount > 0 or float(rate or 0.0) > 0:
+                # Per lineamiento SAAI M3 v9.0, campo "Tasa" del registro 556:
+                # "Cuando la tasa sea 0, no será necesario declarar este registro."
+                # Lo mismo aplica para 557. Solo se incluyen contribuciones con tasa > 0.
+                if float(rate or 0.0) > 0 or amount > 0:
                     normalized_candidates.append((tax_code, amount, rate, contrib_id))
 
             existing_lines = partida.contribucion_ids.filtered(lambda c: c.operacion_id == self)
