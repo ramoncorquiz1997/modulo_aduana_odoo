@@ -222,18 +222,16 @@ class MxPedPartida(models.Model):
     )
 
     # ── Tasas por partida (registro 556) ─────────────────────────────────────
-    tasa_clave_contribucion = fields.Char(
-        string="Tasa: Clave contribución",
-        size=3,
+    contribucion_ids = fields.One2many(
+        "mx.ped.partida.contribucion",
+        "partida_id",
+        string="Contribuciones (556)",
+        copy=True,
     )
-    tasa_valor = fields.Float(
-        string="Tasa: Valor",
-        digits=(16, 4),
-    )
-    tasa_tipo = fields.Char(
-        string="Tasa: Tipo de tasa",
-        size=2,
-    )
+    # Campos legacy mantenidos por compatibilidad con datos existentes.
+    tasa_clave_contribucion = fields.Char(string="Tasa: Clave contribución (legacy)", size=3)
+    tasa_valor = fields.Float(string="Tasa: Valor (legacy)", digits=(16, 4))
+    tasa_tipo = fields.Char(string="Tasa: Tipo de tasa (legacy)", size=2)
 
     forma_pago_sugerida_id = fields.Many2one(
         "mx.forma.pago",
@@ -438,6 +436,38 @@ class MxPedPartida(models.Model):
             rec.nom_ids = [(6, 0, fraccion.nom_default_ids.ids)]
             rec.permiso_ids = [(6, 0, fraccion.permiso_default_ids.ids)]
             rec.rrna_ids = [(6, 0, fraccion.rrna_default_ids.ids)]
+            rec._sync_contribuciones_from_fraccion()
+
+    def _sync_contribuciones_from_fraccion(self):
+        """Auto-rellena contribucion_ids desde fraccion.contribucion_extra_ids.
+        Solo aplica si la fracción tiene contribuciones configuradas; si no,
+        no modifica lo que el agente haya capturado manualmente.
+        """
+        self.ensure_one()
+        fraccion = self.fraccion_id
+        if not fraccion or not fraccion.contribucion_extra_ids:
+            return
+        tipo_op = (
+            self.operacion_id.tipo_operacion
+            or (self.env.context.get("default_tipo_operacion"))
+            or "importacion"
+        )
+        contribs = fraccion.contribucion_extra_ids.filtered(
+            lambda c: c.tipo_operacion == tipo_op and c.active
+        )
+        if not contribs:
+            return
+        _modo_to_tipo = {"porcentaje": "AD", "cuota_fija": "SP"}
+        lines = [
+            (0, 0, {
+                "contribucion_id": c.contribucion_id.id,
+                "tasa": c.tasa,
+                "tipo_tasa": _modo_to_tipo.get(c.modo_calculo, "AD"),
+                "sequence": idx * 10,
+            })
+            for idx, c in enumerate(contribs.sorted(lambda c: c.id), start=1)
+        ]
+        self.contribucion_ids = [(5, 0, 0)] + lines
 
     @api.onchange("nico_id")
     def _onchange_nico_id(self):
@@ -480,6 +510,10 @@ class MxPedPartida(models.Model):
                 default_doc = rec._get_default_factura_documento()
                 if default_doc:
                     rec.with_context(skip_auto_generated_refresh=True).write({"factura_documento_id": default_doc.id})
+            # Auto-rellenar contribuciones desde la fracción si aún no tiene ninguna
+            # (caso típico: creación programática desde sync del lead).
+            if rec.fraccion_id and not rec.contribucion_ids:
+                rec.with_context(skip_auto_generated_refresh=True)._sync_contribuciones_from_fraccion()
         if not self.env.context.get("skip_auto_generated_refresh"):
             records.mapped("operacion_id")._auto_refresh_generated_registros()
         return records
@@ -502,3 +536,55 @@ class MxPedPartida(models.Model):
         if not self.env.context.get("skip_auto_generated_refresh"):
             operaciones._auto_refresh_generated_registros()
         return res
+
+
+class MxPedPartidaContribucion(models.Model):
+    _name = "mx.ped.partida.contribucion"
+    _description = "Partida - Contribucion (Registro 556)"
+    _order = "sequence, id"
+
+    partida_id = fields.Many2one(
+        "mx.ped.partida", required=True, ondelete="cascade", index=True
+    )
+    operacion_id = fields.Many2one(
+        "mx.ped.operacion",
+        related="partida_id.operacion_id",
+        store=True,
+        readonly=True,
+        index=True,
+    )
+    sequence = fields.Integer(default=10)
+    contribucion_id = fields.Many2one(
+        "aduana.catalogo.contribucion",
+        string="Contribución",
+        required=True,
+        ondelete="restrict",
+        domain="[('active','=',True)]",
+    )
+    clave = fields.Integer(
+        related="contribucion_id.code",
+        store=True,
+        readonly=True,
+        string="Clave",
+    )
+    nombre = fields.Char(
+        related="contribucion_id.contribucion",
+        readonly=True,
+        string="Nombre",
+    )
+    tasa = fields.Float(
+        string="Tasa / cuota",
+        digits=(16, 6),
+        help="Porcentaje (ad valorem) o cuota fija según tipo de tasa.",
+    )
+    tipo_tasa = fields.Selection(
+        [
+            ("AD", "AD - Ad valorem"),
+            ("SP", "SP - Específica"),
+            ("MT", "MT - Monto total"),
+            ("MX", "MX - Mixta"),
+        ],
+        string="Tipo de tasa",
+        default="AD",
+        required=True,
+    )

@@ -2272,16 +2272,30 @@ class MxPedOperacion(models.Model):
         (stale - used).unlink()
 
     def _relax_technical_required_states(self, states):
-        """Relaja min/required en registros tecnicos cuando no hay fuente de datos."""
+        """Relaja min/required en registros cuando no hay fuente de datos."""
         self.ensure_one()
         relaxed = dict(states or {})
         docs_514 = self.documento_ids.filtered(lambda d: (d.registro_codigo or "").strip() == "514")
+
+        # Registros técnicos: solo requeridos si tienen fuente de datos.
         has_source = {
             "509": bool(self._build_509_sources_from_partida_contribuciones()),
             "510": bool(self.contribucion_global_ids),
             "514": bool(docs_514),
             "557": bool(self.partida_contribucion_ids),
         }
+        # Registros opcionales por naturaleza: nunca bloquean si no hay datos.
+        # 556 = tasas por partida (solo si la fracción tiene contribuciones),
+        # 353/351/355/358 = T-MEC/TLCUEM (solo si se usan tratados).
+        has_source_optional = {
+            "556": any(p.contribucion_ids for p in self.partida_ids),
+            "351": any(p.tmec_valor_mercancia_no_originaria for p in self.partida_ids),
+            "353": any(p.tmec_valor_mercancia_no_originaria for p in self.partida_ids),
+            "355": any(p.tmec_clave_contribucion for p in self.partida_ids),
+            "358": any(p.tmec_clave_contribucion for p in self.partida_ids),
+        }
+        has_source.update(has_source_optional)
+
         for code, present in has_source.items():
             if present or code not in relaxed:
                 continue
@@ -6145,12 +6159,11 @@ class MxPedOperacion(models.Model):
                     if val not in (None, "", False):
                         valores[campo.nombre] = val
 
-                # Registro 553 se maneja en auto_multi: un registro por permiso
-                # por partida. Si se dejara al loop genérico, un Many2many con
-                # múltiples permisos fallaría con "Expected singleton", y los
-                # campos valor_comercial/cantidad harían pasar la guardia opcional
-                # aunque la partida no tenga permisos → clave_permiso vacío.
-                if code == "553":
+                # Registros 553 y 556 se manejan en auto_multi (una línea por
+                # permiso/contribución por partida). Si se dejaran en el loop
+                # genérico, los campos de importe siempre harían pasar la guardia
+                # opcional aunque no haya datos reales → campos clave vacíos.
+                if code in {"553", "556"}:
                     continue
 
                 # Saltar registros opcionales de partida que no tienen datos
@@ -6195,7 +6208,8 @@ class MxPedOperacion(models.Model):
             ("502", self._get_502_transporte_lines(), self._build_502_valores_direct, True),
             ("503", self._get_503_guia_lines(),       self._build_503_valores_direct, True),
             ("504", self._get_504_contenedor_lines(), self._build_504_valores_direct, True),
-            ("553", self._get_553_permiso_lines(),    self._build_553_valores_direct, True),
+            ("553", self._get_553_permiso_lines(),       self._build_553_valores_direct, True),
+            ("556", self._get_556_contribucion_lines(),  self._build_556_valores_direct, True),
             ("702", self._get_702_contribucion_lines() if is_rectificacion else [], self._build_702_valores_direct, True),
             ("302", self._get_302_prueba_lines() if is_complementario else [],       self._build_302_valores_direct, True),
         ]
@@ -6307,6 +6321,41 @@ class MxPedOperacion(models.Model):
             "clave_permiso":              line.get("clave_permiso") or "",
             "valor_comercial_permiso":    str(round(valor, 2)) if valor else "",
             "cantidad_mercancia_permiso": str(round(cantidad, 5)) if cantidad else "",
+        }
+
+    # ============================================================
+    # 556 – Tasas por Partida
+    # ============================================================
+
+    def _get_556_contribucion_lines(self):
+        """Un dict por cada (partida, contribucion) — un 556 por tasa por partida."""
+        self.ensure_one()
+        lines = []
+        for partida in self.partida_ids.sorted(lambda p: (p.numero_partida or 0, p.id)):
+            fraccion = (partida.fraccion_arancelaria or "").strip()
+            numero_partida = partida.numero_partida or 0
+            for contrib in partida.contribucion_ids.sorted(lambda c: (c.sequence, c.id)):
+                clave = contrib.clave  # Integer (Apéndice 12)
+                lines.append({
+                    "fraccion": fraccion,
+                    "numero_partida": numero_partida,
+                    "clave_contribucion": str(clave) if clave else "",
+                    "tasa": contrib.tasa or 0.0,
+                    "tipo_tasa": contrib.tipo_tasa or "AD",
+                })
+        return lines
+
+    def _build_556_valores_direct(self, line):
+        """Genera el dict de valores para el registro 556 (una tasa por línea)."""
+        tasa = line.get("tasa") or 0.0
+        return {
+            "clave_registro":    "556",
+            "numero_pedimento":  self.pedimento_numero or "",
+            "fraccion_arancelaria": line.get("fraccion") or "",
+            "numero_partida":    str(int(line.get("numero_partida") or 0)) if line.get("numero_partida") else "",
+            "clave_contribucion": line.get("clave_contribucion") or "",
+            "tasa":              str(round(tasa, 6)) if tasa is not None else "",
+            "tipo_tasa":         line.get("tipo_tasa") or "AD",
         }
 
     # ============================================================
