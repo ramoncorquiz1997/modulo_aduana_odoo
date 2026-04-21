@@ -101,7 +101,7 @@ class MxPedClave(models.Model):
         help="Marca informativa cuando las banderas legacy ya se migraron a reglas de rulepack.",
     )
 
-    display_name = fields.Char(compute="_compute_display_name", store=False)
+    display_name = fields.Char(compute="_compute_display_name", store=True, index=True)
 
     _sql_constraints = [
         ("mx_ped_clave_code_uniq", "unique(code)", "La clave de pedimento debe ser unica."),

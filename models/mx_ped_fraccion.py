@@ -92,7 +92,7 @@ class MxPedFraccion(models.Model):
     anexo_30_aplica = fields.Boolean(string="Anexo 30")
     active = fields.Boolean(default=True)
 
-    display_name = fields.Char(compute="_compute_display_name")
+    display_name = fields.Char(compute="_compute_display_name", store=True, index=True)
     nom_aplica = fields.Boolean(compute="_compute_regulatory_flags", store=True)
     permiso_aplica = fields.Boolean(compute="_compute_regulatory_flags", store=True)
     rrna_aplica = fields.Boolean(compute="_compute_regulatory_flags", store=True)

@@ -159,6 +159,17 @@ class MxPedPartidaContribucion(models.Model):
         readonly=True,
     )
     tasa = fields.Float()
+    tipo_tasa = fields.Selection(
+        [
+            ("AD", "Ad Valorem (%)"),
+            ("ES", "Específica (por unidad)"),
+            ("MX", "Mixta"),
+        ],
+        string="Tipo de tasa",
+        default="AD",
+        required=True,
+        help="Tipo de tasa aplicada: AD=porcentaje, ES=monto fijo por unidad, MX=combinación.",
+    )
     base = fields.Monetary(currency_field="currency_id")
     importe = fields.Monetary(currency_field="currency_id")
     currency_id = fields.Many2one(related="operacion_id.currency_id", store=True, readonly=True)

@@ -144,7 +144,7 @@ class MxPedDocumento(models.Model):
     display_name = fields.Char(
         string="Nombre",
         compute="_compute_display_name",
-        store=False,
+        store=True,
     )
 
     estatus = fields.Selection(
