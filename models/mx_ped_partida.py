@@ -561,17 +561,22 @@ class MxPedPartidaContribucion(models.Model):
         ondelete="restrict",
         domain="[('active','=',True)]",
     )
-    clave = fields.Integer(
-        related="contribucion_id.code",
-        store=True,
-        readonly=True,
+    contribucion_code = fields.Integer(
         string="Clave",
+        compute="_compute_contribucion_display",
+        store=True,
     )
-    nombre = fields.Char(
-        related="contribucion_id.contribucion",
-        readonly=True,
-        string="Nombre",
+    contribucion_name = fields.Char(
+        string="Contribución",
+        compute="_compute_contribucion_display",
+        store=True,
     )
+
+    @api.depends("contribucion_id")
+    def _compute_contribucion_display(self):
+        for rec in self:
+            rec.contribucion_code = rec.contribucion_id.code or 0
+            rec.contribucion_name = rec.contribucion_id.contribucion or ""
     tasa = fields.Float(
         string="Tasa / cuota",
         digits=(16, 6),

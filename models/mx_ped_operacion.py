@@ -6335,7 +6335,7 @@ class MxPedOperacion(models.Model):
             fraccion = (partida.fraccion_arancelaria or "").strip()
             numero_partida = partida.numero_partida or 0
             for contrib in partida.contribucion_ids.sorted(lambda c: (c.sequence, c.id)):
-                clave = contrib.clave  # Integer (Apéndice 12)
+                clave = contrib.contribucion_code or contrib.contribucion_id.code or 0
                 lines.append({
                     "fraccion": fraccion,
                     "numero_partida": numero_partida,
