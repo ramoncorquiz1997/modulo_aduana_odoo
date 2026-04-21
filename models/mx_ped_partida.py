@@ -112,10 +112,32 @@ class MxPedPartida(models.Model):
         readonly=True,
     )
 
-    unidad_tarifa = fields.Char(size=10)
+    unidad_tarifa_id = fields.Many2one(
+        "mx.ped.um",
+        string="Unidad tarifa",
+        help="Unidad de medida de tarifa (UMT) — definida por la TIGIE para la fracción arancelaria.",
+    )
+    unidad_tarifa = fields.Char(
+        string="Unidad tarifa (código)",
+        size=10,
+        related="unidad_tarifa_id.code",
+        store=True,
+        readonly=True,
+    )
     cantidad_tarifa = fields.Float(digits=(16, 5))
 
-    unidad_comercial = fields.Char(size=10)
+    unidad_comercial_id = fields.Many2one(
+        "mx.ped.um",
+        string="Unidad comercial",
+        help="Unidad de medida comercial (UMC) — como viene expresada en la factura del proveedor.",
+    )
+    unidad_comercial = fields.Char(
+        string="Unidad comercial (código)",
+        size=10,
+        related="unidad_comercial_id.code",
+        store=True,
+        readonly=True,
+    )
     cantidad_comercial = fields.Float(digits=(16, 5))
 
     precio_unitario = fields.Float(digits=(16, 6))
@@ -349,19 +371,25 @@ class MxPedPartida(models.Model):
             rec.value_mxn = (rec.value_usd or 0.0) * tc
 
     @api.model
-    def name_search(self, name="", args=None, operator="ilike", limit=100):
-        args = list(args or [])
-        domain = []
+    def _name_search(self, name, domain=None, operator="ilike", limit=100, order=None):
+        domain = list(domain or [])
         if name:
-            domain = [
+            text_domain = [
                 "|",
-                "|",
-                ("numero_partida", "ilike", name),
                 ("fraccion_arancelaria", operator, name),
                 ("descripcion", operator, name),
             ]
-        recs = self.search(domain + args, limit=limit)
-        return recs.name_get()
+            # numero_partida es Integer: solo se puede comparar con = cuando el texto es numérico
+            name_stripped = (name or "").strip()
+            if name_stripped.isdigit():
+                domain = [
+                    "|",
+                    ("numero_partida", "=", int(name_stripped)),
+                    *text_domain,
+                ] + domain
+            else:
+                domain = text_domain + domain
+        return self._search(domain, limit=limit, order=order)
 
     def name_get(self):
         return [(rec.id, rec.display_name or ("Partida %s" % (rec.numero_partida or rec.id))) for rec in self]
@@ -446,7 +474,7 @@ class MxPedPartida(models.Model):
             if not rec.descripcion:
                 rec.descripcion = fraccion.name
             if fraccion.um_id:
-                rec.unidad_tarifa = fraccion.um_id.code
+                rec.unidad_tarifa_id = fraccion.um_id
                 rec.uom_id = fraccion.um_id.id
             rec.nom_ids = [(6, 0, fraccion.nom_default_ids.ids)]
             rec.permiso_ids = [(6, 0, fraccion.permiso_default_ids.ids)]
@@ -480,6 +508,28 @@ class MxPedPartida(models.Model):
             f"PERMISO: {permisos or 'N/A'} | "
             f"RRNA: {rrna or 'N/A'}"
         )
+
+    def init(self):
+        """Migración en caliente: enlaza unidad_tarifa_id / unidad_comercial_id
+        para registros que ya tenían el código guardado como Char libre."""
+        self.env.cr.execute("""
+            UPDATE mx_ped_partida p
+               SET unidad_tarifa_id = u.id
+              FROM mx_ped_um u
+             WHERE u.code = p.unidad_tarifa
+               AND p.unidad_tarifa_id IS NULL
+               AND p.unidad_tarifa IS NOT NULL
+               AND p.unidad_tarifa != ''
+        """)
+        self.env.cr.execute("""
+            UPDATE mx_ped_partida p
+               SET unidad_comercial_id = u.id
+              FROM mx_ped_um u
+             WHERE u.code = p.unidad_comercial
+               AND p.unidad_comercial_id IS NULL
+               AND p.unidad_comercial IS NOT NULL
+               AND p.unidad_comercial != ''
+        """)
 
     @api.model_create_multi
     def create(self, vals_list):

@@ -1598,12 +1598,23 @@ class MxPedOperacion(models.Model):
         for partida in self.partida_ids:
             tipo = "importacion" if self.tipo_operacion != "exportacion" else "exportacion"
             tasa = False
-            if partida.fraccion_id:
-                tasa = partida.fraccion_id.tasa_ids.filtered(
+            # Usa fraccion_id Many2one; si no está enlazado, intenta resolverlo por código.
+            fraccion = partida.fraccion_id
+            if not fraccion and (partida.fraccion_arancelaria or "").strip():
+                fraccion = self.env["mx.ped.fraccion"].search(
+                    [("code", "=", partida.fraccion_arancelaria.strip())], limit=1
+                )
+                if fraccion:
+                    # Enlaza para que cálculos futuros sean inmediatos.
+                    partida.with_context(skip_auto_generated_refresh=True).write(
+                        {"fraccion_id": fraccion.id}
+                    )
+            if fraccion:
+                tasa = fraccion.tasa_ids.filtered(
                     lambda t: t.tipo_operacion == tipo and t.territorio == "general"
                 )[:1]
                 if not tasa:
-                    tasa = partida.fraccion_id.tasa_ids.filtered(lambda t: t.tipo_operacion == tipo)[:1]
+                    tasa = fraccion.tasa_ids.filtered(lambda t: t.tipo_operacion == tipo)[:1]
 
             candidates = [
                 ("IGI", partida.igi_estimado or 0.0, tasa.igi if tasa else 0.0),
@@ -1616,12 +1627,12 @@ class MxPedOperacion(models.Model):
                 if ieps_amount > 0.0:
                     candidates.append(("IEPS", ieps_amount, tasa.ieps))
 
-            if partida.fraccion_id:
-                extra_rules = partida.fraccion_id.contribucion_extra_ids.filtered(
+            if fraccion:
+                extra_rules = fraccion.contribucion_extra_ids.filtered(
                     lambda r: r.active and r.tipo_operacion == tipo and r.territorio == "general"
                 )[:]
                 if not extra_rules:
-                    extra_rules = partida.fraccion_id.contribucion_extra_ids.filtered(
+                    extra_rules = fraccion.contribucion_extra_ids.filtered(
                         lambda r: r.active and r.tipo_operacion == tipo
                     )[:]
                 for rule in extra_rules:
@@ -5995,8 +6006,17 @@ class MxPedOperacion(models.Model):
             if allowed is not None and layout_reg.codigo not in allowed:
                 continue
             code = (layout_reg.codigo or "").strip()
-            # Estos registros se generan/sincronizan desde modelos tecnicos dedicados.
+            # Estos registros se generan/sincronizan desde modelos técnicos dedicados
+            # o tienen condiciones propias (auto_single / auto_multi).
+            # NO deben procesarse por el loop de layout para evitar que se generen
+            # incondicionalmente (ej. 800 apareciendo en pedimentos normales).
             if code in {"509", "510", "557", "514"}:
+                continue
+            # 505 se inyecta por su propio bloque (una línea por documento).
+            if code == "505":
+                continue
+            # Registros condicionales de escenario: solo via auto_single con guardia propia.
+            if code in {"800", "801", "701", "702", "301", "302"}:
                 continue
             campos = layout_reg.campo_ids.sorted(lambda c: c.pos_ini or c.orden or 0)
 
@@ -6202,23 +6222,23 @@ class MxPedOperacion(models.Model):
                     "valores": valores,
                 }))
 
-        # ── 505 contingencia: solo se inyecta si la casilla está activa ────────
-        if self._is_505_contingency_mode():
-            layout_reg_505 = self.layout_id.registro_ids.filtered(
-                lambda r: (r.codigo or "").strip() == "505"
-            )
-            if layout_reg_505:
-                layout_reg_505 = layout_reg_505.sorted(lambda r: r.orden or 0)[0]
-                docs_505 = self.documento_ids.filtered(
-                    lambda d: d.tipo in ("factura", "cove", "otro")
-                    and (d.registro_codigo or "").strip() not in {"514", "510", "557"}
-                ).sorted(lambda d: (d.es_documento_principal is not True, d.id))
-                for secuencia, documento in enumerate(docs_505, start=1):
-                    registros.append((0, 0, {
-                        "codigo": "505",
-                        "secuencia": secuencia,
-                        "valores": self._build_505_valores(layout_reg_505, documento),
-                    }))
+        # ── 505: se inyecta siempre que existan documentos de tipo factura/cove/otro ──
+        # (obligatorio para importaciones normales; no se limita a modo contingencia)
+        layout_reg_505 = self.layout_id.registro_ids.filtered(
+            lambda r: (r.codigo or "").strip() == "505"
+        )
+        if layout_reg_505:
+            layout_reg_505 = layout_reg_505.sorted(lambda r: r.orden or 0)[0]
+            docs_505 = self.documento_ids.filtered(
+                lambda d: d.tipo in ("factura", "cove", "otro")
+                and (d.registro_codigo or "").strip() not in {"514", "510", "557"}
+            ).sorted(lambda d: (d.es_documento_principal is not True, d.id))
+            for secuencia, documento in enumerate(docs_505, start=1):
+                registros.append((0, 0, {
+                    "codigo": "505",
+                    "secuencia": secuencia,
+                    "valores": self._build_505_valores(layout_reg_505, documento),
+                }))
 
         # Auto-inyección de registros con estructura fija (no dependen del layout).
         is_rectificacion = bool(self.es_rectificacion)
@@ -6252,7 +6272,11 @@ class MxPedOperacion(models.Model):
 
         # Registros de encabezado único (1 por pedimento, condicionados al escenario)
         mov = self._get_tipo_movimiento_effective()
-        is_cancelacion_desistimiento = mov in {"2", "3"}
+        # 800 (Firma Electrónica) es obligatorio en todos los tipos EXCEPTO:
+        #   7 = Despacho Anticipado  (aún no hay firma definitiva)
+        #   8 = Confirmación de Pago (el pago confirma sin firma adicional)
+        is_despacho_anticipado = mov == "7"
+        is_confirmacion_pago = mov == "8"
 
         auto_single = []
         if is_rectificacion and "701" not in generated_codes:
@@ -6261,7 +6285,7 @@ class MxPedOperacion(models.Model):
         if is_complementario and "301" not in generated_codes:
             if allowed is None or "301" in allowed:
                 auto_single.append(("301", self._build_301_valores_direct()))
-        if is_cancelacion_desistimiento and "800" not in generated_codes:
+        if not is_despacho_anticipado and not is_confirmacion_pago and "800" not in generated_codes:
             if allowed is None or "800" in allowed:
                 auto_single.append(("800", self._build_800_valores_direct()))
         if "801" not in generated_codes:

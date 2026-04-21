@@ -211,8 +211,10 @@
                       <field name="net_weight_line"/>
                       <field name="precio_unitario"/>
                       <field name="value_mxn" readonly="1"/>
-                      <field name="unidad_tarifa"/>
+                      <field name="unidad_tarifa_id"/>
                       <field name="cantidad_tarifa"/>
+                      <field name="unidad_comercial_id"/>
+                      <field name="cantidad_comercial"/>
                       <field name="valor_aduana"/>
                     </group>
                     <group string="Regulatorio" invisible="not parent.show_advanced_info">

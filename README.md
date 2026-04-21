@@ -76,3 +76,8 @@ Clave para Many2one:
 
 ## CHANGE LOG 18.0.1.7.5
 - Cambios en manejo de transporte para manejar varios transporte en un mismo pedimento
+
+## CHANGE LOG 18.0.1.7.7
+- Arreglo en catalogo de fracciones, en busqueda dentro del crm_lead
+- Se arreglan registros que tenian bloqueo
+- Campos con seleccion de tipo de unidad se apega a catalogo y se quita de texto abierto
