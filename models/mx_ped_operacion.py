@@ -2162,6 +2162,19 @@ class MxPedOperacion(models.Model):
                     return partida.numero_partida
                 return default
 
+            # 557: fraccion_arancelaria viene de la partida relacionada.
+            # El source object es mx.ped.partida.contribucion, que no tiene fraccion_arancelaria
+            # directamente — se resuelve vía partida_id.
+            if "fraccion" in norm_name and "arancelaria" in norm_name:
+                partida = _read_attr(source, "partida_id")
+                if partida:
+                    frac = (
+                        (_read_attr(partida, "fraccion_arancelaria") or "").strip()
+                        or (partida.fraccion_id.code if _read_attr(partida, "fraccion_id") else "")
+                    )
+                    return frac or default
+                return default
+
             # 514
             if code == "514":
                 if "folio" in norm_name or "documento" in norm_name:
@@ -5102,6 +5115,12 @@ class MxPedOperacion(models.Model):
             # Fallback al code de fraccion_id para garantizar que nunca esté vacío.
             if not val and source == "fraccion_arancelaria" and partida and partida.fraccion_id:
                 val = partida.fraccion_id.code or val
+            # cantidad_comercial (UMC) puede ser 0.0 cuando el usuario no la ha llenado.
+            # 0.0 == False en Python → el valor se descartaría en la guardia `not in (None, "", False)`.
+            # Fallback a cantidad_tarifa y después a quantity (default=1.0) para que el
+            # campo siempre lleve un valor positivo declarable en el TXT de SAAI.
+            if not val and source == "cantidad_comercial" and partida:
+                val = partida.cantidad_tarifa or partida.quantity or 0.0
             return val
         return self._lead_value_for_field_name(
             campo.nombre,
