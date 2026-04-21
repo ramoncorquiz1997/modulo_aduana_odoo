@@ -6145,6 +6145,14 @@ class MxPedOperacion(models.Model):
                     if val not in (None, "", False):
                         valores[campo.nombre] = val
 
+                # Registro 553 se maneja en auto_multi: un registro por permiso
+                # por partida. Si se dejara al loop genérico, un Many2many con
+                # múltiples permisos fallaría con "Expected singleton", y los
+                # campos valor_comercial/cantidad harían pasar la guardia opcional
+                # aunque la partida no tenga permisos → clave_permiso vacío.
+                if code == "553":
+                    continue
+
                 # Saltar registros opcionales de partida que no tienen datos
                 # propios (solo tienen los campos de identificación básicos).
                 if code in _OPTIONAL_PARTIDA_CODES:
@@ -6187,6 +6195,7 @@ class MxPedOperacion(models.Model):
             ("502", self._get_502_transporte_lines(), self._build_502_valores_direct, True),
             ("503", self._get_503_guia_lines(),       self._build_503_valores_direct, True),
             ("504", self._get_504_contenedor_lines(), self._build_504_valores_direct, True),
+            ("553", self._get_553_permiso_lines(),    self._build_553_valores_direct, True),
             ("702", self._get_702_contribucion_lines() if is_rectificacion else [], self._build_702_valores_direct, True),
             ("302", self._get_302_prueba_lines() if is_complementario else [],       self._build_302_valores_direct, True),
         ]
@@ -6261,6 +6270,43 @@ class MxPedOperacion(models.Model):
             "numero_pedimento": self.pedimento_numero or "",
             "numero_contenedor": line.get("numero") or "",
             "tipo_contenedor":  line.get("tipo") or "",
+        }
+
+    # ============================================================
+    # 553 – Permisos por partida
+    # ============================================================
+
+    def _get_553_permiso_lines(self):
+        """Un dict por cada (partida, permiso) — el SAT requiere un 553 por permiso."""
+        self.ensure_one()
+        lines = []
+        for partida in self.partida_ids.sorted(lambda p: (p.numero_partida or 0, p.id)):
+            fraccion = (partida.fraccion_arancelaria or "").strip()
+            numero_partida = partida.numero_partida or 0
+            valor = partida.value_usd or 0.0
+            cantidad = partida.cantidad_tarifa or 0.0
+            for permiso in partida.permiso_ids:
+                lines.append({
+                    "fraccion": fraccion,
+                    "numero_partida": numero_partida,
+                    "clave_permiso": (permiso.code or "").strip(),
+                    "valor": valor,
+                    "cantidad": cantidad,
+                })
+        return lines
+
+    def _build_553_valores_direct(self, line):
+        """Genera el dict de valores para el registro 553 (un permiso por línea)."""
+        valor = line.get("valor") or 0.0
+        cantidad = line.get("cantidad") or 0.0
+        return {
+            "clave_registro":             "553",
+            "numero_pedimento":           self.pedimento_numero or "",
+            "fraccion_arancelaria":       line.get("fraccion") or "",
+            "numero_partida":             str(int(line.get("numero_partida") or 0)) if line.get("numero_partida") else "",
+            "clave_permiso":              line.get("clave_permiso") or "",
+            "valor_comercial_permiso":    str(round(valor, 2)) if valor else "",
+            "cantidad_mercancia_permiso": str(round(cantidad, 5)) if cantidad else "",
         }
 
     # ============================================================
