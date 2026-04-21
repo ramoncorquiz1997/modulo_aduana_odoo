@@ -2913,6 +2913,12 @@ class MxPedOperacion(models.Model):
 
     def _validate_registros_vs_estructura(self):
         self.ensure_one()
+        # Para eliminación/desistimiento (mov 2/3) la estructura válida es
+        # exclusivamente 500/800/801. _validate_cancel_desist_structure() ya
+        # la verifica antes de llegar aquí; el plan de rulepack completo
+        # (que exige 502, partidas, etc.) no aplica y se omite.
+        if self._get_tipo_movimiento_effective() in {"2", "3"}:
+            return
         counts = Counter((r.codigo or "") for r in self.registro_ids)
         errors = []
 

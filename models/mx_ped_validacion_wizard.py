@@ -116,7 +116,9 @@ class MxPedValidacionWizard(models.TransientModel):
             e(_("Falta el Agente Aduanal."), cat="general", seq=40)
         if not op.fecha_operacion:
             e(_("Falta la Fecha de operación."), cat="general", seq=50)
-        if not op.incoterm and op.tipo_operacion == "importacion":
+        if not op.incoterm and op.tipo_operacion == "importacion" and not is_cancel_desist:
+            # Para eliminación/desistimiento no aplica incoterm: la mercancía
+            # no llegó a entrar o salir del país.
             w(_("No se indicó el Incoterm. Recomendado para importaciones."), cat="general", seq=60)
 
         tipo_cambio = op.lead_id.x_tipo_cambio if op.lead_id else 0.0
