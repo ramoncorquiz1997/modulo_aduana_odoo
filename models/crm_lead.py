@@ -2489,13 +2489,14 @@ class CrmLeadDocumento(models.Model):
             rec.diferencia_valor_moneda = diff_moneda
             rec.saldo_valor_usd = max(diff_usd, 0.0)
             rec.saldo_valor_moneda = max(diff_moneda, 0.0)
-            rec.has_difference = abs(diff_usd) > 0.01 or abs(diff_moneda) > 0.01
-            parts = []
-            if abs(diff_moneda) > 0.01:
-                parts.append("Mon: %.2f" % diff_moneda)
-            if abs(diff_usd) > 0.01:
-                parts.append("USD: %.2f" % diff_usd)
-            rec.diferencia_resumen = " | ".join(parts) if parts else "0.00"
+            # Solo marca diferencia cuando el campo USD tiene valor capturado.
+            # Si no se capturó, no hay contra qué comparar.
+            tiene_valor_usd = (rec.cfdi_valor_usd or 0.0) > 0.01
+            rec.has_difference = tiene_valor_usd and abs(diff_usd) > 0.01
+            if tiene_valor_usd and abs(diff_usd) > 0.01:
+                rec.diferencia_resumen = "USD: %.2f" % diff_usd
+            else:
+                rec.diferencia_resumen = "✓"
 
     def action_open_full_form(self):
         self.ensure_one()

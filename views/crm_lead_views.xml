@@ -103,7 +103,9 @@
                        required="x_tipo_operacion == 'importacion'"/>
                 <field name="x_importador_name"
                        invisible="x_tipo_operacion == 'exportacion'"/>
-                <field name="x_proveedor_id" domain="[('x_contact_role','in',['proveedor','otro'])]"/>
+                <field name="x_proveedor_id"
+                       domain="['|', ('x_contact_role','in',['proveedor','otro']), ('supplier_rank','>',0)]"
+                       context="{'default_x_contact_role': 'proveedor'}"/>
                 <field name="x_proveedor_name"/>
                 <field name="x_comprador_id"
                        domain="[('x_contact_role','in',['cliente','otro'])]"
@@ -128,8 +130,10 @@
                 <field name="x_medio_transporte_arribo_id"/>
                 <field name="x_medio_transporte_entrada_salida_id"/>
                 <field name="x_origen_destino_id"/>
-                <field name="x_pais_origen_id"/>
-                <field name="x_pais_destino_id"/>
+                <field name="x_pais_origen_id"
+                       invisible="x_tipo_operacion == 'exportacion'"/>
+                <field name="x_pais_destino_id"
+                       invisible="x_tipo_operacion == 'importacion'"/>
                 <field name="x_lugar_carga"/>
                 <field name="x_lugar_descarga"/>
               </group>

@@ -87,6 +87,12 @@ class ResPartner(models.Model):
         string="Rol aduanal",
         default="cliente",
     )
+    x_es_proveedor = fields.Boolean(
+        string="Es proveedor",
+        compute="_compute_x_es_proveedor",
+        inverse="_inverse_x_es_proveedor",
+        store=True,
+    )
     x_freight_forwarder_id = fields.Many2one(
         "res.partner",
         string="Freight Forwarder",
@@ -581,6 +587,16 @@ class ResPartner(models.Model):
             return result[0].data.decode("utf-8", errors="ignore")
         except Exception:
             return False
+
+    @api.depends("x_contact_role")
+    def _compute_x_es_proveedor(self):
+        for rec in self:
+            rec.x_es_proveedor = rec.x_contact_role == "proveedor"
+
+    def _inverse_x_es_proveedor(self):
+        for rec in self:
+            if rec.x_es_proveedor:
+                rec.x_contact_role = "proveedor"
 
     def _compute_invite_url(self):
         base = self.env["ir.config_parameter"].sudo().get_param(

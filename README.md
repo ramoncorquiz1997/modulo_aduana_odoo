@@ -59,3 +59,10 @@ Clave para Many2one:
   - `x_pedimento_last_error`
 - Regla 1:1 garantizada por constraint SQL en `aduana.pedimento(lead_id)`.
 - Existe esqueleto para mapeo TXT en `aduana.pedimento.action_prepare_txt_payload`.
+
+
+## CHANGE LOG 18.0.1.7.2
+- El buscador de aduana-seccion ahora funciona en orden de busqueda, no ignora el texto agregado
+- La lista de proveedores incluye los contactos que tienen el checkbox de proveedor, no solo exige crear uno nuevo en cada operación
+- Se agrega check de proveedores en perfil de contacto
+- La columna de diferencia en documentos no se pone en rojo ni la muestra si hay diferencia de moneda de cambio
