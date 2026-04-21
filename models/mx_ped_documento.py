@@ -168,6 +168,17 @@ class MxPedDocumento(models.Model):
                 pieces.append("Partida %s" % rec.partida_id.numero_partida)
             rec.display_name = " | ".join(pieces)
 
+    @api.model
+    def _name_search(self, name, domain=None, operator="ilike", limit=100, order=None):
+        domain = list(domain or [])
+        if name:
+            domain = [
+                "|",
+                ("folio", operator, name.strip()),
+                ("tipo", operator, name.strip()),
+            ] + domain
+        return self._search(domain, limit=limit, order=order)
+
     def name_get(self):
         return [(rec.id, rec.display_name or ("Documento %s" % rec.id)) for rec in self]
 

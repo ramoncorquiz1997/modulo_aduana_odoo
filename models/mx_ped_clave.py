@@ -126,6 +126,17 @@ class MxPedClave(models.Model):
         for rec in self:
             rec.display_name = f"{rec.code} - {rec.name}"
 
+    @api.model
+    def _name_search(self, name, domain=None, operator="ilike", limit=100, order=None):
+        domain = list(domain or [])
+        if name:
+            domain = [
+                "|",
+                ("code", operator, name.strip()),
+                ("name", operator, name.strip()),
+            ] + domain
+        return self._search(domain, limit=limit, order=order)
+
     @api.constrains("code")
     def _check_code(self):
         for rec in self:

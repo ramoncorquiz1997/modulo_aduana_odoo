@@ -138,6 +138,19 @@ class MxPedFraccion(models.Model):
                 label = f"{label} {rec.name}"
             rec.display_name = label.strip()
 
+    @api.model
+    def _name_search(self, name, domain=None, operator="ilike", limit=100, order=None):
+        domain = list(domain or [])
+        if name:
+            name_stripped = (name or "").strip()
+            domain = [
+                "|", "|",
+                ("code", operator, name_stripped),
+                ("nico", operator, name_stripped),
+                ("name", operator, name_stripped),
+            ] + domain
+        return self._search(domain, limit=limit, order=order)
+
     @api.depends("nom_default_ids", "permiso_default_ids", "rrna_default_ids")
     def _compute_regulatory_flags(self):
         for rec in self:
