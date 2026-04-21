@@ -73,3 +73,6 @@ Clave para Many2one:
 
 ## CHANGE LOG 18.0.1.7.4
 -Manejo de identificadores a nivel partida
+
+## CHANGE LOG 18.0.1.7.5
+- Cambios en manejo de transporte para manejar varios transporte en un mismo pedimento

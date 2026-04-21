@@ -113,6 +113,8 @@ access_aduana_catalogo_medio_transporte_admin,aduana.catalogo.medio.transporte.a
 access_aduana_catalogo_pais_admin,aduana.catalogo.pais.admin,model_aduana_catalogo_pais,base.group_system,1,1,1,1
 access_aduana_catalogo_moneda_admin,aduana.catalogo.moneda.admin,model_aduana_catalogo_moneda,base.group_system,1,1,1,1
 access_aduana_catalogo_contribucion_admin,aduana.catalogo.contribucion.admin,model_aduana_catalogo_contribucion,base.group_system,1,1,1,1
+access_crm_lead_transportista,crm.lead.transportista,model_crm_lead_transportista,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_crm_lead_transportista_admin,crm.lead.transportista.admin,model_crm_lead_transportista,base.group_system,1,1,1,1
 access_crm_lead_guia,crm.lead.guia,model_crm_lead_guia,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_crm_lead_guia_admin,crm.lead.guia.admin,model_crm_lead_guia,base.group_system,1,1,1,1
 access_crm_lead_contenedor,crm.lead.contenedor,model_crm_lead_contenedor,modulo_aduana_odoo.group_aduana_user,1,1,1,1

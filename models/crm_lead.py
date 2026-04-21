@@ -288,73 +288,11 @@ class CrmLead(models.Model):
         domain="[('active','=',True)]",
     )
 
-    x_transportista_id = fields.Many2one(
-        comodel_name="res.partner",
-        string="Transportista",
-        domain="[('x_contact_role','=','transportista')]",
+    x_transportista_ids = fields.One2many(
+        "crm.lead.transportista",
+        "lead_id",
+        string="Transportistas (502)",
     )
-    x_transportista_rfc = fields.Char(
-        string="RFC transportista",
-        related="x_transportista_id.vat",
-        readonly=True,
-    )
-    x_transportista_curp = fields.Char(
-        string="CURP transportista",
-        related="x_transportista_id.x_curp",
-        readonly=True,
-    )
-    x_transportista_domicilio = fields.Char(
-        string="Domicilio fiscal transportista",
-        compute="_compute_x_transportista_domicilio",
-        store=False,
-        readonly=True,
-    )
-    x_transportista_calle = fields.Char(
-        string="Calle transportista",
-        related="x_transportista_id.x_street_name",
-        readonly=True,
-    )
-    x_transportista_num_ext = fields.Char(
-        string="Num. exterior transportista",
-        related="x_transportista_id.x_street_number_ext",
-        readonly=True,
-    )
-    x_transportista_num_int = fields.Char(
-        string="Num. interior transportista",
-        related="x_transportista_id.x_street_number_int",
-        readonly=True,
-    )
-    x_transportista_colonia = fields.Char(
-        string="Colonia transportista",
-        related="x_transportista_id.x_colonia",
-        readonly=True,
-    )
-    x_transportista_municipio = fields.Char(
-        string="Municipio transportista",
-        related="x_transportista_id.x_municipio",
-        readonly=True,
-    )
-    x_transportista_localidad = fields.Char(
-        string="Localidad transportista",
-        related="x_transportista_id.x_localidad",
-        readonly=True,
-    )
-    x_transportista_estado_id = fields.Many2one(
-        "res.country.state",
-        string="Estado transportista",
-        related="x_transportista_id.state_id",
-        readonly=True,
-    )
-    x_transportista_cp = fields.Char(
-        string="CP transportista",
-        related="x_transportista_id.zip",
-        readonly=True,
-    )
-    x_transporte_pais_id = fields.Many2one(
-        comodel_name="res.country",
-        string="País del medio de transporte",
-    )
-    x_transporte_identificador = fields.Char(string="Identificador de transporte")
 
     x_pais_origen_id = fields.Many2one(
         comodel_name="res.country",
@@ -571,46 +509,6 @@ class CrmLead(models.Model):
             rec.x_counterparty_name_505 = text_name or (partner.name if partner else False)
             rec.x_counterparty_role_505 = role
 
-    @api.depends(
-        "x_transportista_id",
-        "x_transportista_id.x_street_name",
-        "x_transportista_id.x_street_number_ext",
-        "x_transportista_id.x_street_number_int",
-        "x_transportista_id.x_colonia",
-        "x_transportista_id.x_municipio",
-        "x_transportista_id.x_localidad",
-        "x_transportista_id.city",
-        "x_transportista_id.state_id.name",
-        "x_transportista_id.zip",
-        "x_transportista_id.country_id.name",
-    )
-    def _compute_x_transportista_domicilio(self):
-        for rec in self:
-            partner = rec.x_transportista_id
-            if not partner:
-                rec.x_transportista_domicilio = False
-                continue
-            street = " ".join(
-                filter(
-                    None,
-                    [
-                        partner.x_street_name,
-                        partner.x_street_number_ext,
-                    ],
-                )
-            ).strip()
-            if partner.x_street_number_int:
-                street = ("%s INT %s" % (street, partner.x_street_number_int)).strip()
-            pieces = [
-                street,
-                partner.x_colonia,
-                partner.x_localidad or partner.city,
-                partner.x_municipio,
-                partner.state_id.name if partner.state_id else False,
-                partner.zip,
-                partner.country_id.name if partner.country_id else False,
-            ]
-            rec.x_transportista_domicilio = ", ".join([p for p in pieces if p])
 
     def _prepare_default_505_document_vals(self):
         self.ensure_one()
@@ -752,7 +650,7 @@ class CrmLead(models.Model):
             "acuse_validacion": self.x_acuse_validacion or "",
             "agente_aduanal_id": self.x_agente_aduanal_id.id or False,
             "patente": self.x_agente_aduanal_id.x_patente_aduanal or self.x_patente_agente or "",
-            "avc_transportista_id": self.x_transportista_id.id or False,
+            "avc_transportista_id": self.x_transportista_ids[:1].transportista_id.id or False,
             "curp_agente": self.x_curp_agente or "",
             "clave_pedimento_id": self.x_clave_pedimento_id.id or False,
             "currency_id": currency.id,
@@ -997,12 +895,6 @@ class CrmLead(models.Model):
                 if mt:
                     vals[id_field] = mt.id
         return vals
-
-    @api.onchange("x_transportista_id")
-    def _onchange_x_transportista_id(self):
-        for rec in self:
-            if rec.x_transportista_id and not rec.x_transporte_pais_id:
-                rec.x_transporte_pais_id = rec.x_transportista_id.country_id
 
     def action_generate_pedimento_xml(self):
         self.ensure_one()
@@ -1409,22 +1301,7 @@ class CrmLead(models.Model):
     x_numero_paquetes = fields.Integer(string="Número de paquetes")
 
     # --- Transporte / guías ---
-    x_tipo_guia = fields.Selection(
-        selection=[
-            ("M", "M - Master"),
-            ("H", "H - House"),
-        ],
-        string="Identificador de guía",
-    )
-    x_guia_manifiesto = fields.Char(string="Guía o manifiesto", size=20)
     x_booking = fields.Char(string="Booking")
-    x_tipo_contenedor_id = fields.Many2one(
-        comodel_name="mx.ped.tipo.contenedor",
-        string="Tipo de contenedor/vehículo",
-        domain=[("active", "=", True)],
-    )
-    x_num_contenedor = fields.Char(string="Número de contenedor")
-    x_num_sello = fields.Char(string="Número de sello")
     x_guia_ids = fields.One2many(
         "crm.lead.guia",
         "lead_id",
@@ -2682,6 +2559,78 @@ class CrmLeadContenedor(models.Model):
         domain=[("active", "=", True)],
         required=True,
     )
+
+
+class CrmLeadTransportista(models.Model):
+    _name = "crm.lead.transportista"
+    _description = "Transportista por Lead (Registro 502)"
+    _order = "sequence, id"
+
+    lead_id = fields.Many2one("crm.lead", required=True, ondelete="cascade", index=True)
+    sequence = fields.Integer(default=10)
+    transportista_id = fields.Many2one(
+        "res.partner",
+        string="Transportista",
+        required=True,
+        domain="[('x_contact_role','=','transportista')]",
+        ondelete="restrict",
+    )
+    transporte_identificador = fields.Char(
+        string="Identificador del vehículo",
+        size=30,
+        help="Placas (terrestre), nombre del buque (marítimo), número de furgón (ferroviario).",
+    )
+    transporte_pais_id = fields.Many2one("res.country", string="País del vehículo")
+
+    # Computed/related desde el partner
+    rfc = fields.Char(related="transportista_id.vat", readonly=True, string="RFC")
+    curp = fields.Char(related="transportista_id.x_curp", readonly=True, string="CURP")
+    nombre = fields.Char(related="transportista_id.name", readonly=True, string="Nombre/Razón social")
+    domicilio = fields.Char(
+        string="Domicilio fiscal",
+        compute="_compute_domicilio",
+        store=False,
+        readonly=True,
+    )
+
+    @api.depends(
+        "transportista_id",
+        "transportista_id.x_street_name",
+        "transportista_id.x_street_number_ext",
+        "transportista_id.x_street_number_int",
+        "transportista_id.x_colonia",
+        "transportista_id.x_municipio",
+        "transportista_id.x_localidad",
+        "transportista_id.city",
+        "transportista_id.state_id.name",
+        "transportista_id.zip",
+        "transportista_id.country_id.name",
+    )
+    def _compute_domicilio(self):
+        for rec in self:
+            partner = rec.transportista_id
+            if not partner:
+                rec.domicilio = False
+                continue
+            street = " ".join(filter(None, [partner.x_street_name, partner.x_street_number_ext])).strip()
+            if partner.x_street_number_int:
+                street = ("%s INT %s" % (street, partner.x_street_number_int)).strip()
+            pieces = [
+                street,
+                partner.x_colonia,
+                partner.x_localidad or partner.city,
+                partner.x_municipio,
+                partner.state_id.name if partner.state_id else False,
+                partner.zip,
+                partner.country_id.name if partner.country_id else False,
+            ]
+            rec.domicilio = ", ".join([p for p in pieces if p])
+
+    @api.onchange("transportista_id")
+    def _onchange_transportista_id(self):
+        for rec in self:
+            if rec.transportista_id and not rec.transporte_pais_id:
+                rec.transporte_pais_id = rec.transportista_id.country_id
 
 
 class CrmLeadDestinatario520(models.Model):

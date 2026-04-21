@@ -149,29 +149,39 @@
                   <field name="x_bl_last_read" readonly="1"/>
                   <field name="x_booking" modifiers='{"invisible":[["x_modo_transporte","!=","maritimo"]]}'/>
                 </group>
-                <group string="Equipo / cruce">
-                  <field name="x_modo_transporte"/>
-                  <field name="x_transporte_identificador"/>
-                  <field name="x_transporte_pais_id"/>
-                </group>
               </group>
-              <group>
-                <group string="Transportista">
-                  <field name="x_transportista_id"
-                         domain="[('x_contact_role','=','transportista')]"
-                         context="{'default_x_contact_role': 'transportista', 'default_company_type': 'company'}"/>
-                  <field name="x_transportista_rfc" readonly="1"/>
-                  <field name="x_transportista_curp" readonly="1"/>
-                  <field name="x_transportista_domicilio" readonly="1"/>
-                  <field name="x_transportista_calle" readonly="1"/>
-                  <field name="x_transportista_num_ext" readonly="1"/>
-                  <field name="x_transportista_num_int" readonly="1"/>
-                  <field name="x_transportista_colonia" readonly="1"/>
-                  <field name="x_transportista_municipio" readonly="1"/>
-                  <field name="x_transportista_localidad" readonly="1"/>
-                  <field name="x_transportista_estado_id" readonly="1"/>
-                  <field name="x_transportista_cp" readonly="1"/>
-                </group>
+              <group string="Transportistas (Reg. 502)">
+                <field name="x_transportista_ids" nolabel="1"
+                       context="{'default_lead_id': id}">
+                  <list editable="bottom" open_form_view="1">
+                    <field name="sequence" widget="handle"/>
+                    <field name="transportista_id"
+                           domain="[('x_contact_role','=','transportista')]"
+                           context="{'default_x_contact_role': 'transportista', 'default_company_type': 'company'}"/>
+                    <field name="transporte_identificador"/>
+                    <field name="transporte_pais_id"/>
+                    <field name="rfc" readonly="1"/>
+                    <field name="curp" readonly="1" optional="hide"/>
+                  </list>
+                  <form string="Transportista">
+                    <group>
+                      <group string="Datos del vehículo">
+                        <field name="sequence"/>
+                        <field name="transportista_id"
+                               domain="[('x_contact_role','=','transportista')]"
+                               context="{'default_x_contact_role': 'transportista', 'default_company_type': 'company'}"/>
+                        <field name="transporte_identificador"/>
+                        <field name="transporte_pais_id"/>
+                      </group>
+                      <group string="Datos del transportista (auto)">
+                        <field name="rfc" readonly="1"/>
+                        <field name="curp" readonly="1"/>
+                        <field name="nombre" readonly="1"/>
+                        <field name="domicilio" readonly="1"/>
+                      </group>
+                    </group>
+                  </form>
+                </field>
               </group>
               <group string="Guías / Manifiestos (Reg. 503)">
                 <field name="x_guia_ids" nolabel="1">
@@ -181,8 +191,6 @@
                     <field name="identificador"/>
                   </list>
                 </field>
-                <field name="x_tipo_guia" string="Guía rápida - identificador (legado)"/>
-                <field name="x_guia_manifiesto" string="Guía rápida - número (legado)"/>
               </group>
               <group string="Contenedores (Reg. 504)">
                 <field name="x_contenedor_ids" nolabel="1">
@@ -192,19 +200,14 @@
                     <field name="tipo_contenedor_id"/>
                   </list>
                 </field>
-                <field name="x_tipo_contenedor_id" string="Contenedor rápido - tipo (legado)"/>
-                <field name="x_num_contenedor" string="Contenedor rápido - número (legado)"/>
               </group>
               <group string="Candados (Reg. 516)">
-                <field name="x_candado_ids">
+                <field name="x_candado_ids" nolabel="1">
                   <list editable="bottom">
                     <field name="transporte_identificador"/>
                     <field name="num_candado"/>
                   </list>
                 </field>
-                <field name="x_num_sello"
-                       string="Candado rápido (legado)"
-                       help="Use las líneas de candados para nuevas operaciones"/>
               </group>
             </group>
           </page>

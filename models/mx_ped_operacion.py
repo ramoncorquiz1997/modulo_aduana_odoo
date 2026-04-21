@@ -945,7 +945,7 @@ class MxPedOperacion(models.Model):
             "fecha_liberacion": lead.x_fecha_liberacion or False,
             "semaforo": lead.x_semaforo or False,
             "observaciones": lead.x_incidente_text or False,
-            "avc_transportista_id": lead.x_transportista_id or False,
+            "avc_transportista_id": lead.x_transportista_ids[:1].transportista_id or False,
             # Rectificación: datos del pedimento original
             "es_rectificacion": lead.x_es_rectificacion or False,
             "rect_pedimento_original": lead.x_rect_pedimento_original or False,
@@ -3858,28 +3858,30 @@ class MxPedOperacion(models.Model):
     def _build_proforma_guia_list(self):
         from .pedimento_proforma_v2 import Guia
 
-        guias = []
-        if self.lead_id and (self.lead_id.x_guia_manifiesto or "").strip():
-            guias.append(
-                Guia(
-                    numero=(self.lead_id.x_guia_manifiesto or "").strip(),
-                    identificador=(self.lead_id.x_tipo_guia or "").strip(),
-                )
+        if not self.lead_id:
+            return []
+        return [
+            Guia(
+                numero=(g.numero or "").strip(),
+                identificador=(g.identificador or "M").strip(),
             )
-        return guias
+            for g in self.lead_id.x_guia_ids.sorted(lambda g: (g.sequence or 0, g.id))
+            if (g.numero or "").strip()
+        ]
 
     def _build_proforma_contenedor_list(self):
         from .pedimento_proforma_v2 import Contenedor
 
-        contenedores = []
-        if self.lead_id and (self.lead_id.x_num_contenedor or "").strip():
-            contenedores.append(
-                Contenedor(
-                    numero=(self.lead_id.x_num_contenedor or "").strip(),
-                    tipo=self._proforma_text(self.lead_id.x_tipo_contenedor_id),
-                )
+        if not self.lead_id:
+            return []
+        return [
+            Contenedor(
+                numero=(c.numero or "").strip(),
+                tipo=self._proforma_text(c.tipo_contenedor_id),
             )
-        return contenedores
+            for c in self.lead_id.x_contenedor_ids.sorted(lambda c: (c.sequence or 0, c.id))
+            if (c.numero or "").strip()
+        ]
 
     def _build_proforma_partida(self, partida):
         from .pedimento_proforma_v2 import Partida
@@ -3924,7 +3926,8 @@ class MxPedOperacion(models.Model):
         self.ensure_one()
         lead = self.lead_id
         participante = self.participante_id or self.importador_id or self.exportador_id
-        transportista = lead.x_transportista_id if lead else self.env["res.partner"]
+        transportista_line = lead.x_transportista_ids[:1] if lead else self.env["crm.lead.transportista"]
+        transportista = transportista_line.transportista_id if transportista_line else self.env["res.partner"]
         doc_505 = self._get_proforma_505_document()
         fechas = self._get_proforma_fecha_map()
         contribuciones_globales = [
@@ -3970,11 +3973,12 @@ class MxPedOperacion(models.Model):
         ped.codigo_aceptacion = self._proforma_text(self.acuse_validacion)
         ped.codigo_barras = ""
         ped.clave_seccion_aduanera = self._proforma_text(self.aduana_seccion_entrada_salida or self.aduana_seccion_despacho_id)
+        _first_contenedor = lead.x_contenedor_ids[:1] if lead else self.env["crm.lead.contenedor"]
         ped.marcas_numeros_bultos = " / ".join(
             value
             for value in [
-                self._proforma_text(lead.x_num_contenedor if lead else ""),
-                self._proforma_text(lead.x_num_sello if lead else ""),
+                self._proforma_text(_first_contenedor.numero if _first_contenedor else ""),
+                self._proforma_text(_first_candado.num_candado if _first_candado else ""),
                 self._proforma_text(lead.x_bultos if lead else 0),
             ]
             if value
@@ -3991,15 +3995,16 @@ class MxPedOperacion(models.Model):
         ped.num_acuse_valor = self._proforma_text(doc_505.folio if doc_505 else "")
         ped.vinculacion_505 = ""
         ped.incoterm = self._proforma_text((doc_505.cfdi_termino_facturacion if doc_505 else "") or self.incoterm)
-        ped.transporte_id = self._proforma_text(lead.x_transporte_identificador if lead else "")
-        ped.transporte_pais = self._proforma_text(lead.x_transporte_pais_id if lead else "")
+        ped.transporte_id = self._proforma_text(transportista_line.transporte_identificador if transportista_line else "")
+        ped.transporte_pais = self._proforma_text(transportista_line.transporte_pais_id if transportista_line else "")
         ped.transportista_nombre = self._proforma_text(transportista.name if transportista else "")
-        ped.transportista_rfc = self._proforma_text(lead.x_transportista_rfc if lead else "")
-        ped.transportista_curp = self._proforma_text(lead.x_transportista_curp if lead else "")
+        ped.transportista_rfc = self._proforma_text(transportista_line.rfc if transportista_line else "")
+        ped.transportista_curp = self._proforma_text(transportista_line.curp if transportista_line else "")
         ped.transportista_domicilio = self._proforma_text(
-            (lead.x_transportista_domicilio if lead else "") or self._proforma_partner_address(transportista)
+            (transportista_line.domicilio if transportista_line else "") or self._proforma_partner_address(transportista)
         )
-        ped.candado1 = self._proforma_text(lead.x_num_sello if lead else "")
+        _first_candado = lead.x_candado_ids[:1] if lead else self.env["crm.lead.candado"]
+        ped.candado1 = self._proforma_text(_first_candado.num_candado if _first_candado else "")
         ped.candado2 = ""
         ped.guias = self._build_proforma_guia_list()
         ped.contenedores = self._build_proforma_contenedor_list()
@@ -4743,12 +4748,22 @@ class MxPedOperacion(models.Model):
 
         lead_vals = {}
         if parsed.get("bl_no"):
-            lead_vals["x_guia_manifiesto"] = parsed["bl_no"]
-            lead_vals["x_tipo_guia"] = "M"
+            self.lead_id.x_guia_ids.create({
+                "lead_id": self.lead_id.id,
+                "numero": parsed["bl_no"][:20],
+                "identificador": "M",
+            })
         if parsed.get("container"):
-            lead_vals["x_num_contenedor"] = parsed["container"]
+            self.lead_id.x_contenedor_ids.create({
+                "lead_id": self.lead_id.id,
+                "numero": parsed["container"][:12],
+            })
         if parsed.get("seal"):
-            lead_vals["x_num_sello"] = parsed["seal"]
+            self.lead_id.x_candado_ids.create({
+                "lead_id": self.lead_id.id,
+                "transporte_identificador": parsed.get("container", "")[:17],
+                "num_candado": parsed["seal"][:21],
+            })
         if parsed.get("bultos"):
             try:
                 lead_vals["x_bultos"] = int(float(parsed["bultos"]))
@@ -4947,24 +4962,11 @@ class MxPedOperacion(models.Model):
             "medio_transporte_salida": "x_medio_transporte_salida",
             "tipo_contenedor": "x_tipo_contenedor_id",
             "clave_tipo_contenedor": "x_tipo_contenedor_id",
-            "identificador_guia": "x_tipo_guia",
-            "guia_manifiesto": "x_guia_manifiesto",
             "acuse_validacion": "acuse_validacion",
             "curp_agente": "curp_agente",
             "rfc_importador_exportador": "participante_rfc",
             "curp_importador_exportador": "participante_curp",
             "nombre_importador_exportador": "participante_nombre",
-            "transportista_rfc": "x_transportista_rfc",
-            "transportista_curp": "x_transportista_curp",
-            "transportista_domicilio": "x_transportista_domicilio",
-            "transportista_calle": "x_transportista_calle",
-            "transportista_num_ext": "x_transportista_num_ext",
-            "transportista_num_int": "x_transportista_num_int",
-            "transportista_colonia": "x_transportista_colonia",
-            "transportista_municipio": "x_transportista_municipio",
-            "transportista_localidad": "x_transportista_localidad",
-            "transportista_estado": "x_transportista_estado_id",
-            "transportista_cp": "x_transportista_cp",
             "comprador": "x_comprador_id",
             "nombre_proveedor_comprador": "x_counterparty_name_505",
         }
@@ -5036,7 +5038,8 @@ class MxPedOperacion(models.Model):
                 partner = lead.x_proveedor_id or lead.x_comprador_id if lead else None
             return self._record_value_for_field(partner, source)
         if source_model == "transportista":
-            return self._record_value_for_field(lead.x_transportista_id if lead else None, source)
+            t_line = lead.x_transportista_ids[:1] if lead else None
+            return self._record_value_for_field(t_line.transportista_id if t_line else None, source)
 
         return self._record_value_for_field(lead, source)
 
@@ -5702,17 +5705,7 @@ class MxPedOperacion(models.Model):
                 "num_candado": num_candado,
             })
 
-        if lines:
-            return lines
-
-        transporte_identificador = self._sanitize_516_transport_identificador(lead.x_transporte_identificador)
-        num_candado = (lead.x_num_sello or "").strip()
-        if transporte_identificador and num_candado:
-            return [{
-                "transporte_identificador": transporte_identificador,
-                "num_candado": num_candado,
-            }]
-        return []
+        return lines
 
     def _build_516_valores(self, layout_reg, candado_line):
         self.ensure_one()
@@ -5783,63 +5776,56 @@ class MxPedOperacion(models.Model):
         return (country.code or "").strip().upper()
 
     def _get_502_transporte_lines(self):
-        """Devuelve lista de dicts con datos del transportista para el registro 502."""
+        """Devuelve una lista de dicts, uno por transportista capturado (registro 502)."""
         self.ensure_one()
         lead = self.lead_id
-        if not lead or not lead.x_transportista_id:
+        if not lead or not lead.x_transportista_ids:
             return []
-        partner = lead.x_transportista_id
-        pais_code = self._resolve_saai_pais_code(lead.x_transporte_pais_id)
-        return [{
-            "rfc": (lead.x_transportista_rfc or "").strip()[:13],
-            "curp": (lead.x_transportista_curp or "").strip()[:18],
-            "nombre": self._sanitize_502_text(partner.name or "", 120),
-            "pais": pais_code[:3],
-            "identificador": self._sanitize_502_text(lead.x_transporte_identificador or "", 30)[:30],
-            "bultos": lead.x_bultos or 0,
-            "domicilio": self._sanitize_502_text(lead.x_transportista_domicilio or "", 150),
-        }]
+        lines = []
+        for t in lead.x_transportista_ids.sorted(lambda l: (l.sequence or 0, l.id)):
+            if not t.transportista_id:
+                continue
+            pais_code = self._resolve_saai_pais_code(t.transporte_pais_id)
+            lines.append({
+                "rfc": (t.rfc or "").strip()[:13],
+                "curp": (t.curp or "").strip()[:18],
+                "nombre": self._sanitize_502_text(t.transportista_id.name or "", 120),
+                "pais": pais_code[:3],
+                "identificador": self._sanitize_502_text(t.transporte_identificador or "", 30)[:30],
+                "bultos": lead.x_bultos or 0,
+                "domicilio": self._sanitize_502_text(t.domicilio or "", 150),
+            })
+        return lines
 
     def _get_503_guia_lines(self):
-        """Devuelve lista de dicts para el registro 503. Usa x_guia_ids si existen, si no cae al campo simple."""
+        """Devuelve lista de dicts para el registro 503 desde x_guia_ids."""
         self.ensure_one()
         lead = self.lead_id
         if not lead:
             return []
-        if lead.x_guia_ids:
-            return [
-                {
-                    "numero": (g.numero or "").strip()[:20],
-                    "identificador": (g.identificador or "M")[:1],
-                }
-                for g in lead.x_guia_ids.sorted(lambda g: (g.sequence or 0, g.id))
-                if (g.numero or "").strip()
-            ]
-        numero = (lead.x_guia_manifiesto or "").strip()
-        if not numero:
-            return []
-        return [{"numero": numero[:20], "identificador": (lead.x_tipo_guia or "M")}]
+        return [
+            {
+                "numero": (g.numero or "").strip()[:20],
+                "identificador": (g.identificador or "M")[:1],
+            }
+            for g in lead.x_guia_ids.sorted(lambda g: (g.sequence or 0, g.id))
+            if (g.numero or "").strip()
+        ]
 
     def _get_504_contenedor_lines(self):
-        """Devuelve lista de dicts para el registro 504. Usa x_contenedor_ids si existen, si no cae al campo simple."""
+        """Devuelve lista de dicts para el registro 504 desde x_contenedor_ids."""
         self.ensure_one()
         lead = self.lead_id
         if not lead:
             return []
-        if lead.x_contenedor_ids:
-            return [
-                {
-                    "numero": (c.numero or "").strip()[:12],
-                    "tipo": str(c.tipo_contenedor_id.code or "").zfill(2) if c.tipo_contenedor_id else "",
-                }
-                for c in lead.x_contenedor_ids.sorted(lambda c: (c.sequence or 0, c.id))
-                if (c.numero or "").strip()
-            ]
-        numero = (lead.x_num_contenedor or "").strip()
-        if not numero:
-            return []
-        tipo = str(lead.x_tipo_contenedor_id.code or "").zfill(2) if lead.x_tipo_contenedor_id else ""
-        return [{"numero": numero[:12], "tipo": tipo}]
+        return [
+            {
+                "numero": (c.numero or "").strip()[:12],
+                "tipo": str(c.tipo_contenedor_id.code or "").zfill(2) if c.tipo_contenedor_id else "",
+            }
+            for c in lead.x_contenedor_ids.sorted(lambda c: (c.sequence or 0, c.id))
+            if (c.numero or "").strip()
+        ]
 
     def _build_502_valores(self, layout_reg, transporte_line):
         self.ensure_one()
