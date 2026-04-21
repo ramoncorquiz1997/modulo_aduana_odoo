@@ -4035,6 +4035,7 @@ class MxPedOperacion(models.Model):
         ped.codigo_barras = ""
         ped.clave_seccion_aduanera = self._proforma_text(self.aduana_seccion_entrada_salida or self.aduana_seccion_despacho_id)
         _first_contenedor = lead.x_contenedor_ids[:1] if lead else self.env["crm.lead.contenedor"]
+        _first_candado = lead.x_candado_ids[:1] if lead else self.env["crm.lead.candado"]
         ped.marcas_numeros_bultos = " / ".join(
             value
             for value in [
@@ -4064,7 +4065,6 @@ class MxPedOperacion(models.Model):
         ped.transportista_domicilio = self._proforma_text(
             (transportista_line.domicilio if transportista_line else "") or self._proforma_partner_address(transportista)
         )
-        _first_candado = lead.x_candado_ids[:1] if lead else self.env["crm.lead.candado"]
         ped.candado1 = self._proforma_text(_first_candado.num_candado if _first_candado else "")
         ped.candado2 = ""
         ped.guias = self._build_proforma_guia_list()
