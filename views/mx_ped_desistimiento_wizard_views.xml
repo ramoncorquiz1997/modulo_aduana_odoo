@@ -37,8 +37,19 @@
               <field name="orig_tipo_operacion"    readonly="1"/>
               <field name="orig_fecha_operacion"   readonly="1"/>
               <field name="orig_fecha_pago"        readonly="1"/>
-              <field name="orig_acuse_validacion"  readonly="1"/>
+              <field name="orig_acuse_validacion"  readonly="1"
+                     decoration-danger="not orig_acuse_validacion"/>
             </group>
+
+            <!-- Advertencia si el pedimento original no tiene acuse -->
+            <div class="alert alert-danger mb-3" invisible="orig_acuse_validacion">
+              <i class="fa fa-exclamation-circle me-2"/>
+              <strong>El pedimento original no tiene acuse de validación registrado.</strong>
+              El acuse es obligatorio para generar una eliminación o desistimiento.
+              Cierra este wizard, abre el pedimento original, llena el campo
+              <strong>"Acuse electrónico validación"</strong> (en el grupo Aduana y Agente)
+              con el código de 8 dígitos que entregó el SAAI al validarlo, guarda y vuelve a intentarlo.
+            </div>
 
             <!-- ── Datos del nuevo pedimento ────────────────────────────────── -->
             <group string="Datos del nuevo pedimento de cancelación" col="4">
@@ -47,8 +58,8 @@
                      colspan="4"/>
               <field name="nueva_fecha_operacion"/>
               <field name="nuevo_acuse_validacion"
-                     placeholder="00000000 (opcional — lo genera el SAAI al presentar)"
-                     help="El acuse de 8 dígitos lo entrega el SAAI cuando presentas el TXT. Puedes crear el pedimento sin él y llenarlo después en la pestaña 'Cancelación / Desistimiento (800)' del nuevo pedimento."/>
+                     placeholder="00000000"
+                     help="Se toma automáticamente del pedimento original. Modifícalo solo si el acuse del desistimiento/eliminación es diferente al del pedimento original."/>
             </group>
 
             <group string="Motivo de cancelación (registro 800)" col="1">

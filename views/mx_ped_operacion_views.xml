@@ -105,7 +105,7 @@
                 <field name="aduana_clave" invisible="not show_advanced_info"/>
                 <field name="aduana_seccion_entrada_salida_id" invisible="not show_advanced_info"/>
                 <field name="curp_agente" invisible="not show_advanced_info"/>
-                <field name="acuse_validacion" invisible="not (show_advanced_info and show_acuse_ui)"/>
+                <field name="acuse_validacion"/>
                 <field name="company_id" invisible="1"/>
                 <field name="ws_ambiente" invisible="not show_advanced_info"/>
                 <field name="ws_credencial_id" invisible="not show_advanced_info"/>

@@ -83,6 +83,8 @@ class MxPedDesistimientoWizard(models.TransientModel):
                 "orig_fecha_operacion": op.fecha_operacion,
                 "orig_fecha_pago": op.fecha_pago,
                 "orig_acuse_validacion": op.acuse_validacion or "",
+                # Pre-llenar con el acuse del pedimento original
+                "nuevo_acuse_validacion": op.acuse_validacion or "",
             })
         return res
 
