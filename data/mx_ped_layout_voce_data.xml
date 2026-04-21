@@ -305,7 +305,7 @@
       <field name="tipo">AN</field>
       <field name="source_model">importador</field>
       <field name="source_field">x_street_number_int</field>
-          <field name="requerido">True</field>
+          <field name="requerido">False</field>
     </record>
     <record id="mx_layout_campo_501_25" model="mx.ped.layout.campo">
       <field name="registro_id" ref="mx_layout_reg_501"/>

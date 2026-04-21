@@ -1,6 +1,6 @@
 {
     "name": "Aduanex",
-    "version": "18.0.1.7.2",
+    "version": "18.0.1.7.3",
     "category": "CRM",
     "summary": "Gestión de operaciones aduanales y pedimentos desde CRM",
     "depends": ["crm", "mail", "base", "contacts", "account"],

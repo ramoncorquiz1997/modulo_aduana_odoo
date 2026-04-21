@@ -66,3 +66,7 @@ Clave para Many2one:
 - La lista de proveedores incluye los contactos que tienen el checkbox de proveedor, no solo exige crear uno nuevo en cada operación
 - Se agrega check de proveedores en perfil de contacto
 - La columna de diferencia en documentos no se pone en rojo ni la muestra si hay diferencia de moneda de cambio
+
+
+## CHANGE LOG 18.0.1.7.3
+- El numero interior no debe de ser requerido nunca, porque puede que la direccion no la tenga
