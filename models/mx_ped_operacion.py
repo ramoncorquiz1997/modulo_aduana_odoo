@@ -1659,9 +1659,11 @@ class MxPedOperacion(models.Model):
                     contrib_id = contribucion.id if contribucion else False
                 else:
                     tax_code, amount, rate, contrib_id = item
-                # Incluir si hay importe calculado O si la fracción define una tasa > 0
-                # (permite al agente ver y editar la línea aunque value_mxn sea 0).
-                if amount > 0 or float(rate or 0.0) > 0:
+                # IGI e IVA son contribuciones de declaración obligatoria cuando existe
+                # un registro de tasa en la fracción, aunque la tasa sea 0% (exento).
+                # DTA, PRV, IEPS y extras solo se incluyen cuando hay importe o tasa > 0.
+                is_primary_mandatory = tax_code in {"IGI", "IVA"} and bool(tasa)
+                if is_primary_mandatory or amount > 0 or float(rate or 0.0) > 0:
                     normalized_candidates.append((tax_code, amount, rate, contrib_id))
 
             existing_lines = partida.contribucion_ids.filtered(lambda c: c.operacion_id == self)
