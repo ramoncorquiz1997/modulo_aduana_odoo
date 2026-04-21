@@ -110,9 +110,11 @@ class MxPedDesistimientoWizard(models.TransientModel):
         tipo_label = dict(self._fields["tipo_movimiento"].selection).get(
             self.tipo_movimiento, self.tipo_movimiento
         )
+        tipo_prefix = "ELIM" if self.tipo_movimiento == "2" else "DESIST"
 
         # Construir valores del nuevo pedimento
         vals = {
+            "name": f"{tipo_prefix}/{op.pedimento_numero or op.name}",
             "lead_id": op.lead_id.id,
             "layout_id": op.layout_id.id if op.layout_id else False,
             "tipo_operacion": op.tipo_operacion,
