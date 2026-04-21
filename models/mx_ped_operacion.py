@@ -908,10 +908,14 @@ class MxPedOperacion(models.Model):
         for rec in self:
             if not rec.layout_id:
                 rec.layout_id = rec._get_latest_layout().id or False
+            rec_ctx = rec.with_context(skip_auto_generated_refresh=True)
+            # Siempre actualizar contribuciones desde fracciones arancelarias.
+            rec_ctx.action_generar_contribuciones_557()
             if not rec.layout_id or not rec.lead_id:
                 continue
-            rec_ctx = rec.with_context(skip_auto_generated_refresh=True)
-            rec_ctx.action_generar_contribuciones_557()
+            # action_cargar_desde_lead ya llama action_generar_contribuciones_557 al final,
+            # pero la llamada anterior asegura que las contribuciones estén actualizadas
+            # incluso cuando se accede sin regenerar registros VOCE.
             rec_ctx.action_cargar_desde_lead()
             rec_ctx._sync_registro_ids_from_tecnicos()
 
@@ -1644,7 +1648,9 @@ class MxPedOperacion(models.Model):
                     contrib_id = contribucion.id if contribucion else False
                 else:
                     tax_code, amount, rate, contrib_id = item
-                if amount > 0:
+                # Incluir si hay importe calculado O si la fracción define una tasa > 0
+                # (permite al agente ver y editar la línea aunque value_mxn sea 0).
+                if amount > 0 or float(rate or 0.0) > 0:
                     normalized_candidates.append((tax_code, amount, rate, contrib_id))
 
             existing_lines = partida.contribucion_ids.filtered(lambda c: c.operacion_id == self)
@@ -6258,6 +6264,8 @@ class MxPedOperacion(models.Model):
             }))
 
         self.registro_ids = [(5, 0, 0)] + registros
+        # Auto-poblar contribuciones (Reg. 557) desde tasas de fracciones arancelarias.
+        self.with_context(skip_auto_generated_refresh=True).action_generar_contribuciones_557()
         return True
 
     def _build_502_valores_direct(self, line):
