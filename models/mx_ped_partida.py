@@ -236,9 +236,9 @@ class MxPedPartida(models.Model):
 
     # ── Tasas por partida (registro 556) ─────────────────────────────────────
     contribucion_ids = fields.One2many(
-        "mx.ped.partida.contribucion",
+        "mx.ped.partida.tasa",
         "partida_id",
-        string="Contribuciones (556)",
+        string="Tasas (556)",
         copy=True,
     )
     # Campos legacy mantenidos por compatibilidad con datos existentes.
@@ -559,9 +559,9 @@ class MxPedPartida(models.Model):
         return res
 
 
-class MxPedPartidaContribucion(models.Model):
-    _name = "mx.ped.partida.contribucion"
-    _description = "Partida - Contribucion (Registro 556)"
+class MxPedPartidaTasa(models.Model):
+    _name = "mx.ped.partida.tasa"
+    _description = "Partida - Tasa arancelaria (Registro 556)"
     _order = "sequence, id"
 
     partida_id = fields.Many2one(

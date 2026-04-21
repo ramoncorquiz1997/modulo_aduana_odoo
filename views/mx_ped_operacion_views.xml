@@ -405,7 +405,7 @@
               <page string="Cargos adicionales">
                 <field name="partida_contribucion_ids" context="{'default_operacion_id': id}">
                   <list editable="bottom">
-                    <field name="partida_id"/>
+                    <field name="partida_id" domain="[('operacion_id','=',parent.id)]"/>
                     <field name="contribucion_id"/>
                     <field name="contribucion_code" readonly="1" optional="hide"/>
                     <field name="tasa"/>
@@ -416,7 +416,7 @@
                   </list>
                   <form string="Cargo adicional">
                     <group>
-                      <field name="partida_id"/>
+                      <field name="partida_id" domain="[('operacion_id','=',operacion_id)]"/>
                       <field name="contribucion_id"/>
                       <field name="contribucion_code" readonly="1"/>
                       <field name="tasa"/>
