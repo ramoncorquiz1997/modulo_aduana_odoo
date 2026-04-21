@@ -1893,8 +1893,20 @@ class CrmLeadOperacionLine(models.Model):
         string="NICO",
         domain="[('fraccion_id', '=', fraccion_id)]",
     )
-    fraccion_arancelaria = fields.Char(string="Fraccion (snapshot)", size=10)
-    nico = fields.Char(string="NICO (snapshot)", size=2)
+    fraccion_arancelaria = fields.Char(
+        string="Fraccion (snapshot)",
+        size=10,
+        compute="_compute_fraccion_nico_snapshot",
+        store=True,
+        readonly=False,
+    )
+    nico = fields.Char(
+        string="NICO (snapshot)",
+        size=2,
+        compute="_compute_fraccion_nico_snapshot",
+        store=True,
+        readonly=False,
+    )
     quantity = fields.Float(string="Cantidad", digits=(16, 6), default=1.0)
     uom_id = fields.Many2one("mx.ped.um", string="Unidad de medida")
     packages_line = fields.Integer(string="Bultos", default=0)
@@ -2144,6 +2156,14 @@ class CrmLeadOperacionLine(models.Model):
                 raise UserError(_("La cantidad por linea debe ser mayor a cero."))
             if rec.value_usd is False or rec.value_usd is None or rec.value_usd <= 0:
                 raise UserError(_("La linea requiere valor USD mayor a cero."))
+
+    @api.depends("fraccion_id", "nico_id")
+    def _compute_fraccion_nico_snapshot(self):
+        for rec in self:
+            if rec.fraccion_id and not rec.fraccion_arancelaria:
+                rec.fraccion_arancelaria = rec.fraccion_id.code or ""
+            if rec.nico_id and not rec.nico:
+                rec.nico = rec.nico_id.code or ""
 
     @api.onchange("fraccion_id")
     def _onchange_fraccion_id(self):

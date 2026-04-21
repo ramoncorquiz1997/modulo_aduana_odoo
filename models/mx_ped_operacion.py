@@ -5062,7 +5062,13 @@ class MxPedOperacion(models.Model):
         source_name = campo.source_field_id.name if campo.source_field_id else campo.source_field
         if campo.source_model == "partida":
             source = source_name or campo.nombre
-            return self._record_value_for_field(partida, source)
+            val = self._record_value_for_field(partida, source)
+            # fraccion_arancelaria es un snapshot que puede quedar vacío si la
+            # línea del lead se creó programáticamente (sin disparar el onchange).
+            # Fallback al code de fraccion_id para garantizar que nunca esté vacío.
+            if not val and source == "fraccion_arancelaria" and partida and partida.fraccion_id:
+                val = partida.fraccion_id.code or val
+            return val
         return self._lead_value_for_field_name(
             campo.nombre,
             source_field=source_name,
