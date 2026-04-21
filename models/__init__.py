@@ -7,6 +7,7 @@ from . import mx_ped_partida
 from . import mx_ped_documento
 from . import mx_ped_partida_factura_wizard
 from . import mx_ped_validacion_wizard
+from . import mx_ped_desistimiento_wizard
 from . import mx_ped_evento
 from . import mx_ped_layout
 from . import mx_ped_registro

@@ -445,7 +445,7 @@ class MxPedOperacion(models.Model):
         store=False,
     )
     rule_trace_json = fields.Json(string="Trazabilidad de reglas", readonly=True, copy=False)
-    rule_trace_at = fields.Datetime(string="Ultima evaluaci?n de reglas", readonly=True, copy=False)
+    rule_trace_at = fields.Datetime(string="Ultima evaluación de reglas", readonly=True, copy=False)
     show_acuse_ui = fields.Boolean(
         string="Mostrar acuse",
         compute="_compute_process_ui_flags",
@@ -6607,6 +6607,23 @@ class MxPedOperacion(models.Model):
     def _build_801_valores_direct(self, _line=None):
         """Registro 801: marcador de fin de pedimento (siempre presente)."""
         return {"clave_registro": "801"}
+
+    # ============================================================
+    # Wizard Eliminación / Desistimiento
+    # ============================================================
+
+    def action_generar_desistimiento(self):
+        """Abre el wizard para generar un pedimento de Eliminación (mov. 2)
+        o Desistimiento (mov. 3) a partir de este pedimento."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Generar Eliminación / Desistimiento"),
+            "res_model": "mx.ped.desistimiento.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {"default_operacion_id": self.id},
+        }
 
 
 class MxPedOperacionObservacion(models.Model):

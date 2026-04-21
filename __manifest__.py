@@ -1,6 +1,6 @@
 {
     "name": "Aduanex",
-    "version": "18.0.1.8.3",
+    "version": "18.0.1.8.4",
     "category": "CRM",
     "summary": "Gestión de operaciones aduanales y pedimentos desde CRM",
     "depends": ["crm", "mail", "base", "contacts", "account"],
@@ -17,6 +17,7 @@
         "views/mx_ped_operacion_views.xml",
         "views/mx_ped_partida_factura_wizard_views.xml",
         "views/mx_ped_validacion_wizard_views.xml",
+        "views/mx_ped_desistimiento_wizard_views.xml",
         "views/crm_lead_views.xml",
         "views/mx_ped_clave_views.xml",
         "views/aduana_catalogos_views.xml",

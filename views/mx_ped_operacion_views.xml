@@ -41,6 +41,14 @@
             <button name="action_avc_eliminar" type="object" string="Eliminar AVC" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_eliminar"/>
             <button name="action_cargar_desde_lead" type="object" string="Cargar desde Lead" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_cargar_lead"/>
             <button name="action_crear_factura" type="object" string="Crear factura" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_crear_factura"/>
+            <button name="action_generar_desistimiento"
+                    type="object"
+                    string="Generar Desistimiento / Eliminación"
+                    class="btn-secondary"
+                    icon="fa-ban"
+                    invisible="tipo_movimiento not in ('1', False)"
+                    help="Genera un nuevo pedimento de Eliminación (mov. 2) o Desistimiento (mov. 3) a partir de este pedimento."
+                    groups="modulo_aduana_odoo.group_aduana_user"/>
           </header>
           <sheet>
             <div class="oe_button_box" name="button_box">
