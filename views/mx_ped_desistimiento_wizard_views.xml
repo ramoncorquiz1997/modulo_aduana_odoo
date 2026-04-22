@@ -58,8 +58,8 @@
                      colspan="4"/>
               <field name="nueva_fecha_operacion"/>
               <field name="nuevo_acuse_validacion"
-                     placeholder="(vacío — el SAAI lo asigna al validar el TXT)"
-                     help="Déjalo vacío. El pedimento de eliminación/desistimiento recibe su propio acuse del SAAI DESPUÉS de presentar el TXT. Una vez que el SAAI te devuelva el código de 8 dígitos, ve al nuevo pedimento y llénalo directamente ahí."/>
+                     placeholder="8 caracteres — acuse del pedimento ORIGINAL"
+                     help="Lineamientos SAAI VOCE M3, pág. 35: el campo 6 del registro 500 en pedimentos de eliminación y desistimiento debe contener el Acuse Electrónico de Validación del pedimento ORIGINAL que se está cancelando (el código de 8 dígitos que el SAAI entregó al validar ese pedimento). Se pre-llena automáticamente desde el pedimento original."/>
             </group>
 
             <group string="Motivo de cancelación (registro 800)" col="1">
@@ -76,10 +76,13 @@
               Al confirmar se crea el nuevo pedimento (registros 500, 800 y 801).
               El pedimento original <em>no se modifica</em>.
               <br/>
-              Si aún no tienes el acuse, créalo sin él → exporta el TXT →
-              preséntalo al SAAI → cuando el SAAI te devuelva el acuse,
-              ve al nuevo pedimento, tab <strong>"Cancelación / Desistimiento (800)"</strong>
-              → campo <strong>"Acuse de validación"</strong>, llénalo y vuelve a exportar.
+              El campo <strong>"Acuse de validación (nuevo)"</strong> se pre-llena con el acuse
+              del pedimento original — esto es lo que exige el SAAI en el campo 6 del registro 500
+              (Lineamientos VOCE M3, pág. 35). Verifica que sea correcto antes de confirmar.
+              <br/>
+              Flujo: confirma el wizard → exporta el TXT → preséntalo al SAAI.
+              El SAAI responderá con <code>FpppppppBORRADO</code> (eliminación) o
+              <code>FpppppppDESISTIO</code> (desistimiento) para confirmar la cancelación.
             </div>
 
           </sheet>

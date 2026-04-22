@@ -1057,14 +1057,12 @@ class MxPedOperacion(models.Model):
     def _check_acuse_validacion(self):
         # Saltear durante creación desde wizard de desistimiento/eliminación:
         # el acuse lo retorna el SAAI después de presentar el TXT, no antes.
+        # Durante la creación desde el wizard el acuse se escribe en un paso
+        # posterior (después de action_cargar_desde_lead). Se salta para evitar
+        # falso positivo; la constraint correrá en el write subsecuente.
         if self.env.context.get("creating_desistimiento"):
             return
         for rec in self:
-            # Para eliminación (mov 2) y desistimiento (mov 3) el acuse es
-            # asignado por el SAAI *después* de presentar el TXT inicial.
-            # No se valida aquí; la validación ocurre al exportar.
-            if rec.tipo_movimiento in ("2", "3"):
-                continue
             stage_rules = rec._get_process_stage_rules("pre_validate")
             for rule in stage_rules:
                 payload = rule.payload_json or {}
@@ -2411,13 +2409,7 @@ class MxPedOperacion(models.Model):
     def _validate_confirmacion_pago_formas(self):
         self.ensure_one()
         self._validate_cancel_desist_structure()
-        # Para eliminación (mov 2) y desistimiento (mov 3) el único pre_validate
-        # relevante es la estructura 500/800/801 (ya validada arriba).
-        # El acuse es asignado por el SAAI tras presentar el TXT, así que no
-        # se exige aquí; el usuario lo registra luego.
-        mov = self._get_tipo_movimiento_effective()
-        if mov not in {"2", "3"}:
-            self._run_process_stage_checks("pre_validate")
+        self._run_process_stage_checks("pre_validate")
         self._validate_508_cuenta_aduanera_rules()
         self._validate_513_compensacion_rules()
         self._validate_514_virtual_rules()
@@ -2588,8 +2580,6 @@ class MxPedOperacion(models.Model):
         # Para eliminación/desistimiento (mov 2/3) el acuse electrónico lo
         # asigna el SAAI tras presentar el TXT. Se omiten las reglas require_field
         # que lo exigen para permitir la exportación/validación inicial.
-        mov = self._get_tipo_movimiento_effective()
-        skip_acuse_require = mov in {"2", "3"}
         for rule in rules:
             field_name = (rule.field_id.nombre or "").strip() if rule.field_id else ""
             if not field_name:
@@ -2605,12 +2595,24 @@ class MxPedOperacion(models.Model):
                     effective[field_name] = rule.default_value
             elif policy == "require_field":
                 if self._is_empty_rule_value(current):
-                    # Omitir el error de acuse para eliminación/desistimiento:
-                    # el campo puede venir vacío en la exportación inicial.
-                    if skip_acuse_require and "acuse" in field_name.lower():
-                        pass
-                    elif skip_acuse_require and "acuse" in (rule.name or "").lower():
-                        pass
+                    # Fallback: la regla puede usar un nombre de campo diferente
+                    # al que el layout usa como clave en el dict de valores.
+                    # Caso concreto: "Acuse Electrónico de Validación" (nombre
+                    # human-readable del campo en la regla) vs "acuse_validacion"
+                    # (snake_case que usa el layout). Para desistimiento/eliminación
+                    # el lineamiento SAAI VOCE M3 pág. 35 exige el acuse del
+                    # pedimento original; lo leemos directo del modelo.
+                    if "acuse" in field_name.lower() and self._get_tipo_movimiento_effective() in {"2", "3"}:
+                        acuse_model = (self.acuse_validacion or "").strip()
+                        if acuse_model:
+                            effective[field_name] = acuse_model  # inyectar en TXT
+                        else:
+                            raise ValidationError(
+                                _("Regla %s: registro %s campo %s es obligatorio. "
+                                  "Para eliminación/desistimiento debe ser el acuse "
+                                  "(8 caracteres) del pedimento original que se cancela.")
+                                % (rule.name or rule.id, str(codigo_registro or "").zfill(3), field_name)
+                            )
                     else:
                         raise ValidationError(
                             _("Regla %s: registro %s campo %s es obligatorio.")
@@ -2626,25 +2628,21 @@ class MxPedOperacion(models.Model):
         return effective
 
     def _validate_field_rules_on_registros(self):
-        """Valida require_field sobre el set real que se exportara."""
+        """Valida require_field sobre el set real que se exportara.
+
+        Para eliminación/desistimiento (mov 2/3) el acuse del pedimento
+        original es obligatorio en el campo 6 del registro 500 (Lineamientos
+        SAAI VOCE M3, pág. 35). La validación del acuse se maneja en
+        _apply_field_rules_to_vals, que lo inyecta desde self.acuse_validacion
+        cuando la clave del campo no coincide con la del dict de valores.
+        """
         self.ensure_one()
-        # Para eliminación/desistimiento (mov 2/3) el acuse electrónico lo
-        # asigna el SAAI *después* de presentar el TXT inicial. Se omite su
-        # validación para permitir la exportación sin acuse la primera vez.
-        mov = self._get_tipo_movimiento_effective()
-        skip_acuse = mov in {"2", "3"}
         for reg in self.registro_ids:
             code = (reg.codigo or "").strip()
             if not code:
                 continue
             partida_num = self._extract_partida_number(reg.valores)
-            try:
-                self._apply_field_rules_to_vals(code, reg.valores or {}, partida_num=partida_num, validate_only=True)
-            except (ValidationError, UserError) as exc:
-                if skip_acuse and "acuse" in str(exc.args[0]).lower():
-                    # El acuse se llenará después de que el SAAI valide el TXT.
-                    continue
-                raise
+            self._apply_field_rules_to_vals(code, reg.valores or {}, partida_num=partida_num, validate_only=True)
 
     def _rule_sort_key(self, item):
         return (

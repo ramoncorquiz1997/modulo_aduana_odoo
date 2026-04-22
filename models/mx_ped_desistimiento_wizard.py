@@ -83,9 +83,11 @@ class MxPedDesistimientoWizard(models.TransientModel):
                 "orig_fecha_operacion": op.fecha_operacion,
                 "orig_fecha_pago": op.fecha_pago,
                 "orig_acuse_validacion": op.acuse_validacion or "",
-                # El pedimento de eliminación/desistimiento recibe su propio acuse
-                # del SAAI después de presentar el TXT. Se deja vacío inicialmente.
-                "nuevo_acuse_validacion": "",
+                # Lineamiento SAAI VOCE M3 pág. 35: campo 6 del registro 500
+                # en desistimiento/eliminación debe contener el acuse del
+                # pedimento ORIGINAL (el código de 8 chars que devolvió el SAAI
+                # al validar el pedimento que se va a cancelar).
+                "nuevo_acuse_validacion": op.acuse_validacion or "",
             })
         return res
 
@@ -160,18 +162,14 @@ class MxPedDesistimientoWizard(models.TransientModel):
         # generará esos tres registros — sin partidas, sin contribuciones.
         new_op.action_cargar_desde_lead()
 
-        # action_cargar_desde_lead copia el acuse del lead al nuevo pedimento,
-        # pero el pedimento de eliminación/desistimiento recibe su propio acuse
-        # del SAAI *después* de presentar el TXT. Se limpia para evitar confusión.
-        # Si el usuario llenó nuevo_acuse_validacion en el wizard se respeta.
-        if self.nuevo_acuse_validacion:
-            new_op.with_context(creating_desistimiento=True).write({
-                "acuse_validacion": self.nuevo_acuse_validacion,
-            })
-        else:
-            new_op.with_context(creating_desistimiento=True).write({
-                "acuse_validacion": False,
-            })
+        # action_cargar_desde_lead puede sobrescribir acuse_validacion con el
+        # del lead. Forzamos el valor correcto: el acuse del pedimento original,
+        # que es lo que exige el lineamiento SAAI VOCE M3 (pág. 35, campo 6
+        # del registro 500) para desistimiento/eliminación.
+        acuse_correcto = (self.nuevo_acuse_validacion or "").strip() or False
+        new_op.with_context(creating_desistimiento=True).write({
+            "acuse_validacion": acuse_correcto,
+        })
 
         # Registrar en el chatter del pedimento original para trazabilidad
         op.message_post(
