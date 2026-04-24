@@ -452,8 +452,9 @@ class MxCove(models.Model):
         self.ensure_one()
 
         def _opt(val):
-            """Devuelve None si el valor está vacío, para omitir el tag XML."""
-            if val is None:
+            """Devuelve None si el valor está vacío/False, para omitir el tag XML.
+            Odoo devuelve False (no None) para campos de texto vacíos."""
+            if not val:  # maneja None, False, "", 0
                 return None
             v = str(val).strip()
             return v if v else None
@@ -538,8 +539,9 @@ class MxCove(models.Model):
         }
 
         # Campos opcionales del base
-        if _opt(self.observaciones):
-            comprobante["observaciones"] = self.observaciones.strip()
+        obs = _opt(self.observaciones)
+        if obs:
+            comprobante["observaciones"] = obs
         if self.e_document_adenda:
             comprobante["e-document"] = self.e_document_adenda
         if self.patente_aduanal_ids:

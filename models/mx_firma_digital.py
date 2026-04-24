@@ -125,9 +125,10 @@ class MxFirmaDigital(models.AbstractModel):
     @staticmethod
     def _co_val(value, strip_zeros=True):
         """Normaliza un valor para la cadena original.
-        Si es None / vacío → devuelve '' (campo omitido con pipe vacío).
+        Si es None / False / vacío → devuelve '' (campo omitido con pipe vacío).
+        Odoo devuelve False (no None) para campos de texto vacíos.
         """
-        if value is None:
+        if not value and value != 0:  # maneja None, False, ""
             return ""
         v = str(value).strip()
         return v
