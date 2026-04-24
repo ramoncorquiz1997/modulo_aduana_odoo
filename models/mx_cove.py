@@ -7,10 +7,11 @@ WSDL:  https://www.ventanillaunica.gob.mx:8110/ventanilla/RecibirCoveService?wsd
 XSD:   https://www.ventanillaunica.gob.mx:443/ventanilla/RecibirCoveService?xsd=1
 
 Referencias:
-  - Manual VUCEM vucem009038.pdf
-  - XSD namespace: http://www.ventanillaunica.gob.mx/cove/ws/oxml/
-  - Autenticación: WS-Security UsernameToken (usuario + contraseña)
-  - Firma: SHA1 + RSA PKCS1v15, cert y firma en HEX, cadena en ISO-8859-1
+  - XSD oficial: namespace http://www.ventanillaunica.gob.mx/cove/ws/oxml/
+  - Autenticación: WS-Security UsernameToken (usuario + contraseña VUCEM)
+  - Firma: SHA1 + RSA PKCS1v15
+  - Certificado y firma: Base64 (xsd:base64Binary — el manual decía hex, el XSD manda)
+  - Cadena original: ISO-8859-1, campo tipoMoneda va ANTES de cantidad en mercancías
 """
 import logging
 import time
@@ -530,9 +531,9 @@ class MxCove(models.Model):
             },
             "mercancias": mercancias,
             "firmaElectronica": {
-                "certificado": firma_data["certificado_hex"],
+                "certificado": firma_data["certificado_b64"],   # xsd:base64Binary
                 "cadenaOriginal": firma_data["cadena_original"],
-                "firma": firma_data["firma_hex"],
+                "firma": firma_data["firma_b64"],               # xsd:base64Binary
             },
         }
 
@@ -682,17 +683,17 @@ class MxCove(models.Model):
         if not _ZEEP_OK:
             raise UserError("La librería 'zeep' no está instalada.")
 
+        import base64 as _base64
         cred = self.credencial_id
-        import base64
-        cert_bytes = base64.b64decode(cred.cert_file)
-        key_bytes = base64.b64decode(cred.key_file)
+        cert_bytes = _base64.b64decode(cred.cert_file)
+        key_bytes = _base64.b64decode(cred.key_file)
         private_key = self._firma_load_private_key(key_bytes, cred.key_password)
 
         # Cadena original para consulta: |numOperacion|RFC|
         rfc = cred.ws_username  # El RFC es el usuario VUCEM
         cadena = self._build_cadena_consulta(self.numero_operacion_vucem, rfc)
-        firma_hex = self._firma_sign_hex(private_key, cadena)
-        cert_hex = self._firma_cert_to_hex(cert_bytes)
+        firma_b64 = self._firma_sign_b64(private_key, cadena)
+        cert_b64 = self._firma_cert_to_b64(cert_bytes)
 
         ambiente = cred.ambiente or "pruebas"
         consulta_wsdl = VUCEM_CONSULTA_URLS.get(ambiente) + "?wsdl"
@@ -709,9 +710,9 @@ class MxCove(models.Model):
         try:
             respuesta = client.service.ConsultarRespuestaCove(
                 numeroOperacion=self.numero_operacion_vucem,
-                certificado=cert_hex,
+                certificado=cert_b64,
                 cadenaOriginal=cadena,
-                firma=firma_hex,
+                firma=firma_b64,
             )
             duracion = int((time.time() - t0) * 1000)
         except Exception as exc:

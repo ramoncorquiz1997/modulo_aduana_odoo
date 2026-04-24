@@ -2,14 +2,18 @@
 """
 Mixin de firma electrónica para VUCEM (COVE).
 
-Especificaciones del Manual de Usuario VUCEM (vucem009038.pdf):
+Especificaciones confirmadas contra XSD (RecibirCove.xsd) y XMLs de ejemplo oficiales:
   - Estándar de firma : PKCS7 / RSA con SHA1
   - Algoritmo digestión: SHA1  (NO SHA256)
-  - Certificado (.cer) : leer bytes → convertir a cadena hexadecimal
-  - Firma              : bytes RSA → convertir a cadena hexadecimal
+  - Certificado (.cer) : leer bytes → Base64  (xsd:base64Binary — el manual decía hex, ESTÁ MAL)
+  - Firma              : bytes RSA → Base64   (xsd:base64Binary — el manual decía hex, ESTÁ MAL)
   - Cadena original    : codificar como ISO-8859-1 antes de firmar
+
+Orden de campos en la cadena para mercancías (confirmado en XMLs de ejemplo oficiales):
+  descripcionGenerica | claveUnidadMedida | tipoMoneda | cantidad | valorUnitario | valorTotal | valorDolares
+  (tipoMoneda va ANTES de cantidad, igual que el orden en el XSD)
 """
-import binascii
+import base64
 import logging
 
 from odoo import models
@@ -66,29 +70,32 @@ class MxFirmaDigital(models.AbstractModel):
             ) from exc
 
     @staticmethod
-    def _firma_cert_to_hex(cert_bytes):
-        """Convierte los bytes del certificado .cer a cadena hexadecimal.
+    def _firma_cert_to_b64(cert_bytes):
+        """Convierte los bytes del certificado .cer a Base64.
 
-        El manual VUCEM indica: leer .cer como arreglo de bytes →
-        convertir a String hexadecimal. Ese string es el campo 'certificado'.
+        El XSD declara: <xsd:element name="certificado" type="xsd:base64Binary">
+        Los XMLs de ejemplo oficiales confirman Base64 (NO hex como indicaba el manual).
         """
-        return binascii.hexlify(cert_bytes).decode("ascii")
+        return base64.b64encode(cert_bytes).decode("ascii")
 
     @staticmethod
-    def _firma_sign_hex(private_key, cadena_str):
-        """Firma la cadena original y devuelve la firma en hexadecimal.
+    def _firma_sign_b64(private_key, cadena_str):
+        """Firma la cadena original y devuelve la firma en Base64.
 
         Proceso:
           1. Codificar la cadena como ISO-8859-1 (requerido por VUCEM)
           2. Firmar con SHA1 + RSA PKCS1v15
-          3. Convertir bytes resultado a hexadecimal
+          3. Convertir bytes resultado a Base64
+
+        El XSD declara: <xsd:element name="firma" type="xsd:base64Binary">
+        Los XMLs de ejemplo oficiales confirman Base64 (NO hex como indicaba el manual).
 
         Args:
             private_key : RSAPrivateKey cargado con _firma_load_private_key
             cadena_str  : cadena original (str) ya armada
 
         Returns:
-            str  hexadecimal de la firma
+            str  Base64 de la firma
         """
         try:
             cadena_bytes = cadena_str.encode("iso-8859-1")
@@ -111,7 +118,7 @@ class MxFirmaDigital(models.AbstractModel):
                 f"Error al firmar con la llave privada: {exc}"
             ) from exc
 
-        return binascii.hexlify(firma_bytes).decode("ascii")
+        return base64.b64encode(firma_bytes).decode("ascii")
 
     # ── Constructor de cadena original COVE (RecibirCove) ────────────────────
 
@@ -160,9 +167,10 @@ class MxFirmaDigital(models.AbstractModel):
 
         # ── Datos del comprobante ─────────────────────────────────────────
         # |tipoOperacion|numFactura|relacionFactura|fechaExpedicion|tipoFigura|observaciones|
+        # Confirmado contra cadena oficial: simple COVE lleva "0", relación de facturas lleva "1"
         partes.append(p(cove.tipo_operacion))
         partes.append(p(cove.numero_factura_original))
-        partes.append("")  # relacionFactura — vacío en COVE simple
+        partes.append("0")  # relacionFactura: 0 = COVE simple (sin relación de facturas)
         fecha = cove.fecha_expedicion.strftime("%Y-%m-%d") if cove.fecha_expedicion else ""
         partes.append(fecha)
         partes.append(p(cove.tipo_figura))
@@ -219,11 +227,14 @@ class MxFirmaDigital(models.AbstractModel):
         partes.append(p(cove.dest_codigo_postal))
 
         # ── Mercancías ────────────────────────────────────────────────────
+        # Orden confirmado en XMLs oficiales y XSD:
+        # descripcion | claveUM | tipoMoneda | cantidad | valorUnitario | valorTotal | valorDolares
+        # (tipoMoneda va ANTES de cantidad)
         for m in cove.mercancia_ids:
             partes.append(p(m.descripcion_generica))
             partes.append(p(m.clave_unidad_medida))
-            partes.append(self._co_decimal(m.cantidad, 3))
-            partes.append(p(m.tipo_moneda))
+            partes.append(p(m.tipo_moneda))                        # tipoMoneda primero
+            partes.append(self._co_decimal(m.cantidad, 3))         # luego cantidad
             partes.append(self._co_decimal(m.valor_unitario, 6))
             partes.append(self._co_decimal(m.valor_total, 6))
             partes.append(self._co_decimal(m.valor_dolares, 4))
@@ -257,7 +268,8 @@ class MxFirmaDigital(models.AbstractModel):
             credencial : record mx.ped.credencial.ws (tiene cert_file, key_file, key_password)
 
         Returns:
-            dict con claves: cadena_original, certificado_hex, firma_hex
+            dict con claves: cadena_original, certificado_b64, firma_b64
+            (certificado y firma en Base64 conforme xsd:base64Binary del XSD oficial)
         """
         self._firma_check_crypto()
 
@@ -266,17 +278,16 @@ class MxFirmaDigital(models.AbstractModel):
         if not credencial.key_file:
             raise UserError("La credencial no tiene llave privada (.key) cargada.")
 
-        import base64
         cert_bytes = base64.b64decode(credencial.cert_file)
         key_bytes = base64.b64decode(credencial.key_file)
 
         private_key = self._firma_load_private_key(key_bytes, credencial.key_password)
         cadena = self._build_cadena_cove(cove)
-        firma_hex = self._firma_sign_hex(private_key, cadena)
-        cert_hex = self._firma_cert_to_hex(cert_bytes)
+        firma_b64 = self._firma_sign_b64(private_key, cadena)
+        cert_b64 = self._firma_cert_to_b64(cert_bytes)
 
         return {
             "cadena_original": cadena,
-            "certificado_hex": cert_hex,
-            "firma_hex": firma_hex,
+            "certificado_b64": cert_b64,
+            "firma_b64": firma_b64,
         }
