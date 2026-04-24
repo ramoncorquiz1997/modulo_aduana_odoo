@@ -14,6 +14,7 @@ Referencias:
   - Cadena original: ISO-8859-1, campo tipoMoneda va ANTES de cantidad en mercancías
 """
 import logging
+import os
 import time
 
 from odoo import _, api, fields, models
@@ -553,8 +554,22 @@ class MxCove(models.Model):
 
     # ── Transmisión a VUCEM ───────────────────────────────────────────────────
 
+    def _get_wsdl_path(self, filename):
+        """Devuelve la ruta absoluta a un archivo WSDL local dentro del módulo.
+
+        Usar WSDLs locales evita depender de conectividad a VUCEM solo para
+        obtener la definición del servicio (que no cambia).
+        """
+        module_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        return os.path.join(module_dir, "data", "wsdl", filename)
+
     def _get_zeep_client(self):
-        """Crea y devuelve un cliente zeep configurado para este COVE."""
+        """Crea y devuelve un cliente zeep configurado para este COVE.
+
+        Carga el WSDL desde archivo local para no requerir conexión a VUCEM
+        en el momento de inicializar el cliente. El endpoint real se sobreescribe
+        con la URL correcta para el ambiente configurado.
+        """
         if not _ZEEP_OK:
             raise UserError(
                 "La librería 'zeep' no está instalada.\n"
@@ -562,11 +577,21 @@ class MxCove(models.Model):
             )
         cred = self.credencial_id
         ambiente = cred.ambiente or "pruebas"
-        wsdl_url = VUCEM_URLS.get(ambiente, VUCEM_URLS["pruebas"]) + "?wsdl"
+        endpoint_url = VUCEM_URLS.get(ambiente, VUCEM_URLS["pruebas"])
+
+        # WSDL local — evita timeout al conectar a VUCEM solo para leer la definición
+        wsdl_path = self._get_wsdl_path("RecibirCove.wsdl")
+        if not os.path.exists(wsdl_path):
+            raise UserError(
+                f"No se encontró el archivo WSDL local: {wsdl_path}\n"
+                "Asegúrate de que el módulo esté actualizado (git pull)."
+            )
+        wsdl_url = f"file://{wsdl_path}"
 
         session = _requests.Session()
         session.verify = True
         transport = Transport(session=session, timeout=40)
+        settings = zeep.Settings(strict=False, xml_huge_tree=True)
 
         client = zeep.Client(
             wsdl=wsdl_url,
@@ -576,7 +601,10 @@ class MxCove(models.Model):
                 use_digest=False,
             ),
             transport=transport,
+            settings=settings,
         )
+        # Sobreescribir el endpoint con la URL real del ambiente (pruebas/producción)
+        client.service._binding_options["address"] = endpoint_url
         return client, ambiente
 
     def _registrar_log(self, tipo, ambiente, estatus, cadena=None,
@@ -698,15 +726,23 @@ class MxCove(models.Model):
         cert_b64 = self._firma_cert_to_b64(cert_bytes)
 
         ambiente = cred.ambiente or "pruebas"
-        consulta_wsdl = VUCEM_CONSULTA_URLS.get(ambiente) + "?wsdl"
+        consulta_endpoint = VUCEM_CONSULTA_URLS.get(ambiente, VUCEM_CONSULTA_URLS["pruebas"])
+
+        # WSDL local para consulta
+        consulta_wsdl_path = self._get_wsdl_path("ConsultarRespuestaCove.wsdl")
+        if not os.path.exists(consulta_wsdl_path):
+            raise UserError(f"No se encontró WSDL local: {consulta_wsdl_path}")
 
         session = _requests.Session()
         transport = Transport(session=session, timeout=40)
+        settings = zeep.Settings(strict=False, xml_huge_tree=True)
         client = zeep.Client(
-            wsdl=consulta_wsdl,
+            wsdl=f"file://{consulta_wsdl_path}",
             wsse=UsernameToken(cred.ws_username, cred.ws_password, use_digest=False),
             transport=transport,
+            settings=settings,
         )
+        client.service._binding_options["address"] = consulta_endpoint
 
         t0 = time.time()
         try:

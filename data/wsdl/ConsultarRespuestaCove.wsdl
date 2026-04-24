@@ -1,0 +1,95 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<WL5G3N2:definitions name="ConsultarRespuestaCove" targetNamespace="http://www.ventanillaunica.gob.mx/cove/ws/service/" xmlns="" xmlns:WL5G3N0="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:WL5G3N1="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:WL5G3N2="http://schemas.xmlsoap.org/wsdl/" xmlns:WL5G3N3="http://www.ventanillaunica.gob.mx/cove/ws/oxml/" xmlns:WL5G3N4="http://www.ventanillaunica.gob.mx/cove/ws/service/" xmlns:WL5G3N5="http://schemas.xmlsoap.org/wsdl/soap/">
+  <WL5G3N0:Policy WL5G3N1:Id="BasicHttpBinding_IReceptorService_policy">
+    <WL5G3N0:ExactlyOne>
+      <WL5G3N0:All>
+        <sp:TransportBinding xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+            <sp:TransportToken>
+              <wsp:Policy>
+                <sp:HttpsToken RequireClientCertificate="false"/>
+              </wsp:Policy>
+            </sp:TransportToken>
+            <sp:AlgorithmSuite>
+              <wsp:Policy>
+                <sp:Basic256/>
+              </wsp:Policy>
+            </sp:AlgorithmSuite>
+            <sp:Layout>
+              <wsp:Policy>
+                <sp:Lax/>
+              </wsp:Policy>
+            </sp:Layout>
+            <sp:IncludeTimestamp/>
+          </wsp:Policy>
+        </sp:TransportBinding>
+        <sp:SignedSupportingTokens xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+            <sp:UsernameToken sp:IncludeToken="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy/IncludeToken/AlwaysToRecipient">
+              <wsp:Policy>
+                <sp:WssUsernameToken10/>
+              </wsp:Policy>
+            </sp:UsernameToken>
+          </wsp:Policy>
+        </sp:SignedSupportingTokens>
+        <sp:Wss10 xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+            <sp:MustSupportRefKeyIdentifier/>
+            <sp:MustSupportRefIssuerSerial/>
+          </wsp:Policy>
+        </sp:Wss10>
+      </WL5G3N0:All>
+    </WL5G3N0:ExactlyOne>
+  </WL5G3N0:Policy>
+  <WL5G3N2:types>
+    <xsd:schema targetNamespace="http://www.ventanillaunica.gob.mx/cove/ws/oxml/Imports" xmlns:comun="http://www.ventanillaunica.gob.mx/cove/ws/oxml/" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:sp="http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200702" xmlns:tns="http://www.ventanillaunica.gob.mx/cove/ws/service/" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <xsd:import namespace="http://www.ventanillaunica.gob.mx/cove/ws/oxml/" schemaLocation="ConsultarRespuestaCove.xsd"/>
+    </xsd:schema>
+  </WL5G3N2:types>
+  <WL5G3N2:message name="IReceptor_ConsultarRespuestaCoveServicio_InputMessage">
+    <WL5G3N2:documentation>Petición del servicio</WL5G3N2:documentation>
+    <WL5G3N2:part element="WL5G3N3:solicitarConsultarRespuestaCoveServicio" name="peticion"/>
+  </WL5G3N2:message>
+  <WL5G3N2:message name="IReceptor_ConsultarRespuestaCoveServicio_OutputMessage">
+    <WL5G3N2:documentation>Respuesta del servicio</WL5G3N2:documentation>
+    <WL5G3N2:part element="WL5G3N3:solicitarConsultarRespuestaCoveServicioResponse" name="respuesta"/>
+  </WL5G3N2:message>
+  <WL5G3N2:portType name="IReceptor">
+    <WL5G3N2:operation name="ConsultarRespuestaCove">
+      <WL5G3N2:documentation>
+&lt;pre&gt;
+Recibe una lista de facturas para registrar un Comprobante de Valor Electrónico para cada una. 
+Esta operación debera ser usada cuando se desee generar un coves que tengan solo una factura. 
+Si se tienen mas facturas, se debera registrar una Relacion  de Facturas. 
+&lt;/pre&gt;
+			</WL5G3N2:documentation>
+      <WL5G3N2:input message="WL5G3N4:IReceptor_ConsultarRespuestaCoveServicio_InputMessage"/>
+      <WL5G3N2:output message="WL5G3N4:IReceptor_ConsultarRespuestaCoveServicio_OutputMessage"/>
+    </WL5G3N2:operation>
+  </WL5G3N2:portType>
+  <WL5G3N2:binding name="IReceptorEndpointBinding" type="WL5G3N4:IReceptor">
+    <WL5G3N0:Policy>
+      <WL5G3N0:PolicyReference URI="#BasicHttpBinding_IReceptorService_policy"/>
+    </WL5G3N0:Policy>
+    <WL5G3N5:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <WL5G3N2:operation name="ConsultarRespuestaCove">
+      <WL5G3N5:operation soapAction="http://www.ventanillaunica.gob.mx/ConsultarRespuestaCove"/>
+      <WL5G3N2:input>
+        <WL5G3N5:body use="literal"/>
+      </WL5G3N2:input>
+      <WL5G3N2:output>
+        <WL5G3N5:body use="literal"/>
+      </WL5G3N2:output>
+    </WL5G3N2:operation>
+  </WL5G3N2:binding>
+  <WL5G3N2:service name="ConsultarRespuestaCoveService">
+    <WL5G3N2:documentation>
+&lt;pre&gt;
+Recepcion de Facturas o relaciones de facturas para la generacion de Comprobantes de Valor Electrónico (COVE)
+&lt;/pre&gt;
+			</WL5G3N2:documentation>
+    <WL5G3N2:port binding="WL5G3N4:IReceptorEndpointBinding" name="IReceptorBinding">
+      <WL5G3N5:address location="http://www.ventanillaunica.gob.mx/ConsultarRespuestaCoveService"/>
+    </WL5G3N2:port>
+  </WL5G3N2:service>
+</WL5G3N2:definitions>

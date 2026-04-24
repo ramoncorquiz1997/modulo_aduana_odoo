@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema attributeFormDefault="unqualified"
+    elementFormDefault="qualified"
+    targetNamespace="http://www.ventanillaunica.gob.mx/cove/ws/oxml/"
+    xmlns:tns="http://www.ventanillaunica.gob.mx/cove/ws/oxml/" 
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+
+	<xsd:complexType name="Errores">
+		<xsd:annotation>
+			<xsd:documentation></xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="mensaje" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	
+
+	<xsd:complexType name="RespuestaOperacion">
+		<xsd:annotation>
+			<xsd:documentation></xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="numeroFacturaORelacionFacturas" minOccurs="1" nillable="false">
+				<xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:whiteSpace value="collapse"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="contieneError" type="xsd:boolean" minOccurs="1" nillable="false" />
+			<xsd:element name="eDocument" minOccurs="0">
+				<xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:whiteSpace value="collapse"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="errores" type="tns:Errores" minOccurs="0" />
+			<xsd:element name="cadenaOriginal" minOccurs="0" >
+				<xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:whiteSpace value="collapse"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="selloDigital" minOccurs="0" >
+				<xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:whiteSpace value="collapse"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+			</xsd:element>			
+		</xsd:sequence>
+	</xsd:complexType>
+	
+	<xsd:complexType name="RespuestaPeticion">
+		<xsd:annotation>
+			<xsd:documentation></xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="numeroOperacion" type="xsd:integer" minOccurs="1" maxOccurs="1" nillable="false"/>
+			<xsd:element name="horaRecepcion" type="xsd:dateTime" minOccurs="1" maxOccurs="1" nillable="false"/>
+			<xsd:element name="respuestasOperaciones" type="tns:RespuestaOperacion" minOccurs="1" maxOccurs="unbounded" nillable="false"/>
+			<xsd:element name="leyenda" minOccurs="0">
+				<xsd:simpleType>
+                    <xsd:restriction base="xsd:string">
+                        <xsd:whiteSpace value="collapse"/>
+                    </xsd:restriction>
+                </xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	
+	<xsd:complexType name="FirmaElectronica">
+        <xsd:annotation>
+            <xsd:documentation>Datos de la firma electronica</xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="certificado" type="xsd:base64Binary" minOccurs="1" nillable="false">
+                <xsd:annotation>
+                    <xsd:documentation>Certificado Digital</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="cadenaOriginal" type="xsd:string" minOccurs="1" nillable="false">
+                <xsd:annotation>
+                    <xsd:documentation>Cadena original para obtener la firma digital</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+            <xsd:element name="firma" type="xsd:base64Binary" minOccurs="1" nillable="false">
+                <xsd:annotation>
+                    <xsd:documentation>Firma digital generada</xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
+        </xsd:sequence>
+    </xsd:complexType>
+	
+	<xsd:complexType name="SolicitarConsultarRespuestaCoveServicio">
+        <xsd:annotation>
+            <xsd:documentation> &lt;pre> Petición para la ejecucion de la operación RecibirCove del Servicio Web. &lt;/pre>    </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="numeroOperacion" type="xsd:integer" minOccurs="1" maxOccurs="1" nillable="false"/>
+            <xsd:element name="firmaElectronica" type="tns:FirmaElectronica" minOccurs="1"  nillable="false" />
+        </xsd:sequence>
+    </xsd:complexType>
+	
+	
+	<xsd:element name="solicitarConsultarRespuestaCoveServicio" type="tns:SolicitarConsultarRespuestaCoveServicio" nillable="false" />
+    <xsd:element name="solicitarConsultarRespuestaCoveServicioResponse" type="tns:RespuestaPeticion" nillable="false" />
+	
+
+</xsd:schema>
