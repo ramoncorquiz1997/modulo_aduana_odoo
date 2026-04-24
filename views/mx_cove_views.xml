@@ -306,7 +306,7 @@
     ═══════════════════════════════════════════════════════════════════════ -->
     <menuitem id="menu_mx_cove_root"
               name="COVE / VUCEM"
-              parent="modulo_aduana_odoo.menu_aduana_root"
+              parent="modulo_aduana_odoo.mx_ped_operacion_menu_root"
               sequence="35"/>
 
     <menuitem id="menu_mx_cove_list"
