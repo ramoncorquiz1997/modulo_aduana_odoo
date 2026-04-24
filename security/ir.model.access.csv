@@ -130,3 +130,14 @@ access_mx_ped_validacion_linea_admin,mx.ped.validacion.linea.admin,model_mx_ped_
 access_aduana_setup_wizard,aduana.setup.wizard,model_aduana_setup_wizard,base.group_system,1,1,1,1
 access_mx_ped_desistimiento_wizard,mx.ped.desistimiento.wizard,model_mx_ped_desistimiento_wizard,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_desistimiento_wizard_admin,mx.ped.desistimiento.wizard.admin,model_mx_ped_desistimiento_wizard,base.group_system,1,1,1,1
+access_mx_cove,mx.cove,model_mx_cove,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_cove_admin,mx.cove.admin,model_mx_cove,base.group_system,1,1,1,1
+access_mx_cove_mercancia,mx.cove.mercancia,model_mx_cove_mercancia,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_cove_mercancia_admin,mx.cove.mercancia.admin,model_mx_cove_mercancia,base.group_system,1,1,1,1
+access_mx_cove_rfc_consulta,mx.cove.rfc.consulta,model_mx_cove_rfc_consulta,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_cove_rfc_consulta_admin,mx.cove.rfc.consulta.admin,model_mx_cove_rfc_consulta,base.group_system,1,1,1,1
+access_mx_cove_patente_aduanal,mx.cove.patente.aduanal,model_mx_cove_patente_aduanal,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_cove_patente_aduanal_admin,mx.cove.patente.aduanal.admin,model_mx_cove_patente_aduanal,base.group_system,1,1,1,1
+access_mx_vucem_log,mx.vucem.log,model_mx_vucem_log,modulo_aduana_odoo.group_aduana_user,1,0,0,0
+access_mx_vucem_log_admin,mx.vucem.log.admin,model_mx_vucem_log,base.group_system,1,1,1,1
+access_mx_firma_digital,mx.firma.digital,model_mx_firma_digital,modulo_aduana_odoo.group_aduana_user,1,0,0,0

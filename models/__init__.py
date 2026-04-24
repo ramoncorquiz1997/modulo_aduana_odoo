@@ -32,3 +32,6 @@ from . import aduana_pedimento
 from . import aduana_layout_tecnico
 from . import aduana_setup_wizard
 from . import audit_mixin
+from . import mx_firma_digital
+from . import mx_vucem_log
+from . import mx_cove

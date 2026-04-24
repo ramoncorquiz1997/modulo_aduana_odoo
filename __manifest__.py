@@ -1,6 +1,6 @@
 {
     "name": "Aduanex",
-    "version": "18.0.1.8.6",
+    "version": "18.0.1.9.0",
     "category": "CRM",
     "summary": "Gestión de operaciones aduanales y pedimentos desde CRM",
     "depends": ["crm", "mail", "base", "contacts", "account"],
@@ -18,6 +18,7 @@
         "views/mx_ped_partida_factura_wizard_views.xml",
         "views/mx_ped_validacion_wizard_views.xml",
         "views/mx_ped_desistimiento_wizard_views.xml",
+        "views/mx_cove_views.xml",
         "views/crm_lead_views.xml",
         "views/mx_ped_clave_views.xml",
         "views/aduana_catalogos_views.xml",
@@ -43,7 +44,7 @@
         "views/aduana_setup_wizard_views.xml",
     ],
     "external_dependencies": {
-        "python": ["requests", "PyPDF2", "reportlab"],
+        "python": ["requests", "PyPDF2", "reportlab", "cryptography", "zeep"],
     },
     "license": "LGPL-3",
     "application": False,
