@@ -30,17 +30,33 @@
         <form string="Pedimento">
           <header>
             <button name="action_asignar_numero_pedimento" type="object" string="Asignar N\u00fam. Pedimento" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
-            <button name="action_preparar_estructura" type="object" string="Preparar estructura" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
-            <button name="action_simular_estructura" type="object" string="Simular estructura" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
-            <button name="action_generar_contribuciones_557" type="object" string="Generar contribuciones 557" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
             <button name="action_validar_operacion" type="object" string="Validar" class="btn-primary" icon="fa-check-circle"/>
             <button name="action_export_txt" type="object" string="Exportar TXT" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_export_txt"/>
             <button name="action_export_proforma" type="object" string="Proforma PDF" class="btn-secondary" icon="fa-file-pdf-o"/>
+            <button name="action_generar_cove" type="object" string="Generar COVE" class="btn-secondary" icon="fa-file-text" groups="modulo_aduana_odoo.group_aduana_user"/>
             <button name="action_avc_generar" type="object" string="Generar AVC" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_generar"/>
-            <button name="action_avc_consultar" type="object" string="Consultar AVC" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_consultar"/>
-            <button name="action_avc_eliminar" type="object" string="Eliminar AVC" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_eliminar"/>
-            <button name="action_cargar_desde_lead" type="object" string="Cargar desde Lead" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_cargar_lead"/>
-            <button name="action_crear_factura" type="object" string="Crear factura" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_crear_factura"/>
+            <button name="action_avc_consultar" type="object" string="Consultar AVC" class="btn-secondary"
+                    invisible="not avc_numero"
+                    groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_consultar"/>
+            <button name="action_avc_eliminar" type="object" string="Eliminar AVC" class="btn-secondary"
+                    invisible="not avc_numero"
+                    groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_eliminar"/>
+            <!-- Botones avanzados: visibles solo con show_advanced_info -->
+            <button name="action_preparar_estructura" type="object" string="Preparar estructura" class="btn-secondary"
+                    invisible="not show_advanced_info"
+                    groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
+            <button name="action_simular_estructura" type="object" string="Simular estructura" class="btn-secondary"
+                    invisible="not show_advanced_info"
+                    groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
+            <button name="action_generar_contribuciones_557" type="object" string="Contribuciones 557" class="btn-secondary"
+                    invisible="not show_advanced_info"
+                    groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_pedimento_core"/>
+            <button name="action_cargar_desde_lead" type="object" string="Refrescar desde Lead" class="btn-secondary"
+                    invisible="not show_advanced_info"
+                    groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_cargar_lead"/>
+            <button name="action_crear_factura" type="object" string="Crear factura" class="btn-secondary"
+                    invisible="not show_advanced_info"
+                    groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_crear_factura"/>
             <button name="action_generar_desistimiento"
                     type="object"
                     string="Generar Desistimiento / Eliminación"
@@ -54,6 +70,10 @@
             <div class="oe_button_box" name="button_box">
               <button type="object" name="action_view_facturas" class="oe_stat_button" icon="fa-file-text-o">
                 <field name="invoice_count" widget="statinfo" string="Facturas"/>
+              </button>
+              <button type="object" name="action_ver_coves" class="oe_stat_button" icon="fa-certificate"
+                      invisible="cove_count == 0">
+                <field name="cove_count" widget="statinfo" string="COVEs"/>
               </button>
             </div>
             <div class="oe_title">

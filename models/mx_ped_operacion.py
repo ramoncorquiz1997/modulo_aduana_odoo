@@ -586,6 +586,16 @@ class MxPedOperacion(models.Model):
         string="Remesas",
         compute="_compute_remesa_count",
     )
+    cove_ids = fields.One2many(
+        "mx.cove",
+        "operacion_id",
+        string="COVEs",
+        copy=False,
+    )
+    cove_count = fields.Integer(
+        string="COVEs",
+        compute="_compute_cove_count",
+    )
     total_packages_line = fields.Integer(
         string="Total bultos",
         compute="_compute_totales_partidas",
@@ -671,6 +681,11 @@ class MxPedOperacion(models.Model):
     def _compute_remesa_count(self):
         for rec in self:
             rec.remesa_count = len(rec.remesa_ids)
+
+    @api.depends("cove_ids")
+    def _compute_cove_count(self):
+        for rec in self:
+            rec.cove_count = len(rec.cove_ids)
 
     @api.depends(
         "partida_ids.factura_documento_id",
@@ -1099,6 +1114,80 @@ class MxPedOperacion(models.Model):
             "domain": [("operacion_id", "=", self.id)],
             "context": {"default_operacion_id": self.id},
             "target": "current",
+        }
+
+    def action_ver_coves(self):
+        """Abre los COVEs ligados a esta operación (smart button)."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("COVEs"),
+            "res_model": "mx.cove",
+            "view_mode": "list,form",
+            "domain": [("operacion_id", "=", self.id)],
+            "context": {"default_operacion_id": self.id},
+            "target": "current",
+        }
+
+    def action_generar_cove(self):
+        """Abre un COVE nuevo pre-llenado con los datos de esta operación.
+
+        Se pre-rellenan todos los campos disponibles en la operación.
+        El agente completa los campos faltantes (credencial, correo) y guarda.
+        """
+        self.ensure_one()
+
+        # Documento principal de tipo factura como fuente para datos del emisor
+        doc_principal = self.documento_ids.filtered(
+            lambda d: d.tipo in ("factura", "cove") and d.es_documento_principal
+        ).sorted(lambda d: d.id)[:1]
+        if not doc_principal:
+            doc_principal = self.documento_ids.filtered(
+                lambda d: d.tipo in ("factura", "cove")
+            ).sorted(lambda d: d.id)[:1]
+
+        # Determinar tipo de operación (selección VUCEM)
+        mov = (self.tipo_movimiento or "").strip()
+        tipo_op = "TOCE.IMP" if mov in ("1", "2", "3", "4", "5", "6") else "TOCE.EXP"
+
+        ctx = dict(self.env.context)
+        ctx["default_operacion_id"] = self.id
+        ctx["default_tipo_operacion"] = tipo_op
+        ctx["default_name"] = self.name or _("Nuevo COVE")
+
+        # Pre-llenar emisor (exportador/proveedor) desde el documento principal
+        if doc_principal:
+            doc = doc_principal
+            ctx["default_emisor_nombre"] = doc.counterparty_name_505 or ""
+            ctx["default_emisor_calle"] = doc.counterparty_street_505 or ""
+            ctx["default_emisor_numero_exterior"] = doc.counterparty_num_ext_505 or ""
+            ctx["default_emisor_numero_interior"] = doc.counterparty_num_int_505 or ""
+            ctx["default_emisor_codigo_postal"] = doc.counterparty_zip_505 or ""
+            ctx["default_emisor_municipio"] = doc.counterparty_city_505 or ""
+            if doc.partner_id and doc.partner_id.country_id:
+                ctx["default_emisor_pais"] = doc.partner_id.country_id.code or ""
+            ctx["default_numero_factura_original"] = doc.folio or ""
+
+        # Pre-llenar destinatario (importador) desde la operación
+        if self.importador_id:
+            ctx["default_dest_nombre"] = self.importador_id.name or ""
+            ctx["default_dest_identificacion"] = self.importador_id.vat or ""
+            if self.importador_id.street:
+                ctx["default_dest_calle"] = self.importador_id.street or ""
+            if self.importador_id.zip:
+                ctx["default_dest_codigo_postal"] = self.importador_id.zip or ""
+            if self.importador_id.city:
+                ctx["default_dest_municipio"] = self.importador_id.city or ""
+            if self.importador_id.country_id:
+                ctx["default_dest_pais"] = self.importador_id.country_id.code or ""
+
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Nuevo COVE"),
+            "res_model": "mx.cove",
+            "view_mode": "form",
+            "target": "current",
+            "context": ctx,
         }
 
     def _get_tipo_movimiento_effective(self):
@@ -1968,7 +2057,7 @@ class MxPedOperacion(models.Model):
             clean_text = self._sanitize_511_text(line.texto)
             if clean_text:
                 seq = line.sequence if line.sequence and line.sequence > 0 else idx
-                lines.append({"sequence": seq, "texto": clean_text})
+                lines.append({"sequence": seq, "texto": clean_text, "__source_id": line.id})
         return lines
 
     def _get_512_descargo_lines(self):
@@ -1997,6 +2086,7 @@ class MxPedOperacion(models.Model):
                 "fraccion_original": fraccion,
                 "unidad_medida_original": unidad_code,
                 "cantidad_umt_original": line.cantidad_umt_original,
+                "__source_id": line.id,
             })
         return lines
 
@@ -2033,6 +2123,7 @@ class MxPedOperacion(models.Model):
                 "fecha_pago_original": fecha_txt,
                 "contribucion_compensada": contrib_code,
                 "importe_compensado": line.importe_compensado,
+                "__source_id": line.id,
             })
         return lines
 
@@ -2313,6 +2404,85 @@ class MxPedOperacion(models.Model):
                 used |= created
 
         (stale - used).unlink()
+
+    def _apply_registro_diff(self, desired):
+        """Aplica un diff inteligente sobre registro_ids.
+
+        ``desired`` es una lista de dicts con estructura::
+
+            {
+                "codigo":    str,
+                "secuencia": int,
+                "key":       str,   # __sync_key único
+                "valores":   dict,  # ya incluye __sync_origin="auto" y __sync_key
+            }
+
+        Estrategia:
+        - Registros con ``__sync_origin == "auto"`` son gestionados por este método.
+        - Registros sin ``__sync_origin`` (creados manualmente) se preservan intactos.
+        - Si el registro existente tiene la misma key → actualizar secuencia + valores.
+        - Si la key es nueva → crear.
+        - Si una key "auto" ya no está en desired → eliminar.
+        - Primera ejecución (migración): si no existen registros "auto" pero sí hay
+          registros no-técnicos sin __sync_origin, se reemplazan en bloque para
+          evitar duplicados tras el primer deploy con este sistema.
+        """
+        self.ensure_one()
+        TECNICO_CODES = {"509", "510", "557", "514"}
+        reg_model = self.env["mx.ped.registro"]
+
+        # Separar registros existentes por categoría
+        auto_regs = self.env["mx.ped.registro"]   # gestionados por este método
+        manual_regs = self.env["mx.ped.registro"]  # creados manualmente (sin origin)
+        legacy_regs = self.env["mx.ped.registro"]  # sin origin, no técnicos
+
+        for reg in self.registro_ids:
+            if (reg.codigo or "") in TECNICO_CODES:
+                continue  # los técnicos son responsabilidad de _sync_registro_ids_from_tecnicos
+            vals = reg.valores or {}
+            origin = vals.get("__sync_origin") if isinstance(vals, dict) else None
+            if origin == "auto":
+                auto_regs |= reg
+            else:
+                legacy_regs |= reg
+
+        # Migración de primera ejecución: si no hay registros "auto" todavía
+        # pero sí hay legacy no-técnicos, los borramos para que el diff los recree
+        # correctamente (evita duplicados el primer día tras el deploy).
+        if not auto_regs and legacy_regs:
+            legacy_regs.unlink()
+            auto_regs = self.env["mx.ped.registro"]
+
+        # Índice por __sync_key para búsqueda O(1)
+        by_key = {}
+        for reg in auto_regs:
+            vals = reg.valores or {}
+            if isinstance(vals, dict) and vals.get("__sync_key"):
+                by_key[vals["__sync_key"]] = reg
+
+        used = self.env["mx.ped.registro"]
+        for item in desired:
+            reg = by_key.get(item["key"])
+            if reg:
+                # Actualizar solo si algo cambió (evita writes innecesarios)
+                needs_update = (
+                    reg.secuencia != item["secuencia"]
+                    or reg.valores != item["valores"]
+                )
+                if needs_update:
+                    reg.write({"secuencia": item["secuencia"], "valores": item["valores"]})
+                used |= reg
+            else:
+                created = reg_model.create({
+                    "operacion_id": self.id,
+                    "codigo":       item["codigo"],
+                    "secuencia":    item["secuencia"],
+                    "valores":      item["valores"],
+                })
+                used |= created
+
+        # Eliminar registros "auto" que ya no están en desired
+        (auto_regs - used).unlink()
 
     def _relax_technical_required_states(self, states):
         """Relaja min/required en registros cuando no hay fuente de datos."""
@@ -5751,6 +5921,7 @@ class MxPedOperacion(models.Model):
                 "codigo_postal": (line.codigo_postal or "").strip(),
                 "municipio_ciudad": (line.municipio_ciudad or "").strip(),
                 "pais": (line.pais_id.code or "").strip() if line.pais_id else "",
+                "__source_id": line.id,
             })
         return lines
 
@@ -5818,6 +5989,7 @@ class MxPedOperacion(models.Model):
             lines.append({
                 "transporte_identificador": transporte_identificador,
                 "num_candado": num_candado,
+                "__source_id": line.id,
             })
 
         return lines
@@ -5909,6 +6081,7 @@ class MxPedOperacion(models.Model):
                 "identificador": self._sanitize_502_text(t.transporte_identificador or "", 30)[:30],
                 "bultos": lead.x_bultos or 0,
                 "domicilio": self._sanitize_502_text(t.domicilio or "", 150),
+                "__source_id": t.id,
             })
         return lines
 
@@ -5922,6 +6095,7 @@ class MxPedOperacion(models.Model):
             {
                 "numero": (g.numero or "").strip()[:20],
                 "identificador": (g.identificador or "M")[:1],
+                "__source_id": g.id,
             }
             for g in lead.x_guia_ids.sorted(lambda g: (g.sequence or 0, g.id))
             if (g.numero or "").strip()
@@ -5937,6 +6111,7 @@ class MxPedOperacion(models.Model):
             {
                 "numero": (c.numero or "").strip()[:12],
                 "tipo": str(c.tipo_contenedor_id.code or "").zfill(2) if c.tipo_contenedor_id else "",
+                "__source_id": c.id,
             }
             for c in lead.x_contenedor_ids.sorted(lambda c: (c.sequence or 0, c.id))
             if (c.numero or "").strip()
@@ -6092,11 +6267,9 @@ class MxPedOperacion(models.Model):
                 if not fecha_lines:
                     continue
                 for secuencia, fecha_line in enumerate(fecha_lines, start=1):
-                    registros.append((0, 0, {
-                        "codigo": layout_reg.codigo,
-                        "secuencia": secuencia,
-                        "valores": self._build_506_valores(layout_reg, fecha_line),
-                    }))
+                    _vals = self._build_506_valores(layout_reg, fecha_line)
+                    _vals["__source_id"] = fecha_line.id
+                    registros.append((0, 0, {"codigo": layout_reg.codigo, "secuencia": secuencia, "valores": _vals}))
                 continue
 
             if code == "507":
@@ -6106,11 +6279,9 @@ class MxPedOperacion(models.Model):
                 if not id_lines:
                     continue
                 for secuencia, ident_line in enumerate(id_lines, start=1):
-                    registros.append((0, 0, {
-                        "codigo": layout_reg.codigo,
-                        "secuencia": secuencia,
-                        "valores": self._build_507_valores(layout_reg, ident_line),
-                    }))
+                    _vals = self._build_507_valores(layout_reg, ident_line)
+                    _vals["__source_id"] = ident_line.id
+                    registros.append((0, 0, {"codigo": layout_reg.codigo, "secuencia": secuencia, "valores": _vals}))
                 continue
 
             if code == "508":
@@ -6118,11 +6289,9 @@ class MxPedOperacion(models.Model):
                 if not cuenta_lines:
                     continue
                 for secuencia, cuenta_line in enumerate(cuenta_lines, start=1):
-                    registros.append((0, 0, {
-                        "codigo": layout_reg.codigo,
-                        "secuencia": secuencia,
-                        "valores": self._build_508_valores(layout_reg, cuenta_line),
-                    }))
+                    _vals = self._build_508_valores(layout_reg, cuenta_line)
+                    _vals["__source_id"] = cuenta_line.id
+                    registros.append((0, 0, {"codigo": layout_reg.codigo, "secuencia": secuencia, "valores": _vals}))
                 continue
 
             if code == "502":
@@ -6130,11 +6299,10 @@ class MxPedOperacion(models.Model):
                 if not transporte_lines:
                     continue
                 for secuencia, transporte_line in enumerate(transporte_lines, start=1):
-                    registros.append((0, 0, {
-                        "codigo": layout_reg.codigo,
-                        "secuencia": secuencia,
-                        "valores": self._build_502_valores(layout_reg, transporte_line),
-                    }))
+                    _vals = self._build_502_valores(layout_reg, transporte_line)
+                    if "__source_id" in transporte_line:
+                        _vals["__source_id"] = transporte_line["__source_id"]
+                    registros.append((0, 0, {"codigo": layout_reg.codigo, "secuencia": secuencia, "valores": _vals}))
                 continue
 
             if code == "503":
@@ -6142,11 +6310,10 @@ class MxPedOperacion(models.Model):
                 if not guia_lines:
                     continue
                 for secuencia, guia_line in enumerate(guia_lines, start=1):
-                    registros.append((0, 0, {
-                        "codigo": layout_reg.codigo,
-                        "secuencia": secuencia,
-                        "valores": self._build_503_valores(layout_reg, guia_line),
-                    }))
+                    _vals = self._build_503_valores(layout_reg, guia_line)
+                    if "__source_id" in guia_line:
+                        _vals["__source_id"] = guia_line["__source_id"]
+                    registros.append((0, 0, {"codigo": layout_reg.codigo, "secuencia": secuencia, "valores": _vals}))
                 continue
 
             if code == "504":
@@ -6154,11 +6321,10 @@ class MxPedOperacion(models.Model):
                 if not contenedor_lines:
                     continue
                 for secuencia, contenedor_line in enumerate(contenedor_lines, start=1):
-                    registros.append((0, 0, {
-                        "codigo": layout_reg.codigo,
-                        "secuencia": secuencia,
-                        "valores": self._build_504_valores(layout_reg, contenedor_line),
-                    }))
+                    _vals = self._build_504_valores(layout_reg, contenedor_line)
+                    if "__source_id" in contenedor_line:
+                        _vals["__source_id"] = contenedor_line["__source_id"]
+                    registros.append((0, 0, {"codigo": layout_reg.codigo, "secuencia": secuencia, "valores": _vals}))
                 continue
 
             if code == "516":
@@ -6166,11 +6332,10 @@ class MxPedOperacion(models.Model):
                 if not candado_lines:
                     continue
                 for secuencia, candado_line in enumerate(candado_lines, start=1):
-                    registros.append((0, 0, {
-                        "codigo": layout_reg.codigo,
-                        "secuencia": secuencia,
-                        "valores": self._build_516_valores(layout_reg, candado_line),
-                    }))
+                    _vals = self._build_516_valores(layout_reg, candado_line)
+                    if "__source_id" in candado_line:
+                        _vals["__source_id"] = candado_line["__source_id"]
+                    registros.append((0, 0, {"codigo": layout_reg.codigo, "secuencia": secuencia, "valores": _vals}))
                 continue
 
             if code == "520":
@@ -6180,11 +6345,10 @@ class MxPedOperacion(models.Model):
                 if not destinatario_lines:
                     continue
                 for secuencia, destinatario_line in enumerate(destinatario_lines, start=1):
-                    registros.append((0, 0, {
-                        "codigo": layout_reg.codigo,
-                        "secuencia": secuencia,
-                        "valores": self._build_520_valores(layout_reg, destinatario_line),
-                    }))
+                    _vals = self._build_520_valores(layout_reg, destinatario_line)
+                    if "__source_id" in destinatario_line:
+                        _vals["__source_id"] = destinatario_line["__source_id"]
+                    registros.append((0, 0, {"codigo": layout_reg.codigo, "secuencia": secuencia, "valores": _vals}))
                 continue
 
             if code == "511":
@@ -6192,11 +6356,10 @@ class MxPedOperacion(models.Model):
                 if not observation_lines:
                     continue
                 for secuencia, observation_line in enumerate(observation_lines, start=1):
-                    registros.append((0, 0, {
-                        "codigo": layout_reg.codigo,
-                        "secuencia": secuencia,
-                        "valores": self._build_511_valores(layout_reg, observation_line),
-                    }))
+                    _vals = self._build_511_valores(layout_reg, observation_line)
+                    if "__source_id" in observation_line:
+                        _vals["__source_id"] = observation_line["__source_id"]
+                    registros.append((0, 0, {"codigo": layout_reg.codigo, "secuencia": secuencia, "valores": _vals}))
                 continue
 
             if code == "512":
@@ -6204,11 +6367,10 @@ class MxPedOperacion(models.Model):
                 if not descargo_lines:
                     continue
                 for secuencia, descargo_line in enumerate(descargo_lines, start=1):
-                    registros.append((0, 0, {
-                        "codigo": layout_reg.codigo,
-                        "secuencia": secuencia,
-                        "valores": self._build_512_valores(layout_reg, descargo_line),
-                    }))
+                    _vals = self._build_512_valores(layout_reg, descargo_line)
+                    if "__source_id" in descargo_line:
+                        _vals["__source_id"] = descargo_line["__source_id"]
+                    registros.append((0, 0, {"codigo": layout_reg.codigo, "secuencia": secuencia, "valores": _vals}))
                 continue
 
             if code == "513":
@@ -6216,11 +6378,10 @@ class MxPedOperacion(models.Model):
                 if not compensacion_lines:
                     continue
                 for secuencia, compensacion_line in enumerate(compensacion_lines, start=1):
-                    registros.append((0, 0, {
-                        "codigo": layout_reg.codigo,
-                        "secuencia": secuencia,
-                        "valores": self._build_513_valores(layout_reg, compensacion_line),
-                    }))
+                    _vals = self._build_513_valores(layout_reg, compensacion_line)
+                    if "__source_id" in compensacion_line:
+                        _vals["__source_id"] = compensacion_line["__source_id"]
+                    registros.append((0, 0, {"codigo": layout_reg.codigo, "secuencia": secuencia, "valores": _vals}))
                 continue
 
             if code == "505":
@@ -6283,6 +6444,9 @@ class MxPedOperacion(models.Model):
                     if not meaningful_keys:
                         continue
 
+                if partida:
+                    valores["__partida_id"] = partida.id
+
                 registros.append((0, 0, {
                     "codigo": layout_reg.codigo,
                     "secuencia": secuencia,
@@ -6301,10 +6465,12 @@ class MxPedOperacion(models.Model):
                 and (d.registro_codigo or "").strip() not in {"514", "510", "557"}
             ).sorted(lambda d: (d.es_documento_principal is not True, d.id))
             for secuencia, documento in enumerate(docs_505, start=1):
+                _vals_505 = self._build_505_valores(layout_reg_505, documento)
+                _vals_505["__source_id"] = documento.id
                 registros.append((0, 0, {
                     "codigo": "505",
                     "secuencia": secuencia,
-                    "valores": self._build_505_valores(layout_reg_505, documento),
+                    "valores": _vals_505,
                 }))
 
         # Auto-inyección de registros con estructura fija (no dependen del layout).
@@ -6331,10 +6497,15 @@ class MxPedOperacion(models.Model):
             if not auto_lines:
                 continue
             for secuencia, line in enumerate(auto_lines, start=1):
+                _vals_multi = auto_builder(line)
+                if isinstance(line, dict) and "__source_id" in line:
+                    _vals_multi["__source_id"] = line["__source_id"]
+                if isinstance(line, dict) and "__partida_id" in line:
+                    _vals_multi["__partida_id"] = line["__partida_id"]
                 registros.append((0, 0, {
                     "codigo": auto_code,
                     "secuencia": secuencia,
-                    "valores": auto_builder(line),
+                    "valores": _vals_multi,
                 }))
 
         # Registros de encabezado único (1 por pedimento, condicionados al escenario)
@@ -6365,7 +6536,52 @@ class MxPedOperacion(models.Model):
                 "valores": valores,
             }))
 
-        self.registro_ids = [(5, 0, 0)] + registros
+        # ── Post-procesamiento: asignar __sync_key / __sync_origin a cada registro ──
+        # Las claves se construyen a partir de metadata temporal (__source_id,
+        # __partida_id) inyectada en los valores durante el loop de arriba.
+        # Los registros de tipo "tecnico" (509/510/557/514) los maneja
+        # _sync_registro_ids_from_tecnicos con su propio sistema de keys.
+        TECNICO_CODES = {"509", "510", "557", "514"}
+        desired = []
+        for cmd in registros:
+            # cmd es (0, 0, {codigo, secuencia, valores})
+            rec_data = cmd[2]
+            code = rec_data["codigo"]
+            seq = rec_data["secuencia"]
+            vals = dict(rec_data.get("valores") or {})
+
+            if code in TECNICO_CODES:
+                # Los técnicos los maneja su propio sync — los excluimos del diff general.
+                continue
+
+            source_id = vals.pop("__source_id", None)
+            partida_id = vals.pop("__partida_id", None)
+
+            # Construir la sync_key más estable posible:
+            if source_id is not None and partida_id is not None:
+                # Registro de partida con fuente identificada (ej: 553, 702, 302)
+                sync_key = f"{code}:p{partida_id}:id{source_id}"
+            elif source_id is not None:
+                # Registro de encabezado con fuente identificada (ej: 502, 503, 505)
+                sync_key = f"{code}:id{source_id}"
+            elif partida_id is not None:
+                # Registro de partida sin fuente específica (loop genérico del layout)
+                sync_key = f"{code}:p{partida_id}:seq{seq}"
+            else:
+                # Registro único de encabezado (800, 801, 701, 301, etc.)
+                sync_key = f"{code}:seq{seq}"
+
+            vals["__sync_origin"] = "auto"
+            vals["__sync_key"] = sync_key
+
+            desired.append({
+                "codigo": code,
+                "secuencia": seq,
+                "key": sync_key,
+                "valores": vals,
+            })
+
+        self._apply_registro_diff(desired)
         # Auto-poblar contribuciones (Reg. 557) desde tasas de fracciones arancelarias.
         self.with_context(skip_auto_generated_refresh=True).action_generar_contribuciones_557()
         return True
@@ -6422,6 +6638,7 @@ class MxPedOperacion(models.Model):
                     "clave_permiso": (permiso.code or "").strip(),
                     "valor": valor,
                     "cantidad": cantidad,
+                    "__source_id": f"{partida.id}_{permiso.id}",
                 })
         return lines
 
@@ -6536,6 +6753,7 @@ class MxPedOperacion(models.Model):
                 "clave_contribucion": (line.clave_contribucion or "").strip(),
                 "clave_forma_pago":   (line.clave_forma_pago or "").strip(),
                 "importe_pago":       line.importe_pago or 0.0,
+                "__source_id":        line.id,
             }
             for line in self.contribucion_702_ids
             if line.clave_contribucion and line.clave_forma_pago
@@ -6605,6 +6823,7 @@ class MxPedOperacion(models.Model):
                 "pedimento_eua_can": (ps.pedimento_eua_can or "").strip()[:14],
                 "prueba_suficiente": ps.prueba_suficiente or "",
                 "fecha_documento":  fecha_str,
+                "__source_id":      ps.id,
             })
         return lines
 
