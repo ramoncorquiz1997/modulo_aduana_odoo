@@ -175,37 +175,39 @@
                 <field name="x_transportista_ids" nolabel="1"
                        context="{'default_lead_id': id}">
                   <list editable="bottom" open_form_view="1">
+                    <!-- NOTA: column_invisible se evalúa contra el padre (crm.lead),
+                         por eso usamos x_modo_transporte (campo del lead) aquí.
+                         invisible en las celdas de fila usa el contexto de la línea. -->
                     <field name="sequence" widget="handle"/>
-                    <field name="modo_transporte" column_invisible="1"/>
                     <field name="transportista_id"
                            domain="[('x_contact_role','=','transportista')]"
                            context="{'default_x_contact_role': 'transportista', 'default_company_type': 'company'}"
                            string="Carrier / Transportista"/>
-                    <!-- Identificador varía según modo -->
                     <field name="transporte_identificador"
                            string="Placa / Matrícula / Buque"
                            optional="show"/>
                     <field name="numero_vuelo"
-                           column_invisible="modo_transporte != 'aereo'"
+                           column_invisible="x_modo_transporte != 'aereo'"
                            optional="show"/>
                     <field name="nombre_buque"
-                           column_invisible="modo_transporte != 'maritimo'"
+                           column_invisible="x_modo_transporte != 'maritimo'"
                            optional="show"/>
                     <field name="numero_viaje"
-                           column_invisible="modo_transporte != 'maritimo'"
+                           column_invisible="x_modo_transporte != 'maritimo'"
                            optional="show"/>
                     <field name="transporte_pais_id" string="País"/>
                     <field name="es_carrier_nacional" optional="hide"/>
                     <field name="rfc" readonly="1"
-                           column_invisible="not es_carrier_nacional"
+                           column_invisible="x_modo_transporte not in ('terrestre', 'ferro')"
                            optional="show"/>
                     <field name="curp" readonly="1"
-                           column_invisible="modo_transporte not in ('terrestre', 'ferro') or not es_carrier_nacional"
+                           column_invisible="x_modo_transporte not in ('terrestre', 'ferro')"
                            optional="hide"/>
                   </list>
                   <form string="Transportista">
+                    <!-- modo_transporte es un related field en la línea,
+                         aquí invisible se evalúa en el contexto de crm.lead.transportista -->
                     <group>
-                      <!-- Modo relay invisible -->
                       <field name="modo_transporte" invisible="1"/>
                       <group string="Carrier">
                         <field name="sequence"/>
@@ -217,23 +219,16 @@
                         <field name="es_carrier_nacional"/>
                       </group>
                       <group string="Identificación del vehículo">
-                        <!-- Terrestre / ferro -->
+                        <!-- Un solo campo transporte_identificador, label genérico -->
                         <field name="transporte_identificador"
-                               string="Placas / Número de furgón"
-                               invisible="modo_transporte in ('aereo', 'maritimo')"/>
-                        <!-- Aéreo -->
-                        <field name="transporte_identificador"
-                               string="Matrícula de la aeronave"
-                               invisible="modo_transporte != 'aereo'"/>
+                               string="Placas / Matrícula / ID vehículo"/>
+                        <!-- Campos adicionales solo para aéreo -->
                         <field name="numero_vuelo"
                                invisible="modo_transporte != 'aereo'"/>
-                        <!-- Marítimo -->
+                        <!-- Campos adicionales solo para marítimo -->
                         <field name="nombre_buque"
                                invisible="modo_transporte != 'maritimo'"/>
                         <field name="numero_viaje"
-                               invisible="modo_transporte != 'maritimo'"/>
-                        <field name="transporte_identificador"
-                               string="Buque (identificador SAAI)"
                                invisible="modo_transporte != 'maritimo'"/>
                       </group>
                       <group string="Datos del carrier (auto desde contacto)"
@@ -253,44 +248,19 @@
                 </field>
               </group>
 
-              <!-- ══ GUÍAS / MANIFIESTOS (Reg. 503) ════════════════════════ -->
-              <group>
-                <group string="Guías aéreas (AWB) — Reg. 503"
-                       invisible="x_modo_transporte != 'aereo'">
-                  <field name="x_guia_ids" nolabel="1"
-                         context="{'default_lead_id': id, 'default_tipo_documento': 'MAWB', 'default_identificador': 'M'}">
-                    <list editable="bottom">
-                      <field name="sequence" widget="handle"/>
-                      <field name="tipo_documento" string="Tipo AWB"/>
-                      <field name="numero" string="Número AWB"/>
-                      <field name="identificador" string="Nivel" optional="hide"/>
-                    </list>
-                  </field>
-                </group>
-                <group string="Bills of Lading (BL) — Reg. 503"
-                       invisible="x_modo_transporte != 'maritimo'">
-                  <field name="x_guia_ids" nolabel="1"
-                         context="{'default_lead_id': id, 'default_tipo_documento': 'MBL', 'default_identificador': 'M'}">
-                    <list editable="bottom">
-                      <field name="sequence" widget="handle"/>
-                      <field name="tipo_documento" string="Tipo BL"/>
-                      <field name="numero" string="Número BL"/>
-                      <field name="identificador" string="Nivel" optional="hide"/>
-                    </list>
-                  </field>
-                </group>
-                <group string="Guías / Manifiestos (Reg. 503)"
-                       invisible="x_modo_transporte in ('aereo', 'maritimo')">
-                  <field name="x_guia_ids" nolabel="1"
-                         context="{'default_lead_id': id}">
-                    <list editable="bottom">
-                      <field name="sequence" widget="handle"/>
-                      <field name="tipo_documento"/>
-                      <field name="numero"/>
-                      <field name="identificador" optional="hide"/>
-                    </list>
-                  </field>
-                </group>
+              <!-- ══ GUÍAS / MANIFIESTOS (Reg. 503) ════════════════════════
+                   Una sola instancia del campo — el título y las columnas
+                   actúan según el modo seleccionado en el lead.         -->
+              <group string="AWB / BL / Guías (Reg. 503)">
+                <field name="x_guia_ids" nolabel="1"
+                       context="{'default_lead_id': id}">
+                  <list editable="bottom">
+                    <field name="sequence" widget="handle"/>
+                    <field name="tipo_documento"/>
+                    <field name="numero" string="Número"/>
+                    <field name="identificador" string="Nivel" optional="hide"/>
+                  </list>
+                </field>
               </group>
 
               <!-- ══ CONTENEDORES (Reg. 504) — Solo marítimo/ferro ════════ -->
