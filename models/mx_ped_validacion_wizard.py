@@ -156,26 +156,18 @@ class MxPedValidacionWizard(models.TransientModel):
                 if not p.descripcion or len((p.descripcion or "").strip()) < 5:
                     w(_("Descripción de mercancía muy corta o vacía."), ref=ref, cat="partidas", seq=70)
 
-                # NOM / Permisos / RRNA desde fracción
+                # Regulaciones desde fracción (mx.tigie.maestra es modelo plano;
+                # no existen nom_default_ids/permiso_default_ids/rrna_default_ids).
+                # Si la fracción tiene texto de regulaciones, advertimos cuando la
+                # partida no tiene ningún NOM/permiso/RRNA capturado.
                 if p.fraccion_id:
                     frac = p.fraccion_id
-                    if frac.nom_default_ids and not p.nom_ids:
+                    frac_code = frac.fraccion_8 or frac.llave_10 or ""
+                    if (frac.regulaciones_economia or "").strip() and not p.nom_ids and not p.permiso_ids and not p.rrna_ids:
                         w(
-                            _("La fracción %s requiere NOM(s) (%s) pero no están capturadas en la partida.")
-                            % (frac.fraccion_arancelaria, ", ".join(frac.nom_default_ids.mapped("code"))),
+                            _("La fracción %s tiene regulaciones de economía en TIGIE. Verifique si aplican NOM/permisos/RRNA en la partida.")
+                            % frac_code,
                             ref=ref, cat="regulatorio", seq=10,
-                        )
-                    if frac.permiso_default_ids and not p.permiso_ids:
-                        w(
-                            _("La fracción %s sugiere Permiso(s) (%s) pero no están capturados en la partida.")
-                            % (frac.fraccion_arancelaria, ", ".join(frac.permiso_default_ids.mapped("code") or [])),
-                            ref=ref, cat="regulatorio", seq=20,
-                        )
-                    if frac.rrna_default_ids and not p.rrna_ids:
-                        w(
-                            _("La fracción %s tiene RRNA(s) (%s) asociados que no están capturados en la partida.")
-                            % (frac.fraccion_arancelaria, ", ".join(frac.rrna_default_ids.mapped("code") or [])),
-                            ref=ref, cat="regulatorio", seq=30,
                         )
 
         # ── 3. DOCUMENTOS 505 ───────────────────────────────────────────

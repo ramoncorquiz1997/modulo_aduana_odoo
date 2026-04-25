@@ -2277,13 +2277,9 @@ class CrmLeadOperacionLine(models.Model):
         return {"domain": {"factura_documento_id": domain}}
 
     def action_load_regulatory_defaults(self):
-        for rec in self:
-            fraccion = rec.fraccion_id
-            if not fraccion:
-                continue
-            rec.nom_ids = [(6, 0, fraccion.nom_default_ids.ids)]
-            rec.permiso_ids = [(6, 0, fraccion.permiso_default_ids.ids)]
-            rec.rrna_ids = [(6, 0, fraccion.rrna_default_ids.ids)]
+        # mx.tigie.maestra es un modelo plano: no contiene listas pre-definidas de NOMs,
+        # permisos ni RRNA. Las regulaciones se capturan manualmente en cada partida.
+        # Esta acción no aplica sobre la nueva tabla maestra.
         return True
 
     def get_regulatory_summary_text(self):

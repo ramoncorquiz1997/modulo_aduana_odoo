@@ -1693,59 +1693,43 @@ class MxPedOperacion(models.Model):
         managed_contrib_codes = {1, 3, 6, 15, 22}
         for partida in self.partida_ids:
             tipo = "importacion" if self.tipo_operacion != "exportacion" else "exportacion"
-            tasa = False
-            # Usa fraccion_id Many2one; si no está enlazado, intenta resolverlo por código.
+            # Usa fraccion_id Many2one (mx.tigie.maestra — modelo plano); si no está enlazado,
+            # intenta resolverlo por código en la misma tabla maestra.
             fraccion = partida.fraccion_id
             if not fraccion and (partida.fraccion_arancelaria or "").strip():
-                fraccion = self.env["mx.ped.fraccion"].search(
-                    [("code", "=", partida.fraccion_arancelaria.strip())], limit=1
-                )
+                frac_code = partida.fraccion_arancelaria.strip()
+                # Intenta primero por llave_10 (fraccion+nico), luego por fraccion_8
+                if len(frac_code) == 10:
+                    fraccion = self.env["mx.tigie.maestra"].search(
+                        [("llave_10", "=", frac_code)], limit=1
+                    )
+                if not fraccion:
+                    fraccion = self.env["mx.tigie.maestra"].search(
+                        [("fraccion_8", "=", frac_code[:8])], limit=1
+                    )
                 if fraccion:
-                    # Enlaza para que cálculos futuros sean inmediatos.
                     partida.with_context(skip_auto_generated_refresh=True).write(
                         {"fraccion_id": fraccion.id}
                     )
+
+            # mx.tigie.maestra es un modelo plano: las tasas están directamente en los campos
+            # arancel_importacion / arancel_exportacion / iva_importacion.
+            # No existen tasa_ids ni contribucion_extra_ids.
             if fraccion:
-                tasa = fraccion.tasa_ids.filtered(
-                    lambda t: t.tipo_operacion == tipo and t.territorio == "general"
-                )[:1]
-                if not tasa:
-                    tasa = fraccion.tasa_ids.filtered(lambda t: t.tipo_operacion == tipo)[:1]
+                igi_rate = fraccion.arancel_importacion if tipo == "importacion" else fraccion.arancel_exportacion
+                iva_rate = fraccion.iva_importacion if tipo == "importacion" else 0.0
+            else:
+                igi_rate = 0.0
+                iva_rate = 0.0
 
             candidates = [
-                ("IGI", partida.igi_estimado or 0.0, tasa.igi if tasa else 0.0),
-                ("IVA", partida.iva_estimado or 0.0, tasa.iva if tasa else 0.0),
+                ("IGI", partida.igi_estimado or 0.0, igi_rate),
+                ("IVA", partida.iva_estimado or 0.0, iva_rate),
                 ("DTA", partida.dta_estimado or 0.0, dta_rate),
                 ("PRV", partida.prv_estimado or 0.0, prv_rate),
             ]
-            if tasa and float(tasa.ieps or 0.0) > 0.0:
-                ieps_amount = (partida.value_mxn or 0.0) * (float(tasa.ieps or 0.0) / 100.0)
-                if ieps_amount > 0.0:
-                    candidates.append(("IEPS", ieps_amount, tasa.ieps))
-
-            if fraccion:
-                extra_rules = fraccion.contribucion_extra_ids.filtered(
-                    lambda r: r.active and r.tipo_operacion == tipo and r.territorio == "general"
-                )[:]
-                if not extra_rules:
-                    extra_rules = fraccion.contribucion_extra_ids.filtered(
-                        lambda r: r.active and r.tipo_operacion == tipo
-                    )[:]
-                for rule in extra_rules:
-                    contrib_code = int(rule.contribucion_id.code or 0)
-                    if contrib_code in managed_contrib_codes:
-                        continue
-                    base_amount = partida.value_mxn or 0.0
-                    amount = (
-                        base_amount * ((rule.tasa or 0.0) / 100.0)
-                        if rule.modo_calculo == "porcentaje"
-                        else (rule.tasa or 0.0)
-                    )
-                    if amount <= 0:
-                        continue
-                    tax_code = rule.contribucion_id.abbreviation or rule.contribucion_id.contribucion or str(rule.contribucion_id.code)
-                    rate_value = rule.tasa or 0.0
-                    candidates.append((tax_code, amount, rate_value, rule.contribucion_id.id))
+            # IEPS y contribuciones extra no están en el modelo TIGIE plano;
+            # si se requieren se capturan manualmente en la partida.
 
             normalized_candidates = []
             for item in candidates:
@@ -6956,7 +6940,7 @@ class MxPedOperacionDescargo(models.Model):
     clave_documento_original_id = fields.Many2one("mx.ped.clave", string="Clave documento original", required=True)
     clave_documento_original = fields.Char(string="Clave documento original (codigo)", related="clave_documento_original_id.code", store=True, readonly=True)
     fecha_operacion_original = fields.Date(string="Fecha operacion original", required=True)
-    fraccion_original_id = fields.Many2one("mx.ped.fraccion", string="Fraccion original")
+    fraccion_original_id = fields.Many2one("mx.tigie.maestra", string="Fraccion original")
     fraccion_original = fields.Char(string="Fraccion original (codigo)", related="fraccion_original_id.code", store=True, readonly=True)
     unidad_medida_original_id = fields.Many2one("mx.ped.um", string="Unidad medida original")
     unidad_medida_original_code = fields.Char(string="Unidad medida original (codigo)", related="unidad_medida_original_id.code", store=True, readonly=True)
