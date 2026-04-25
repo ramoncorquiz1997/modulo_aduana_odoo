@@ -143,31 +143,16 @@
           <page string="Transporte" name="mi_modulo_transporte">
             <group>
 
-              <!-- ══ DOCUMENTOS DE TRANSPORTE ══════════════════════════════ -->
-              <group string="Documentos de transporte">
-
-                <!-- Marítimo: BL + booking -->
-                <group invisible="x_modo_transporte != 'maritimo'">
-                  <field name="x_bl_file" filename="x_bl_filename" string="Archivo B/L (PDF)"/>
-                  <field name="x_bl_filename" invisible="1"/>
-                  <field name="x_bl_last_read" readonly="1" string="Última lectura B/L"/>
-                  <field name="x_booking" string="Booking #"/>
-                </group>
-
-                <!-- Aéreo: AWB / guía aérea -->
-                <group invisible="x_modo_transporte != 'aereo'">
-                  <field name="x_bl_file" filename="x_bl_filename" string="Archivo AWB (PDF)"/>
-                  <field name="x_bl_filename" invisible="1"/>
-                  <field name="x_bl_last_read" readonly="1" string="Última lectura AWB"/>
-                </group>
-
-                <!-- Terrestre/ferro: carta de porte -->
-                <group invisible="x_modo_transporte not in ('terrestre', 'ferro')">
-                  <field name="x_bl_file" filename="x_bl_filename" string="Carta de porte / guía (PDF)"/>
-                  <field name="x_bl_filename" invisible="1"/>
-                  <field name="x_bl_last_read" readonly="1"/>
-                </group>
-
+              <!-- ══ DOCUMENTOS DE TRANSPORTE ══════════════════════════════
+                   Un solo bloque — el label cambia en las instrucciones
+                   al agente, pero el campo es el mismo para todos los modos. -->
+              <group string="Documento de transporte">
+                <field name="x_bl_file" filename="x_bl_filename"
+                       string="Archivo B/L / AWB / Carta porte (PDF)"/>
+                <field name="x_bl_filename" invisible="1"/>
+                <field name="x_bl_last_read" readonly="1"/>
+                <field name="x_booking" string="Booking #"
+                       invisible="x_modo_transporte != 'maritimo'"/>
               </group>
 
               <!-- ══ TRANSPORTISTAS (Reg. 502) ══════════════════════════════ -->
@@ -175,34 +160,21 @@
                 <field name="x_transportista_ids" nolabel="1"
                        context="{'default_lead_id': id}">
                   <list editable="bottom" open_form_view="1">
-                    <!-- NOTA: column_invisible se evalúa contra el padre (crm.lead),
-                         por eso usamos x_modo_transporte (campo del lead) aquí.
-                         invisible en las celdas de fila usa el contexto de la línea. -->
                     <field name="sequence" widget="handle"/>
                     <field name="transportista_id"
                            domain="[('x_contact_role','=','transportista')]"
                            context="{'default_x_contact_role': 'transportista', 'default_company_type': 'company'}"
                            string="Carrier / Transportista"/>
                     <field name="transporte_identificador"
-                           string="Placa / Matrícula / Buque"
+                           string="Placa / Matrícula / Buque / Furgón"
                            optional="show"/>
-                    <field name="numero_vuelo"
-                           column_invisible="x_modo_transporte != 'aereo'"
-                           optional="show"/>
-                    <field name="nombre_buque"
-                           column_invisible="x_modo_transporte != 'maritimo'"
-                           optional="show"/>
-                    <field name="numero_viaje"
-                           column_invisible="x_modo_transporte != 'maritimo'"
-                           optional="show"/>
-                    <field name="transporte_pais_id" string="País"/>
+                    <field name="numero_vuelo" optional="hide"/>
+                    <field name="nombre_buque" optional="hide"/>
+                    <field name="numero_viaje" optional="hide"/>
+                    <field name="transporte_pais_id" string="País" optional="show"/>
                     <field name="es_carrier_nacional" optional="hide"/>
-                    <field name="rfc" readonly="1"
-                           column_invisible="x_modo_transporte not in ('terrestre', 'ferro')"
-                           optional="show"/>
-                    <field name="curp" readonly="1"
-                           column_invisible="x_modo_transporte not in ('terrestre', 'ferro')"
-                           optional="hide"/>
+                    <field name="rfc" readonly="1" optional="show"/>
+                    <field name="curp" readonly="1" optional="hide"/>
                   </list>
                   <form string="Transportista">
                     <!-- modo_transporte es un related field en la línea,
