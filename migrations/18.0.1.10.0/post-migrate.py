@@ -59,14 +59,16 @@ def migrate(cr, version):
         matched_code = cr.rowcount
         _logger.info("post-migrate: %s.%s — %d filas recuperadas por código.", table, column, matched_code)
 
-        # Segundo intento: por nombre aproximado para valores que eran nombre completo
+        # Segundo intento: por nombre aproximado.
+        # account_incoterms.name es JSONB en Odoo 18 (campo traducible),
+        # hay que castearlo a text antes de comparar con ILIKE.
         cr.execute(f"""
             UPDATE "{table}" t
             SET "{column}" = ai.id
             FROM account_incoterms ai
             WHERE t."{backup_col}" IS NOT NULL
               AND t."{column}" IS NULL
-              AND ai.name ILIKE '%' || TRIM(t."{backup_col}") || '%'
+              AND (ai.name::text) ILIKE '%' || TRIM(t."{backup_col}") || '%'
         """)
         matched_name = cr.rowcount
         _logger.info("post-migrate: %s.%s — %d filas recuperadas por nombre.", table, column, matched_name)
