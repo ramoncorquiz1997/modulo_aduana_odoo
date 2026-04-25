@@ -498,8 +498,7 @@
 
           </page>
 
-          <page string="Mercancias / Partidas" name="mi_modulo_partidas_import"
-                invisible="not x_tipo_operacion">
+          <page string="Mercancias / Partidas" name="mi_modulo_partidas_import">
             <group>
               <field name="x_ped_factura_resumen" readonly="1"/>
             </group>
@@ -512,6 +511,7 @@
                 <field name="numero_partida"/>
                 <field name="factura_documento_id"/>
                 <field name="fraccion_id"/>
+                <field name="name" optional="show"/>
                 <field name="quantity"/>
                 <field name="value_usd"/>
               </list>

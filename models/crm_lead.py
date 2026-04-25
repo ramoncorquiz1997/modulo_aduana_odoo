@@ -1945,7 +1945,7 @@ class CrmLeadOperacionLine(models.Model):
     lead_id = fields.Many2one("crm.lead", required=True, ondelete="cascade", index=True)
     sequence = fields.Integer(default=10)
     numero_partida = fields.Integer(string="Numero de partida")
-    name = fields.Char(string="Descripcion", required=True)
+    name = fields.Char(string="Descripcion")
     fraccion_id = fields.Many2one(
         "mx.tigie.maestra",
         string="Fraccion arancelaria",
@@ -2231,44 +2231,67 @@ class CrmLeadOperacionLine(models.Model):
 
     @api.onchange("fraccion_id")
     def _onchange_fraccion_id(self):
-        warning = {}
         for rec in self:
             fraccion = rec.fraccion_id
             if not fraccion:
                 continue
+
+            # Snapshots directos de la TIGIE maestra
             rec.fraccion_arancelaria = fraccion.fraccion_8 or ""
-            rec.nico_id = False
             rec.nico = fraccion.nico or ""
+
+            # NICO Many2one — buscar por el código de 2 dígitos que trae la TIGIE
+            if fraccion.nico:
+                nico_rec = self.env["mx.nico"].search(
+                    [("code", "=", fraccion.nico)], limit=1
+                )
+                rec.nico_id = nico_rec if nico_rec else False
+            else:
+                rec.nico_id = False
+
+            # Descripción comercial (desde TIGIE, solo si aún está vacía)
             if not rec.name:
                 rec.name = fraccion.descripcion_completa or ""
+
+            # Unidad de medida (desde TIGIE)
             if fraccion.unidad_medida:
                 umt = self.env["mx.ped.um"].search(
                     [("code", "=", fraccion.unidad_medida), ("active", "=", True)], limit=1
                 )
                 if umt:
                     rec.uom_id = umt.id
-            rec.nom_ids = [(5, 0, 0)]
-            rec.permiso_ids = [(5, 0, 0)]
-            rec.rrna_ids = [(5, 0, 0)]
-            avisos = []
-            if fraccion.regulaciones_economia:
-                avisos.append("SE/COFEPRIS: " + fraccion.regulaciones_economia.strip())
-            if fraccion.otras_dependencias:
-                avisos.append("Otras: " + fraccion.otras_dependencias.strip())
+
+            # Etiquetado (desde TIGIE)
             if fraccion.requires_labeling_default:
-                avisos.append("Esta fraccion requiere etiquetado NOM.")
-            if avisos:
-                warning = {
-                    "title": "Regulaciones — %s" % (fraccion.llave_10 or fraccion.fraccion_8),
-                    "message": "\n".join(avisos),
-                }
-        if warning:
-            return {"warning": warning}
+                rec.labeling_required = True
+
+            # Notas regulatorias — copiar directamente el texto de la TIGIE
+            partes = []
+            if fraccion.regulaciones_economia:
+                partes.append("SE/COFEPRIS: " + fraccion.regulaciones_economia.strip())
+            if fraccion.otras_dependencias:
+                partes.append("Otras dependencias: " + fraccion.otras_dependencias.strip())
+            if partes:
+                rec.notes_regulatorias = "\n".join(partes)
+
+            # Las tasas (IGI, IVA, DTA) las calcula automáticamente
+            # _compute_impuestos_estimados en base a fraccion_id.arancel_importacion /
+            # arancel_exportacion / iva_importacion — no hay que asignarlas aquí.
 
     @api.onchange("nico_id")
     def _onchange_nico_id(self):
         for rec in self:
             rec.nico = rec.nico_id.code if rec.nico_id else (rec.fraccion_id.nico if rec.fraccion_id else False)
+
+    @api.onchange("value_usd", "quantity")
+    def _onchange_calc_precio_unitario(self):
+        """Cuando cambia el valor USD o la cantidad, recalcula el precio unitario
+        como (valor_usd * tipo_cambio) / cantidad. Solo sobreescribe si ambos > 0."""
+        for rec in self:
+            if rec.value_usd and rec.quantity:
+                tc = (rec.lead_id.x_tipo_cambio or 0.0) if rec.lead_id else 0.0
+                if tc:
+                    rec.precio_unitario = (rec.value_usd * tc) / rec.quantity
 
     @api.onchange("lead_id", "numero_partida", "factura_documento_id", "quantity")
     def _onchange_factura_documento_id(self):
