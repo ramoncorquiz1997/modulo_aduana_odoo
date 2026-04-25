@@ -790,8 +790,9 @@ class CrmLead(models.Model):
 
         last_error = None
         for headers, params in attempts:
+            resp = None  # inicializar antes del try para evitar UnboundLocalError
             try:
-                resp = requests.get(url, headers=headers, params=params, timeout=12)
+                resp = requests.get(url, headers=headers, params=params, timeout=10)
                 resp.raise_for_status()
                 payload = resp.json() or {}
                 series = (((payload.get("bmx") or {}).get("series")) or [])
@@ -806,36 +807,47 @@ class CrmLead(models.Model):
                 return float(raw.replace(",", ""))
             except Exception as exc:
                 last_error = exc
-                snippet = ""
-                try:
-                    snippet = (resp.text or "")[:300]
-                except Exception:
-                    snippet = ""
+                snippet = (resp.text or "")[:300] if resp is not None else "(sin respuesta)"
                 _logger.warning(
-                    "Banxico FIX intento fallido (serie=%s, status=%s, body=%s)",
+                    "Banxico FIX intento fallido (serie=%s, status=%s, body=%s): %s",
                     serie_code,
-                    getattr(resp, "status_code", "N/A"),
+                    getattr(resp, "status_code", "N/A") if resp is not None else "timeout",
                     snippet,
+                    exc,
                 )
 
         if last_error:
-            _logger.exception("No se pudo obtener tipo de cambio FIX desde Banxico.")
+            _logger.warning(
+                "No se pudo obtener tipo de cambio FIX desde Banxico: %s", last_error
+            )
         return False
 
     def _sync_tipo_cambio_banxico(self):
-        rate = self._get_banxico_fix_rate()
-        if not rate:
-            return
-        to_update = self.filtered(lambda r: abs((r.x_tipo_cambio or 0.0) - rate) > 0.00001)
-        if not to_update:
-            return
-        to_update.with_context(skip_sync_tipo_cambio_banxico=True).write({"x_tipo_cambio": rate})
+        try:
+            rate = self._get_banxico_fix_rate()
+            if not rate:
+                return
+            to_update = self.filtered(lambda r: abs((r.x_tipo_cambio or 0.0) - rate) > 0.00001)
+            if not to_update:
+                return
+            to_update.with_context(skip_sync_tipo_cambio_banxico=True).write({"x_tipo_cambio": rate})
+        except Exception as exc:
+            # Banxico no debe bloquear la apertura de ninguna vista
+            _logger.warning("_sync_tipo_cambio_banxico ignorado por error: %s", exc)
 
     def web_read(self, specification):
-        # Al abrir un caso en formulario, refresca FIX en tiempo real.
-        # Se omite en registros nuevos (sin id) para evitar write durante onchange.
-        if not self.env.context.get("skip_sync_tipo_cambio_banxico") and len(self) == 1 and self.id:
-            self._sync_tipo_cambio_banxico()
+        # Refresca FIX solo al abrir UN registro en formulario, nunca en listas/kanban.
+        # Envuelto en try/except para que un fallo de Banxico nunca bloquee la UI.
+        if (
+            not self.env.context.get("skip_sync_tipo_cambio_banxico")
+            and len(self) == 1
+            and self.id
+            and self.env.context.get("view_type") == "form"
+        ):
+            try:
+                self._sync_tipo_cambio_banxico()
+            except Exception as exc:
+                _logger.warning("Banxico sync en web_read ignorado: %s", exc)
         return super().web_read(specification)
     
     @api.onchange("x_modo_transporte")
