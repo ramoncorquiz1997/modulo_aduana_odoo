@@ -74,7 +74,7 @@ class MxDoda(models.Model):
     """
     _name = "mx.doda"
     _description = "DODA — Documento de Operación para Despacho Aduanero"
-    _inherit = ["mx.firma.digital"]
+    _inherit = ["mx.firma.digital", "mail.thread", "mail.activity.mixin"]
     _order = "id desc"
     _rec_name = "name"
 
