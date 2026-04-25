@@ -1884,14 +1884,13 @@ class CrmLeadOperacionLine(models.Model):
     numero_partida = fields.Integer(string="Numero de partida")
     name = fields.Char(string="Descripcion", required=True)
     fraccion_id = fields.Many2one(
-        "mx.ped.fraccion",
+        "mx.tigie.maestra",
         string="Fraccion arancelaria",
         domain=[("active", "=", True)],
     )
     nico_id = fields.Many2one(
         "mx.nico",
         string="NICO",
-        domain="[('fraccion_id', '=', fraccion_id)]",
     )
     fraccion_arancelaria = fields.Char(
         string="Fraccion (snapshot)",
@@ -2122,7 +2121,9 @@ class CrmLeadOperacionLine(models.Model):
 
     @api.depends(
         "fraccion_id",
-        "fraccion_id.tasa_ids",
+        "fraccion_id.arancel_importacion",
+        "fraccion_id.arancel_exportacion",
+        "fraccion_id.iva_importacion",
         "lead_id.x_tipo_operacion",
         "value_mxn",
     )
@@ -2132,16 +2133,16 @@ class CrmLeadOperacionLine(models.Model):
         prv_rate = float(icp.get_param("mx_ped.prv_rate", "0.0") or 0.0)
         for rec in self:
             base = rec.value_mxn or 0.0
-            tasa = False
+            igi_rate = 0.0
+            iva_rate = 0.0
             if rec.fraccion_id:
                 tipo = "importacion" if rec.lead_id.x_tipo_operacion != "exportacion" else "exportacion"
-                tasa = rec.fraccion_id.tasa_ids.filtered(
-                    lambda t: t.tipo_operacion == tipo and t.territorio == "general"
-                )[:1]
-                if not tasa:
-                    tasa = rec.fraccion_id.tasa_ids.filtered(lambda t: t.tipo_operacion == tipo)[:1]
-            igi_rate = tasa.igi if tasa else 0.0
-            iva_rate = tasa.iva if tasa else 0.0
+                if tipo == "importacion":
+                    igi_rate = rec.fraccion_id.arancel_importacion or 0.0
+                    iva_rate = rec.fraccion_id.iva_importacion or 0.0
+                else:
+                    igi_rate = rec.fraccion_id.arancel_exportacion or 0.0
+                    iva_rate = 0.0
             rec.igi_estimado = base * (igi_rate / 100.0)
             rec.iva_estimado = (base + rec.igi_estimado) * (iva_rate / 100.0)
             rec.dta_estimado = base * (dta_rate / 100.0)

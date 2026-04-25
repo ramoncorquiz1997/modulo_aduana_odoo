@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <!-- ── FORM ──────────────────────────────────────────────────────────────── -->
+  <record id="mx_doda_view_form" model="ir.ui.view">
+    <field name="name">mx.doda.form</field>
+    <field name="model">mx.doda</field>
+    <field name="arch" type="xml">
+      <form string="DODA">
+        <header>
+          <button name="action_cargar_edocuments" type="object"
+                  string="Cargar e-Documents" class="btn-secondary" icon="fa-refresh"
+                  help="Recarga los e-documents desde las remesas con COVE confirmado."/>
+          <button name="action_preparar" type="object"
+                  string="Preparar" class="btn-secondary" icon="fa-check"
+                  invisible="estado != 'borrador'"
+                  confirm="¿Validar el DODA y marcarlo como listo para transmitir?"/>
+          <button name="action_transmitir_vucem" type="object"
+                  string="Transmitir a VUCEM" class="btn-primary" icon="fa-send"
+                  invisible="estado not in ('listo', 'error')"
+                  confirm="¿Firmar y enviar el DODA a VUCEM?"/>
+          <button name="action_consultar_resultado" type="object"
+                  string="Consultar resultado" class="btn-secondary" icon="fa-search"
+                  invisible="not numero_operacion_vucem"/>
+          <field name="estado" widget="statusbar"
+                 statusbar_visible="borrador,listo,enviado,con_folio"/>
+        </header>
+        <sheet>
+          <div class="oe_title">
+            <h1><field name="name"/></h1>
+          </div>
+
+          <group col="2">
+            <group string="Pedimento consolidado">
+              <field name="operacion_id"
+                     domain="[('es_consolidado','=',True)]"/>
+              <field name="numero_pedimento" readonly="1"/>
+              <field name="aduana_clave" readonly="1"/>
+              <field name="patente" readonly="1"/>
+              <field name="fecha_pago_pedimento" readonly="1"/>
+            </group>
+            <group string="VUCEM">
+              <field name="credencial_id"/>
+              <field name="correo_electronico"/>
+              <field name="numero_operacion_vucem" readonly="1"/>
+              <field name="folio_doda" readonly="1"/>
+              <field name="acuse_hora_recepcion" readonly="1"/>
+            </group>
+          </group>
+
+          <notebook>
+            <page string="e-Documents COVE">
+              <field name="edocument_ids">
+                <list editable="bottom">
+                  <field name="secuencia" widget="handle"/>
+                  <field name="remesa_id"
+                         domain="[('operacion_id','=',parent.operacion_id)]"/>
+                  <field name="folio_remesa"/>
+                  <field name="fecha_remesa"/>
+                  <field name="e_document"/>
+                </list>
+              </field>
+              <div class="alert alert-info" invisible="edocument_count > 0">
+                <strong>Sin e-documents.</strong>
+                Usa el botón <em>Cargar e-Documents</em> para importar automáticamente
+                los folios COVE de las remesas con COVE confirmado.
+              </div>
+            </page>
+            <page string="Resultado VUCEM">
+              <group>
+                <field name="acuse_mensaje" readonly="1"/>
+              </group>
+            </page>
+            <page string="XML / Auditoría" groups="base.group_system">
+              <group>
+                <field name="cadena_original_guardada" readonly="1" widget="text"/>
+                <field name="xml_generado" readonly="1" widget="text"/>
+              </group>
+            </page>
+          </notebook>
+          <field name="edocument_count" invisible="1"/>
+        </sheet>
+        <div class="oe_chatter">
+          <field name="message_follower_ids"/>
+          <field name="activity_ids"/>
+          <field name="message_ids"/>
+        </div>
+      </form>
+    </field>
+  </record>
+
+  <!-- ── LIST ──────────────────────────────────────────────────────────────── -->
+  <record id="mx_doda_view_list" model="ir.ui.view">
+    <field name="name">mx.doda.list</field>
+    <field name="model">mx.doda</field>
+    <field name="arch" type="xml">
+      <list string="DODAs" decoration-success="estado == 'con_folio'"
+            decoration-warning="estado == 'enviado'"
+            decoration-danger="estado == 'error'">
+        <field name="name"/>
+        <field name="operacion_id"/>
+        <field name="numero_pedimento"/>
+        <field name="edocument_count" string="e-Docs"/>
+        <field name="folio_doda"/>
+        <field name="estado" widget="badge"
+               decoration-success="estado == 'con_folio'"
+               decoration-warning="estado in ('listo', 'enviado')"
+               decoration-danger="estado == 'error'"/>
+        <field name="fecha_pago_pedimento"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- ── ACTION ────────────────────────────────────────────────────────────── -->
+  <record id="action_mx_doda" model="ir.actions.act_window">
+    <field name="name">DODAs</field>
+    <field name="res_model">mx.doda</field>
+    <field name="view_mode">list,form</field>
+  </record>
+
+</odoo>

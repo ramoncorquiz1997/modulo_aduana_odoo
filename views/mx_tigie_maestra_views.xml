@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <!-- ── SEARCH ────────────────────────────────────────────────────────────── -->
+  <record id="view_mx_tigie_maestra_search" model="ir.ui.view">
+    <field name="name">mx.tigie.maestra.search</field>
+    <field name="model">mx.tigie.maestra</field>
+    <field name="arch" type="xml">
+      <search string="Buscar en TIGIE">
+        <field name="llave_10" string="Llave / Fraccion / NICO"
+               filter_domain="['|','|','|',
+                               ('llave_10','ilike',self),
+                               ('fraccion_8','ilike',self),
+                               ('nico','ilike',self),
+                               ('descripcion_completa','ilike',self)]"/>
+        <field name="descripcion_completa"/>
+        <field name="unidad_medida"/>
+        <separator/>
+        <filter string="Con regulaciones SE" name="con_reg_economia"
+                domain="[('regulaciones_economia','!=',False),('regulaciones_economia','!=','')]"/>
+        <filter string="Requiere etiquetado" name="etiquetado"
+                domain="[('requires_labeling_default','=',True)]"/>
+        <filter string="Activos" name="activos" domain="[('active','=',True)]"/>
+        <filter string="Archivados" name="archivados" domain="[('active','=',False)]"/>
+        <group expand="0" string="Agrupar por">
+          <filter string="Capitulo" name="grupo_capitulo"
+                  context="{'group_by': 'capitulo'}"/>
+          <filter string="UMT" name="grupo_umt"
+                  context="{'group_by': 'unidad_medida'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <!-- ── LIST ──────────────────────────────────────────────────────────────── -->
+  <record id="view_mx_tigie_maestra_list" model="ir.ui.view">
+    <field name="name">mx.tigie.maestra.list</field>
+    <field name="model">mx.tigie.maestra</field>
+    <field name="arch" type="xml">
+      <list string="TIGIE Maestra"
+            decoration-muted="not active">
+        <field name="llave_10"/>
+        <field name="fraccion_8"/>
+        <field name="nico"/>
+        <field name="descripcion_completa" optional="show"/>
+        <field name="unidad_medida"/>
+        <field name="arancel_importacion" string="IGI (%)" optional="show"/>
+        <field name="arancel_exportacion" string="IGE (%)" optional="hide"/>
+        <field name="iva_importacion" string="IVA (%)" optional="hide"/>
+        <field name="requires_labeling_default" string="Etiq." optional="show"
+               widget="boolean_toggle"/>
+        <field name="active" column_invisible="1"/>
+      </list>
+    </field>
+  </record>
+
+  <!-- ── FORM ──────────────────────────────────────────────────────────────── -->
+  <record id="view_mx_tigie_maestra_form" model="ir.ui.view">
+    <field name="name">mx.tigie.maestra.form</field>
+    <field name="model">mx.tigie.maestra</field>
+    <field name="arch" type="xml">
+      <form string="TIGIE Maestra">
+        <sheet>
+          <div class="oe_title">
+            <label for="llave_10" string="Llave TIGIE"/>
+            <h1><field name="llave_10" placeholder="0101210001"/></h1>
+          </div>
+
+          <group col="2">
+            <group string="Identificacion">
+              <field name="fraccion_8"/>
+              <field name="nico"/>
+              <field name="unidad_medida"/>
+              <field name="active"/>
+            </group>
+            <group string="Aranceles">
+              <field name="arancel_importacion" string="IGI importacion (%)"/>
+              <field name="arancel_exportacion" string="IGE exportacion (%)"/>
+              <field name="iva_importacion" string="IVA importacion (%)"/>
+            </group>
+          </group>
+
+          <group string="Descripcion">
+            <field name="descripcion_completa" nolabel="1"
+                   placeholder="Descripcion oficial segun la TIGIE..."/>
+          </group>
+
+          <group string="Regulaciones">
+            <field name="requires_labeling_default" string="Requiere etiquetado NOM"/>
+            <field name="regulaciones_economia"
+                   placeholder="NOMs, RRNAs, permisos SE/COFEPRIS aplicables..."/>
+            <field name="otras_dependencias"
+                   placeholder="Requisitos SADER, SENER, SAT, etc..."/>
+          </group>
+
+          <group string="Campos de compatibilidad" groups="base.group_system">
+            <field name="code" readonly="1"/>
+            <field name="capitulo" readonly="1"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- ── ACTION ────────────────────────────────────────────────────────────── -->
+  <record id="action_mx_tigie_maestra" model="ir.actions.act_window">
+    <field name="name">TIGIE Maestra</field>
+    <field name="res_model">mx.tigie.maestra</field>
+    <field name="view_mode">list,form</field>
+    <field name="search_view_id" ref="view_mx_tigie_maestra_search"/>
+    <field name="context">{'search_default_activos': 1}</field>
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+        No hay registros en la TIGIE Maestra.
+      </p>
+      <p>
+        Importa el CSV con la Tabla Maestra Unificada de la TIGIE usando el
+        menu <b>Importar registros</b>. La columna <b>llave_10</b> actua como
+        identificador unico (8 digitos de fraccion + 2 de NICO).
+      </p>
+    </field>
+  </record>
+
+  <!-- ── MENU ──────────────────────────────────────────────────────────────── -->
+  <menuitem id="menu_mx_tigie_maestra"
+            name="TIGIE Maestra"
+            parent="menu_mx_ped_catalogos"
+            action="action_mx_tigie_maestra"
+            sequence="5"
+            groups="modulo_aduana_odoo.group_aduana_user"/>
+
+</odoo>

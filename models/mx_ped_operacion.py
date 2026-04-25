@@ -3937,6 +3937,16 @@ class MxPedOperacion(models.Model):
         self._validate_registros_vs_estructura()
 
         if self.es_consolidado and self.modo_export_consolidado == "por_remesa":
+            # ── Validación legal: el pedimento consolidado debe estar pagado ──
+            # Emitir TXT de remesas de un pedimento sin pago es un riesgo legal
+            # (art. 36-A LCA: las remesas amparan mercancía contra el pedimento pagado).
+            if not self.fecha_pago:
+                raise UserError(_(
+                    "El pedimento consolidado no tiene fecha de pago registrada.\n\n"
+                    "No se pueden exportar TXT de remesas hasta que el pedimento "
+                    "principal esté pagado. Captura la fecha de pago en la pestaña "
+                    "de datos generales."
+                ))
             remesas = self.remesa_ids.filtered("active").sorted(lambda r: (r.sequence or 0, r.id))
             if not remesas:
                 raise UserError(_("No hay remesas activas para exportar en modo por remesa."))
@@ -4855,6 +4865,14 @@ class MxPedOperacion(models.Model):
 
     def action_avc_generar(self):
         self.ensure_one()
+        # Para remesa previo consolidado el pedimento principal debe estar pagado.
+        if (self.avc_pedimento_subtipo or "normal") == "remesa_previo_consolidado":
+            if not self.fecha_pago:
+                raise UserError(_(
+                    "No se puede generar AVC de remesa (previo consolidado) si el "
+                    "pedimento consolidado principal no tiene fecha de pago registrada.\n\n"
+                    "Registra la fecha de pago antes de generar el AVC de remesa."
+                ))
         self._check_avc_gafete()
         headers = self._get_avc_headers()
         payload = self._build_avc_payload()

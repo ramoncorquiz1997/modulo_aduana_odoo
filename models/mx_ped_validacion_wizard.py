@@ -305,7 +305,23 @@ class MxPedValidacionWizard(models.TransientModel):
 
         # ── 6. CONSOLIDADO ───────────────────────────────────────────────
         if op.es_consolidado:
+            # ── 6.0 Pago del pedimento principal ────────────────────────
+            if not op.fecha_pago:
+                e(
+                    _("El pedimento consolidado no tiene fecha de pago registrada. "
+                      "Las remesas solo pueden exportarse (TXT y AVC) una vez que "
+                      "el pedimento principal esté pagado."),
+                    cat="general", seq=79,
+                )
+            # ── 6.1 Remesas con COVE pero sin e-document ─────────────────
             remesas = op.remesa_ids.filtered("active") if op.remesa_ids else op.env["mx.ped.consolidado.remesa"]
+            for rem in remesas.filtered(lambda r: r.cove_id and not r.acuse_valor):
+                w(
+                    _("La remesa tiene COVE ligado pero aún no tiene e-document de VUCEM. "
+                      "Consulta el resultado del COVE antes de exportar."),
+                    ref=_("Remesa %s") % (rem.folio or rem.id),
+                    cat="general", seq=79,
+                )
             if not remesas:
                 w(_("Es operación consolidada pero no tiene remesas capturadas."), cat="partidas", seq=80)
             else:

@@ -251,6 +251,14 @@ class MxCove(models.Model):
         ondelete="set null",
         index=True,
     )
+    remesa_id = fields.Many2one(
+        "mx.ped.consolidado.remesa",
+        string="Remesa",
+        ondelete="set null",
+        index=True,
+        help="Remesa del consolidado a la que corresponde este COVE. "
+             "Al obtener el e-document, se escribe automáticamente en la remesa.",
+    )
     credencial_id = fields.Many2one(
         "mx.ped.credencial.ws",
         string="Credencial VUCEM",
@@ -448,6 +456,25 @@ class MxCove(models.Model):
             if vals.get("name", _("Nuevo COVE")) == _("Nuevo COVE"):
                 vals["name"] = self.env["ir.sequence"].next_by_code("mx.cove") or _("Nuevo COVE")
         return super().create(vals_list)
+
+    def write(self, vals):
+        res = super().write(vals)
+        # Auto-propagación: cuando VUCEM devuelve el e-document,
+        # lo escribimos en el campo acuse_valor de la remesa ligada.
+        if "e_document" in vals:
+            self._propagate_e_document_to_remesa()
+        return res
+
+    def _propagate_e_document_to_remesa(self):
+        """Escribe el e-document en la remesa ligada cuando VUCEM lo devuelve."""
+        for cove in self:
+            if not cove.remesa_id or not cove.e_document:
+                continue
+            # El campo acuse_valor en la remesa es computado desde cove_id.e_document
+            # (store=True), por lo que Odoo lo recomputará automáticamente.
+            # Pero forzamos la recomputación para que sea inmediata (sin esperar cron).
+            cove.remesa_id._compute_acuse_valor()
+            cove.remesa_id.flush_recordset(["acuse_valor"])
 
     # ── Validaciones ──────────────────────────────────────────────────────────
     @api.constrains("observaciones")

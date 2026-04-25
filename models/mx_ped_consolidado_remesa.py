@@ -76,7 +76,36 @@ class MxPedConsolidadoRemesa(models.Model):
     placas = fields.Char(string="Placas")
     contenedor = fields.Char(string="Contenedor")
     candados = fields.Char(string="Candados")
-    acuse_valor = fields.Char(string="Acuse de valor")
+
+    # ── Enlace formal con COVE ────────────────────────────────────────────────
+    cove_id = fields.Many2one(
+        "mx.cove",
+        string="COVE",
+        ondelete="set null",
+        index=True,
+        domain="[('operacion_id', '=', operacion_id)]",
+        help="COVE VUCEM asociado a esta remesa. Al obtener el e-document "
+             "de VUCEM se propaga automáticamente a Acuse de valor.",
+    )
+    cove_estado = fields.Selection(
+        related="cove_id.estado",
+        string="Estado COVE",
+        readonly=True,
+    )
+    # acuse_valor: se auto-rellena desde cove_id.e_document.
+    # Si no hay COVE formal, se puede capturar manualmente.
+    acuse_valor = fields.Char(
+        string="e-Document (acuse de valor)",
+        compute="_compute_acuse_valor",
+        inverse="_inverse_acuse_valor",
+        store=True,
+        help="Folio COVE devuelto por VUCEM. Se llena automáticamente cuando "
+             "se obtiene el e-document del COVE ligado.",
+    )
+    acuse_valor_manual = fields.Char(
+        string="Acuse de valor (manual)",
+        help="Se usa solo si no hay un COVE formal ligado.",
+    )
     acuse_presentacion = fields.Char(string="Acuse presentacion")
     avc_plazo_id = fields.Selection(
         [("1", "Semanal"), ("2", "Mensual")],
@@ -145,6 +174,20 @@ class MxPedConsolidadoRemesa(models.Model):
             rec.partida_count = len(rec.partida_rel_ids)
             rec.total_quantity = sum(rec.partida_rel_ids.mapped("quantity"))
             rec.total_value_usd = sum(rec.partida_rel_ids.mapped("value_usd"))
+
+    @api.depends("cove_id", "cove_id.e_document", "acuse_valor_manual")
+    def _compute_acuse_valor(self):
+        for rec in self:
+            if rec.cove_id and rec.cove_id.e_document:
+                rec.acuse_valor = rec.cove_id.e_document
+            else:
+                rec.acuse_valor = rec.acuse_valor_manual or False
+
+    def _inverse_acuse_valor(self):
+        """Permite editar el campo directamente cuando no hay COVE formal."""
+        for rec in self:
+            if not rec.cove_id:
+                rec.acuse_valor_manual = rec.acuse_valor
 
     def _get_single_factura_documento(self):
         self.ensure_one()

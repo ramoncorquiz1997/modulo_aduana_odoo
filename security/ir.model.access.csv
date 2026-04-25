@@ -141,3 +141,9 @@ access_mx_cove_patente_aduanal_admin,mx.cove.patente.aduanal.admin,model_mx_cove
 access_mx_vucem_log,mx.vucem.log,model_mx_vucem_log,modulo_aduana_odoo.group_aduana_user,1,0,0,0
 access_mx_vucem_log_admin,mx.vucem.log.admin,model_mx_vucem_log,base.group_system,1,1,1,1
 access_mx_firma_digital,mx.firma.digital,model_mx_firma_digital,modulo_aduana_odoo.group_aduana_user,1,0,0,0
+access_mx_doda,mx.doda,model_mx_doda,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_doda_admin,mx.doda.admin,model_mx_doda,base.group_system,1,1,1,1
+access_mx_doda_edocument,mx.doda.edocument,model_mx_doda_edocument,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_doda_edocument_admin,mx.doda.edocument.admin,model_mx_doda_edocument,base.group_system,1,1,1,1
+access_mx_tigie_maestra_user,mx.tigie.maestra.user,model_mx_tigie_maestra,modulo_aduana_odoo.group_aduana_user,1,0,0,0
+access_mx_tigie_maestra_admin,mx.tigie.maestra.admin,model_mx_tigie_maestra,base.group_system,1,1,1,1

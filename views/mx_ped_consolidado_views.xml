@@ -32,7 +32,19 @@
                 <field name="placas"/>
                 <field name="contenedor"/>
                 <field name="candados"/>
-                <field name="acuse_valor"/>
+                <!-- COVE formal ligado a esta remesa -->
+                <field name="cove_id"
+                       domain="['|', ('operacion_id','=',operacion_id), ('operacion_id','=',False)]"
+                       options="{'no_create': True}"
+                       help="Selecciona el COVE de VUCEM para esta remesa. El e-document se propagará automáticamente."/>
+                <field name="cove_estado" readonly="1" invisible="not cove_id"
+                       widget="badge"
+                       decoration-success="cove_estado == 'con_edocument'"
+                       decoration-warning="cove_estado == 'enviado'"
+                       decoration-muted="cove_estado == 'borrador'"/>
+                <field name="acuse_valor"
+                       readonly="cove_id != False"
+                       help="e-Document COVE. Se llena automáticamente cuando el COVE tiene folio de VUCEM."/>
                 <field name="acuse_presentacion"/>
               </group>
             </group>

@@ -63,7 +63,7 @@ class MxPedPartida(models.Model):
     )
 
     numero_partida = fields.Integer()
-    fraccion_id = fields.Many2one("mx.ped.fraccion", string="Fraccion arancelaria")
+    fraccion_id = fields.Many2one("mx.tigie.maestra", string="Fraccion arancelaria")
     fraccion_arancelaria = fields.Char(
         string="Fraccion (snapshot)",
         size=20,
@@ -75,7 +75,6 @@ class MxPedPartida(models.Model):
     nico_id = fields.Many2one(
         "mx.nico",
         string="NICO",
-        domain="[('fraccion_id', '=', fraccion_id)]",
     )
     nico = fields.Char(
         string="NICO (snapshot)",
@@ -409,23 +408,34 @@ class MxPedPartida(models.Model):
         return {"domain": {"factura_documento_id": domain}}
 
     def _get_applicable_tasa(self):
+        """Devuelve un dict con 'igi' e 'iva' segun el tipo de operacion.
+        Mantiene la firma anterior para no romper llamadas externas."""
         self.ensure_one()
         if not self.fraccion_id:
-            return self.env["mx.ped.fraccion.tasa"]
+            return None
         tipo = "importacion" if self.operacion_id.tipo_operacion != "exportacion" else "exportacion"
-        tasa = self.fraccion_id.tasa_ids.filtered(
-            lambda t: t.tipo_operacion == tipo and t.territorio == "general"
-        )[:1]
-        if not tasa:
-            tasa = self.fraccion_id.tasa_ids.filtered(lambda t: t.tipo_operacion == tipo)[:1]
-        return tasa
+        if tipo == "importacion":
+            return {
+                "igi": self.fraccion_id.arancel_importacion or 0.0,
+                "iva": self.fraccion_id.iva_importacion or 0.0,
+            }
+        return {
+            "igi": self.fraccion_id.arancel_exportacion or 0.0,
+            "iva": 0.0,
+        }
 
-    @api.depends("fraccion_id", "fraccion_id.tasa_ids", "operacion_id.tipo_operacion")
+    @api.depends(
+        "fraccion_id",
+        "fraccion_id.arancel_importacion",
+        "fraccion_id.arancel_exportacion",
+        "fraccion_id.iva_importacion",
+        "operacion_id.tipo_operacion",
+    )
     def _compute_tasas_fraccion(self):
         for rec in self:
             tasa = rec._get_applicable_tasa()
-            rec.igi_rate = tasa.igi if tasa else 0.0
-            rec.iva_rate = tasa.iva if tasa else 0.0
+            rec.igi_rate = tasa["igi"] if tasa else 0.0
+            rec.iva_rate = tasa["iva"] if tasa else 0.0
 
     @api.depends(
         "value_mxn",
@@ -457,28 +467,58 @@ class MxPedPartida(models.Model):
     def _compute_fraccion_nico_snapshot(self):
         for rec in self:
             if rec.fraccion_id and not rec.fraccion_arancelaria:
-                rec.fraccion_arancelaria = rec.fraccion_id.code or ""
+                rec.fraccion_arancelaria = rec.fraccion_id.fraccion_8 or ""
             if rec.nico_id and not rec.nico:
                 rec.nico = rec.nico_id.code or ""
 
     @api.onchange("fraccion_id")
     def _onchange_fraccion_id(self):
+        warning = {}
         for rec in self:
             fraccion = rec.fraccion_id
             if not fraccion:
                 continue
-            rec.fraccion_arancelaria = fraccion.code
-            if rec.nico_id and rec.nico_id.fraccion_id != fraccion:
-                rec.nico_id = False
-            rec.nico = rec.nico_id.code if rec.nico_id else fraccion.nico
+
+            # — Snapshot de fraccion y NICO —
+            rec.fraccion_arancelaria = fraccion.fraccion_8 or ""
+            rec.nico = fraccion.nico or ""
+            rec.nico_id = False  # NICO ahora viene de la TIGIE maestra, no del catalogo separado
+
+            # — Descripcion —
             if not rec.descripcion:
-                rec.descripcion = fraccion.name
-            if fraccion.um_id:
-                rec.unidad_tarifa_id = fraccion.um_id
-                rec.uom_id = fraccion.um_id.id
-            rec.nom_ids = [(6, 0, fraccion.nom_default_ids.ids)]
-            rec.permiso_ids = [(6, 0, fraccion.permiso_default_ids.ids)]
-            rec.rrna_ids = [(6, 0, fraccion.rrna_default_ids.ids)]
+                rec.descripcion = fraccion.descripcion_completa or ""
+
+            # — Unidad de medida de tarifa —
+            if fraccion.unidad_medida:
+                umt = self.env["mx.ped.um"].search(
+                    [("code", "=", fraccion.unidad_medida), ("active", "=", True)], limit=1
+                )
+                if umt:
+                    rec.unidad_tarifa_id = umt
+                    if not rec.uom_id:
+                        rec.uom_id = umt
+
+            # — Limpiar regulatorias (ya no se auto-propagan desde M2M) —
+            rec.nom_ids = [(5, 0, 0)]
+            rec.permiso_ids = [(5, 0, 0)]
+            rec.rrna_ids = [(5, 0, 0)]
+
+            # — Aviso con regulaciones de la TIGIE —
+            avisos = []
+            if fraccion.regulaciones_economia:
+                avisos.append("SE/COFEPRIS: " + fraccion.regulaciones_economia.strip())
+            if fraccion.otras_dependencias:
+                avisos.append("Otras: " + fraccion.otras_dependencias.strip())
+            if fraccion.requires_labeling_default:
+                avisos.append("Esta fraccion requiere etiquetado NOM.")
+            if avisos:
+                warning = {
+                    "title": "Regulaciones aplicables — %s" % (fraccion.llave_10 or fraccion.fraccion_8),
+                    "message": "\n".join(avisos),
+                }
+
+        if warning:
+            return {"warning": warning}
 
     @api.onchange("nico_id")
     def _onchange_nico_id(self):

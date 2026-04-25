@@ -15,6 +15,7 @@ from . import mx_ped_clave
 from . import mx_ped_aduana_seccion
 from . import mx_ped_fraccion
 from . import mx_ped_regulatorio
+from . import mx_tigie_maestra
 from . import mx_ped_identificador
 from . import mx_ped_cuenta_aduanera
 from . import mx_ped_credencial_ws
@@ -35,3 +36,4 @@ from . import audit_mixin
 from . import mx_firma_digital
 from . import mx_vucem_log
 from . import mx_cove
+from . import mx_doda
