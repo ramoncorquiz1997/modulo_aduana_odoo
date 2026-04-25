@@ -518,7 +518,7 @@ class CrmLead(models.Model):
             "tipo": "factura",
             "folio": self.x_cfdi_numero or self.x_cfdi_uuid or self.x_proveedor_invoice_number or self.name,
             "fecha": self.x_cfdi_fecha or self.x_cfdi_fecha_emision or False,
-            "cfdi_termino_facturacion": self.x_incoterm or self.x_cfdi_termino_facturacion or False,
+            "cfdi_termino_facturacion": self._resolve_incoterm_id(self.x_incoterm or self.x_cfdi_termino_facturacion),
             "cfdi_moneda_id": self.x_cfdi_moneda_id.id or self.x_currency_id.id or False,
             "cfdi_valor_usd": self.x_cfdi_valor_usd or (
                 # If currency is already USD, valor_moneda IS the USD value
@@ -690,7 +690,7 @@ class CrmLead(models.Model):
                 "tipo": doc.tipo,
                 "folio": doc.folio,
                 "fecha": doc.fecha,
-                "cfdi_termino_facturacion": doc.cfdi_termino_facturacion,
+                "cfdi_termino_facturacion": doc.cfdi_termino_facturacion.id or False,
                 "cfdi_moneda_id": doc.cfdi_moneda_id.id or False,
                 "cfdi_valor_usd": doc.cfdi_valor_usd,
                 "cfdi_valor_moneda": doc.cfdi_valor_moneda,
@@ -844,6 +844,15 @@ class CrmLead(models.Model):
         except Exception as exc:
             # Banxico no debe bloquear la apertura de ninguna vista
             _logger.warning("_sync_tipo_cambio_banxico ignorado por error: %s", exc)
+
+    def _resolve_incoterm_id(self, code_str):
+        """Convierte un código Incoterm (ej. 'FOB', 'CIF') al ID de account.incoterms.
+        Retorna False si no se encuentra o si la entrada está vacía."""
+        code = (code_str or "").strip().upper()
+        if not code:
+            return False
+        rec = self.env["account.incoterms"].search([("code", "=", code)], limit=1)
+        return rec.id if rec else False
 
     @api.model
     def cron_sync_tipo_cambio_banxico(self):
@@ -2629,13 +2638,48 @@ class CrmLeadGuia(models.Model):
         index=True,
     )
     sequence = fields.Integer(default=10)
-    numero = fields.Char(string="Número de guía/manifiesto", size=20, required=True)
+    numero = fields.Char(string="Número", size=20, required=True)
     identificador = fields.Selection(
         selection=[("M", "M - Master"), ("H", "H - House")],
-        string="Identificador",
+        string="Nivel",
         required=True,
         default="M",
     )
+    tipo_documento = fields.Selection(
+        selection=[
+            ("MAWB", "MAWB — Master Air Waybill"),
+            ("HAWB", "HAWB — House Air Waybill"),
+            ("MBL",  "MBL — Master Bill of Lading"),
+            ("HBL",  "HBL — House Bill of Lading"),
+            ("GUIA_FERRO", "Guía ferroviaria"),
+            ("CARTA_PORTE", "Carta de porte terrestre"),
+            ("OTRO", "Otro"),
+        ],
+        string="Tipo de documento",
+        default="MAWB",
+        help="Indica qué tipo de documento de transporte es este número.",
+    )
+    # read-only relay para condiciones en vista
+    modo_transporte = fields.Selection(
+        related="lead_id.x_modo_transporte",
+        readonly=True,
+        store=False,
+        string="Modo transporte (ref)",
+    )
+
+    @api.onchange("lead_id")
+    def _onchange_lead_set_tipo_default(self):
+        """Pre-selecciona el tipo de documento según el modo de transporte del lead."""
+        defaults = {
+            "aereo": "MAWB",
+            "maritimo": "MBL",
+            "ferro": "GUIA_FERRO",
+            "terrestre": "CARTA_PORTE",
+        }
+        for rec in self:
+            modo = rec.lead_id.x_modo_transporte if rec.lead_id else False
+            if modo and not rec.tipo_documento:
+                rec.tipo_documento = defaults.get(modo, "OTRO")
 
 
 class CrmLeadContenedor(models.Model):
@@ -2675,12 +2719,43 @@ class CrmLeadTransportista(models.Model):
     )
     transporte_identificador = fields.Char(
         string="Identificador del vehículo",
-        size=30,
-        help="Placas (terrestre), nombre del buque (marítimo), número de furgón (ferroviario).",
+        size=35,
+        help="Placas (terrestre), matrícula aeronave (aéreo), nombre del buque (marítimo), número de furgón (ferro).",
     )
-    transporte_pais_id = fields.Many2one("res.country", string="País del vehículo")
+    transporte_pais_id = fields.Many2one("res.country", string="País del vehículo/carrier")
 
-    # Computed/related desde el partner
+    # ── Campos específicos por modo ─────────────────────────────────────────
+    numero_vuelo = fields.Char(
+        string="Número de vuelo",
+        size=10,
+        help="Ej: KE6951, AM0456. Solo aplica para transporte aéreo.",
+    )
+    nombre_buque = fields.Char(
+        string="Nombre del buque",
+        size=35,
+        help="Nombre del buque tal como aparece en el BL. Solo transporte marítimo.",
+    )
+    numero_viaje = fields.Char(
+        string="Número de viaje / Voyage",
+        size=17,
+        help="Número de viaje o voyage del buque. Solo transporte marítimo.",
+    )
+    es_carrier_nacional = fields.Boolean(
+        string="Carrier registrado en México (tiene RFC)",
+        default=False,
+        help="Activar solo si la empresa transportista está inscrita en el SAT y tiene RFC. "
+             "Para aerolíneas y navieras extranjeras dejarlo desactivado.",
+    )
+
+    # ── relay de modo para condiciones en vista ─────────────────────────────
+    modo_transporte = fields.Selection(
+        related="lead_id.x_modo_transporte",
+        readonly=True,
+        store=False,
+        string="Modo transporte (ref)",
+    )
+
+    # ── Computed/related desde el partner ───────────────────────────────────
     rfc = fields.Char(related="transportista_id.vat", readonly=True, string="RFC")
     curp = fields.Char(related="transportista_id.x_curp", readonly=True, string="CURP")
     nombre = fields.Char(related="transportista_id.name", readonly=True, string="Nombre/Razón social")
@@ -2726,9 +2801,15 @@ class CrmLeadTransportista(models.Model):
 
     @api.onchange("transportista_id")
     def _onchange_transportista_id(self):
+        mx = self.env.ref("base.mx", raise_if_not_found=False)
         for rec in self:
             if rec.transportista_id and not rec.transporte_pais_id:
                 rec.transporte_pais_id = rec.transportista_id.country_id
+            # Auto-detectar si es carrier nacional: solo si su país es México y tiene VAT
+            if rec.transportista_id:
+                is_mx = mx and rec.transportista_id.country_id == mx
+                has_rfc = bool(rec.transportista_id.vat)
+                rec.es_carrier_nacional = bool(is_mx and has_rfc)
 
 
 class CrmLeadDestinatario520(models.Model):

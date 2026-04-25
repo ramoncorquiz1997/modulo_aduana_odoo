@@ -4262,7 +4262,11 @@ class MxPedOperacion(models.Model):
         ped.total_total = self._proforma_text(total_liquidacion)
         ped.num_acuse_valor = self._proforma_text(doc_505.folio if doc_505 else "")
         ped.vinculacion_505 = ""
-        ped.incoterm = self._proforma_text((doc_505.cfdi_termino_facturacion if doc_505 else "") or self.incoterm)
+        incoterm_text = (
+            (doc_505.cfdi_termino_facturacion.code if doc_505 and doc_505.cfdi_termino_facturacion else "")
+            or self.incoterm or ""
+        )
+        ped.incoterm = self._proforma_text(incoterm_text)
         ped.transporte_id = self._proforma_text(transportista_line.transporte_identificador if transportista_line else "")
         ped.transporte_pais = self._proforma_text(transportista_line.transporte_pais_id if transportista_line else "")
         ped.transportista_nombre = self._proforma_text(transportista.name if transportista else "")
@@ -5351,8 +5355,8 @@ class MxPedOperacion(models.Model):
         document_field_map = {
             "fecha": documento.fecha or self.lead_id.x_cfdi_fecha or False,
             "folio": documento.folio or False,
-            "cfdi_termino_facturacion": documento.cfdi_termino_facturacion or self.lead_id.x_incoterm or False,
-            "x_incoterm": documento.cfdi_termino_facturacion or self.lead_id.x_incoterm or False,
+            "cfdi_termino_facturacion": (documento.cfdi_termino_facturacion.code if documento.cfdi_termino_facturacion else None) or self.lead_id.x_incoterm or False,
+            "x_incoterm": (documento.cfdi_termino_facturacion.code if documento.cfdi_termino_facturacion else None) or self.lead_id.x_incoterm or False,
             "cfdi_moneda_id": (
                 documento.cfdi_moneda_id.code
                 if documento.cfdi_moneda_id and hasattr(documento.cfdi_moneda_id, "code")
@@ -5418,7 +5422,7 @@ class MxPedOperacion(models.Model):
         if any(key in token for key in ["acuse de valor", "acuse valor", "numero del acuse", "numero acuse", "numero cfdi", "numero documento", "folio"]):
             return documento.folio or False
         if "termino" in token and "facturacion" in token:
-            return documento.cfdi_termino_facturacion or self.lead_id.x_incoterm or False
+            return (documento.cfdi_termino_facturacion.code if documento.cfdi_termino_facturacion else None) or self.lead_id.x_incoterm or False
         if "moneda" in token and ("cfdi" in token or "documento" in token):
             return documento.cfdi_moneda_id.code if documento.cfdi_moneda_id and hasattr(documento.cfdi_moneda_id, "code") else (documento.cfdi_moneda_id.name if documento.cfdi_moneda_id else False)
         if "valor" in token and "dolar" in token:
@@ -6065,24 +6069,56 @@ class MxPedOperacion(models.Model):
         return (country.code or "").strip().upper()
 
     def _get_502_transporte_lines(self):
-        """Devuelve una lista de dicts, uno por transportista capturado (registro 502)."""
+        """Devuelve una lista de dicts, uno por transportista capturado (registro 502).
+
+        El contenido del dict varía según el modo de transporte:
+        - Terrestre: RFC, CURP, placas, domicilio (carrier mexicano)
+        - Aéreo: nombre aerolínea, país, número de vuelo como identificador; sin RFC/CURP si es extranjero
+        - Marítimo: nombre naviera, país, nombre del buque/voyage; sin RFC/CURP si es extranjero
+        - Ferroviario: nombre empresa, RFC si es nacional, número de furgón
+        """
         self.ensure_one()
         lead = self.lead_id
         if not lead or not lead.x_transportista_ids:
             return []
+        modo = lead.x_modo_transporte or "terrestre"
         lines = []
         for t in lead.x_transportista_ids.sorted(lambda l: (l.sequence or 0, l.id)):
             if not t.transportista_id:
                 continue
             pais_code = self._resolve_saai_pais_code(t.transporte_pais_id)
+            es_nacional = t.es_carrier_nacional
+
+            # RFC y CURP solo para carriers nacionales (terrestres y ferroviarios mexicanos)
+            rfc_val = (t.rfc or "").strip()[:13] if es_nacional else ""
+            curp_val = (t.curp or "").strip()[:18] if (es_nacional and modo == "terrestre") else ""
+            domicilio_val = self._sanitize_502_text(t.domicilio or "", 150) if es_nacional else ""
+
+            # Identificador del vehículo según modo
+            if modo == "aereo":
+                # Para aéreo preferimos el número de vuelo; fallback a matrícula aeronave
+                identificador = self._sanitize_502_text(
+                    t.numero_vuelo or t.transporte_identificador or "", 30
+                )[:30]
+            elif modo == "maritimo":
+                # Para marítimo: nombre del buque + voyage si disponible
+                buque = (t.nombre_buque or t.transporte_identificador or "").strip()
+                voyage = (t.numero_viaje or "").strip()
+                identificador = self._sanitize_502_text(
+                    ("%s/%s" % (buque, voyage)) if buque and voyage else buque, 30
+                )[:30]
+            else:
+                # Terrestre y ferroviario: placas o número de furgón
+                identificador = self._sanitize_502_text(t.transporte_identificador or "", 30)[:30]
+
             lines.append({
-                "rfc": (t.rfc or "").strip()[:13],
-                "curp": (t.curp or "").strip()[:18],
+                "rfc": rfc_val,
+                "curp": curp_val,
                 "nombre": self._sanitize_502_text(t.transportista_id.name or "", 120),
                 "pais": pais_code[:3],
-                "identificador": self._sanitize_502_text(t.transporte_identificador or "", 30)[:30],
+                "identificador": identificador,
                 "bultos": lead.x_bultos or 0,
-                "domicilio": self._sanitize_502_text(t.domicilio or "", 150),
+                "domicilio": domicilio_val,
                 "__source_id": t.id,
             })
         return lines

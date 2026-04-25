@@ -34,12 +34,14 @@
             <button name="action_export_txt" type="object" string="Exportar TXT" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_btn_export_txt"/>
             <button name="action_export_proforma" type="object" string="Proforma PDF" class="btn-secondary" icon="fa-file-pdf-o"/>
             <button name="action_generar_cove" type="object" string="Generar COVE" class="btn-secondary" icon="fa-file-text" groups="modulo_aduana_odoo.group_aduana_user"/>
-            <button name="action_avc_generar" type="object" string="Generar AVC" class="btn-secondary" groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_generar"/>
+            <button name="action_avc_generar" type="object" string="Generar AVC" class="btn-secondary"
+                    invisible="lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"
+                    groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_generar"/>
             <button name="action_avc_consultar" type="object" string="Consultar AVC" class="btn-secondary"
-                    invisible="not avc_numero"
+                    invisible="not avc_numero or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"
                     groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_consultar"/>
             <button name="action_avc_eliminar" type="object" string="Eliminar AVC" class="btn-secondary"
-                    invisible="not avc_numero"
+                    invisible="not avc_numero or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"
                     groups="base.group_system,modulo_aduana_odoo.group_aduana_avc_eliminar"/>
             <!-- Botones avanzados: visibles solo con show_advanced_info -->
             <button name="action_preparar_estructura" type="object" string="Preparar estructura" class="btn-secondary"
@@ -129,35 +131,45 @@
                 <field name="company_id" invisible="1"/>
                 <field name="ws_ambiente" invisible="not show_advanced_info"/>
                 <field name="ws_credencial_id" invisible="not show_advanced_info"/>
-                <field name="avc_modalidad_cruce_id" invisible="not show_advanced_info"/>
-                <field name="avc_tipo_documento_id" invisible="not show_advanced_info"/>
+                <!-- AVC: exclusivo de transporte terrestre y ferroviario -->
+                <field name="avc_modalidad_cruce_id"
+                       invisible="not show_advanced_info or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
+                <field name="avc_tipo_documento_id"
+                       invisible="not show_advanced_info or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
                 <field name="avc_transportista_id"
-                       invisible="not show_advanced_info"
+                       invisible="not show_advanced_info or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"
                        context="{'default_x_contact_role': 'transportista', 'default_company_type': 'company'}"/>
                 <field name="avc_chofer_id"
-                       invisible="not show_advanced_info"
+                       invisible="not show_advanced_info or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"
                        context="{'default_x_contact_role': 'chofer', 'default_parent_id': avc_transportista_id, 'default_function': 'Chofer', 'default_company_type': 'person'}"/>
-                <field name="avc_gafete_id" invisible="not show_advanced_info"/>
-                <field name="avc_tag" invisible="not (show_advanced_info and avc_modalidad_cruce_id == '1')"/>
-                <field name="avc_numero_gafete" invisible="not (show_advanced_info and avc_modalidad_cruce_id == '2')"/>
-                <field name="avc_fast_id" invisible="not show_advanced_info"/>
-                <field name="avc_datos_adicionales" invisible="not show_advanced_info"/>
-                <field name="avc_pedimento_subtipo" invisible="not (show_advanced_info and avc_tipo_documento_id == '1')"/>
-                <field name="avc_es_consolidacion_carga" invisible="not (show_advanced_info and avc_tipo_documento_id == '1')"/>
+                <field name="avc_gafete_id"
+                       invisible="not show_advanced_info or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
+                <field name="avc_tag"
+                       invisible="not (show_advanced_info and avc_modalidad_cruce_id == '1') or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
+                <field name="avc_numero_gafete"
+                       invisible="not (show_advanced_info and avc_modalidad_cruce_id == '2') or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
+                <field name="avc_fast_id"
+                       invisible="not show_advanced_info or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
+                <field name="avc_datos_adicionales"
+                       invisible="not show_advanced_info or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
+                <field name="avc_pedimento_subtipo"
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1') or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
+                <field name="avc_es_consolidacion_carga"
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1') or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
                 <field name="avc_consolidacion_autorizacion_1"
-                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_es_consolidacion_carga)"/>
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_es_consolidacion_carga) or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
                 <field name="avc_consolidacion_autorizacion_2"
-                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_es_consolidacion_carga)"/>
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_es_consolidacion_carga) or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
                 <field name="avc_parte2_consecutivo"
-                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'parte_2')"/>
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'parte_2') or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
                 <field name="avc_remesa_id"
-                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'remesa_previo_consolidado')"/>
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'remesa_previo_consolidado') or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
                 <field name="avc_aviso_electronico_folio"
-                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico')"/>
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico') or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
                 <field name="avc_aviso_electronico_plazo_id"
-                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico')"/>
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico') or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
                 <field name="avc_aviso_electronico_consecutivo"
-                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico')"/>
+                       invisible="not (show_advanced_info and avc_tipo_documento_id == '1' and avc_pedimento_subtipo == 'aviso_electronico') or lead_id.x_modo_transporte not in ('terrestre', 'ferro', False)"/>
               </group>
             </group>
 
