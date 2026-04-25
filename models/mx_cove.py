@@ -28,10 +28,34 @@ try:
     from zeep.wsse.username import UsernameToken
     from zeep.transports import Transport
     import requests as _requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.ssl_ import create_urllib3_context
     _ZEEP_OK = True
 except ImportError:
+    HTTPAdapter = object  # fallback para que la clase VucemSSLAdapter no falle al definirse
     _ZEEP_OK = False
     _logger.warning("librería 'zeep' no disponible — transmisión VUCEM deshabilitada")
+
+
+class VucemSSLAdapter(HTTPAdapter):
+    """Adaptador SSL para VUCEM.
+
+    VUCEM usa parámetros DH de 1024 bits, que están rechazados por el nivel
+    de seguridad predeterminado (SECLEVEL=2) de OpenSSL moderno.
+    Este adaptador baja el nivel a SECLEVEL=1, permitiendo DH ≥ 1024 bits,
+    sin desactivar la verificación del certificado del servidor.
+    """
+    def init_poolmanager(self, *args, **kwargs):
+        ctx = create_urllib3_context()
+        ctx.set_ciphers("DEFAULT:@SECLEVEL=1")
+        kwargs["ssl_context"] = ctx
+        super().init_poolmanager(*args, **kwargs)
+
+    def proxy_manager_for(self, proxy, **proxy_kwargs):
+        ctx = create_urllib3_context()
+        ctx.set_ciphers("DEFAULT:@SECLEVEL=1")
+        proxy_kwargs["ssl_context"] = ctx
+        return super().proxy_manager_for(proxy, **proxy_kwargs)
 
 # ── Catálogos de enumeraciones XSD ────────────────────────────────────────────
 TIPO_IDENTIFICADOR = [
@@ -72,13 +96,15 @@ ESTADO_COVE = [
 ]
 
 # URLs de endpoints por ambiente
+# Nota: www2.ventanillaunica.gob.mx (UAT) no es accesible desde redes externas.
+# La URL de producción usa el puerto estándar 443 (sin :8110 — ese puerto no responde).
 VUCEM_URLS = {
     "pruebas": "https://www2.ventanillaunica.gob.mx/ventanilla/RecibirCoveService",
-    "produccion": "https://www.ventanillaunica.gob.mx:8110/ventanilla/RecibirCoveService",
+    "produccion": "https://www.ventanillaunica.gob.mx/ventanilla/RecibirCoveService",
 }
 VUCEM_CONSULTA_URLS = {
     "pruebas": "https://www2.ventanillaunica.gob.mx/ventanilla/ConsultarRespuestaCoveService",
-    "produccion": "https://www.ventanillaunica.gob.mx:8110/ventanilla/ConsultarRespuestaCoveService",
+    "produccion": "https://www.ventanillaunica.gob.mx/ventanilla/ConsultarRespuestaCoveService",
 }
 
 
@@ -588,8 +614,9 @@ class MxCove(models.Model):
             )
         wsdl_url = f"file://{wsdl_path}"
 
+        # Sesión con adaptador SSL para VUCEM (DH keys de 1024 bits)
         session = _requests.Session()
-        session.verify = True
+        session.mount("https://", VucemSSLAdapter())
         transport = Transport(session=session, timeout=40)
         settings = zeep.Settings(strict=False, xml_huge_tree=True)
 
@@ -666,7 +693,7 @@ class MxCove(models.Model):
             )
             raise UserError(
                 f"Error al conectar con VUCEM: {exc}\n\n"
-                "Verifica la URL del webservice y que el puerto 8110 esté abierto."
+                "Verifica la URL del webservice y la conectividad de red."
             ) from exc
 
         # 4. Procesar respuesta (Acuse)
@@ -733,7 +760,9 @@ class MxCove(models.Model):
         if not os.path.exists(consulta_wsdl_path):
             raise UserError(f"No se encontró WSDL local: {consulta_wsdl_path}")
 
+        # Sesión con adaptador SSL para VUCEM (DH keys de 1024 bits)
         session = _requests.Session()
+        session.mount("https://", VucemSSLAdapter())
         transport = Transport(session=session, timeout=40)
         settings = zeep.Settings(strict=False, xml_huge_tree=True)
         client = zeep.Client(
