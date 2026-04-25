@@ -2298,13 +2298,13 @@ class CrmLeadDocumento(models.Model):
         store=False,
     )
     linked_valor_usd = fields.Monetary(
-        string="Valor USD calculado",
+        string="Amparado USD",
         currency_field="company_currency_id",
         compute="_compute_linked_partida_metrics",
         store=False,
     )
     linked_valor_moneda = fields.Monetary(
-        string="Valor comercial calculado",
+        string="Amparado",
         currency_field="cfdi_moneda_id",
         compute="_compute_linked_partida_metrics",
         store=False,
@@ -2322,13 +2322,13 @@ class CrmLeadDocumento(models.Model):
         store=False,
     )
     saldo_valor_usd = fields.Monetary(
-        string="Saldo USD",
+        string="Pendiente USD",
         currency_field="company_currency_id",
         compute="_compute_linked_partida_metrics",
         store=False,
     )
     saldo_valor_moneda = fields.Monetary(
-        string="Saldo",
+        string="Pendiente",
         currency_field="cfdi_moneda_id",
         compute="_compute_linked_partida_metrics",
         store=False,
@@ -2405,14 +2405,12 @@ class CrmLeadDocumento(models.Model):
             rec.diferencia_valor_moneda = diff_moneda
             rec.saldo_valor_usd = max(diff_usd, 0.0)
             rec.saldo_valor_moneda = max(diff_moneda, 0.0)
-            # Solo marca diferencia cuando el campo USD tiene valor capturado.
-            # Si no se capturó, no hay contra qué comparar.
-            tiene_valor_usd = (rec.cfdi_valor_usd or 0.0) > 0.01
-            rec.has_difference = tiene_valor_usd and abs(diff_usd) > 0.01
-            if tiene_valor_usd and abs(diff_usd) > 0.01:
-                rec.diferencia_resumen = "USD: %.2f" % diff_usd
-            else:
-                rec.diferencia_resumen = "✓"
+            # has_difference: hay saldo pendiente cuando el valor declarado
+            # supera lo amparado en partidas.
+            tiene_valor = (rec.cfdi_valor_moneda or 0.0) > 0.01
+            pendiente = max(diff_moneda, 0.0)
+            rec.has_difference = tiene_valor and pendiente > 0.01
+            rec.diferencia_resumen = "✓ Amparado" if not rec.has_difference else ""
 
     def action_open_full_form(self):
         self.ensure_one()

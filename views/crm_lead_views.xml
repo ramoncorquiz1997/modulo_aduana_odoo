@@ -330,17 +330,24 @@
 
             <group string="Facturas / CFDI / Documentos comerciales">
               <field name="x_documento_505_ids" context="{'default_lead_id': id, 'default_tipo': 'factura'}">
-                <list editable="bottom" delete="0" decoration-danger="has_difference">
+                <list editable="bottom" delete="0"
+                      decoration-danger="has_difference"
+                      decoration-success="not has_difference and cfdi_valor_moneda > 0">
                   <field name="sequence" optional="hide"/>
                   <field name="tipo"/>
                   <field name="folio"/>
                   <field name="fecha"/>
-                  <field name="es_documento_principal"/>
-                  <field name="cfdi_valor_usd"/>
-                  <field name="cfdi_valor_moneda"/>
-                  <field name="diferencia_resumen"/>
-                  <field name="estatus"/>
-                  <button name="action_open_full_form" type="object" string="Abrir" class="btn-link"/>
+                  <field name="cfdi_moneda_id" string="Moneda" optional="show"/>
+                  <field name="cfdi_valor_moneda" string="Valor factura"/>
+                  <field name="linked_valor_moneda" string="Amparado" readonly="1"/>
+                  <field name="saldo_valor_moneda" string="Pendiente" readonly="1"/>
+                  <field name="has_difference" column_invisible="1"/>
+                  <field name="estatus" widget="badge"
+                         decoration-success="estatus == 'ok'"
+                         decoration-warning="estatus == 'pendiente'"
+                         decoration-danger="estatus == 'rechazado'"/>
+                  <button name="action_open_full_form" type="object"
+                          string="Ver detalle" class="btn-link" icon="fa-external-link"/>
                 </list>
                 <form string="Documento comercial">
                   <group>
@@ -701,6 +708,9 @@
       <field name="arch" type="xml">
         <form string="Documento comercial" delete="0">
           <header>
+            <field name="estatus" widget="statusbar"
+                   statusbar_visible="pendiente,ok"
+                   statusbar_onclick="1"/>
             <button name="action_archive_and_close"
                     type="object"
                     string="Eliminar documento"
@@ -708,36 +718,62 @@
                     confirm="Esta accion ocultara el documento actual del CRM. Deseas continuar?"/>
           </header>
           <sheet>
-            <group>
-              <group string="Captura basica">
+            <!-- Resumen de amparo visible de un vistazo -->
+            <div class="alert alert-success mb-3"
+                 invisible="has_difference or not cfdi_valor_moneda">
+              <strong>✓ Totalmente amparado.</strong>
+              El valor de este documento está completamente cubierto por partidas del pedimento.
+            </div>
+            <div class="alert alert-warning mb-3"
+                 invisible="not has_difference">
+              <strong>Valor pendiente de amparar:</strong>
+              <field name="saldo_valor_moneda" readonly="1" nolabel="1"/> de
+              <field name="cfdi_valor_moneda" readonly="1" nolabel="1"/>
+              (<field name="linked_partida_count" readonly="1" nolabel="1"/> partida(s) vinculada(s)).
+            </div>
+
+            <group col="2">
+              <group string="Identificacion del documento">
                 <field name="tipo"/>
                 <field name="folio"/>
                 <field name="fecha"/>
-                <field name="es_documento_principal"/>
-                <field name="archivo_file" filename="archivo_filename"/>
+                <field name="es_documento_principal" string="Documento principal de la remesa"/>
+                <field name="archivo_file" filename="archivo_filename" string="Archivo adjunto"/>
                 <field name="archivo_filename" invisible="1"/>
-                <field name="estatus"/>
                 <field name="notas"/>
               </group>
-              <group string="Datos comerciales">
-                <field name="cfdi_termino_facturacion"/>
-                <field name="cfdi_moneda_id"/>
-                <field name="cfdi_valor_usd"/>
-                <field name="cfdi_valor_moneda"/>
-                <field name="cfdi_pais_id"/>
-                <field name="cfdi_estado_id"/>
-                <field name="cfdi_id_fiscal"/>
-                <field name="counterparty_name_505"/>
-                <field name="counterparty_street_505"/>
-                <field name="counterparty_num_int_505"/>
-                <field name="counterparty_num_ext_505"/>
-                <field name="counterparty_zip_505"/>
-                <field name="counterparty_city_505"/>
+              <group string="Valor declarado">
+                <field name="cfdi_moneda_id" string="Moneda de la factura"/>
+                <field name="cfdi_valor_moneda" string="Valor en moneda original"/>
+                <field name="cfdi_valor_usd" string="Equivalente USD (para SAAI)"
+                       optional="hide"/>
+                <field name="cfdi_termino_facturacion" string="Termino de facturacion (Incoterm)"/>
               </group>
             </group>
+
+            <group string="Resumen de amparo" col="4">
+              <field name="linked_valor_moneda" string="Amparado en partidas" readonly="1"/>
+              <field name="saldo_valor_moneda" string="Pendiente por amparar" readonly="1"/>
+              <field name="linked_partida_count" string="Partidas vinculadas" readonly="1"/>
+            </group>
+
+            <group string="Datos del proveedor / comprador (505)"
+                   groups="modulo_aduana_odoo.group_aduana_user">
+              <field name="cfdi_pais_id"/>
+              <field name="cfdi_estado_id"/>
+              <field name="cfdi_id_fiscal"/>
+              <field name="counterparty_name_505"/>
+              <field name="counterparty_street_505"/>
+              <field name="counterparty_num_int_505"/>
+              <field name="counterparty_num_ext_505"/>
+              <field name="counterparty_zip_505"/>
+              <field name="counterparty_city_505"/>
+            </group>
+
             <group invisible="1">
               <field name="lead_id"/>
               <field name="active"/>
+              <field name="has_difference"/>
             </group>
           </sheet>
         </form>
