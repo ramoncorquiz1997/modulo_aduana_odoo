@@ -499,7 +499,7 @@
           </page>
 
           <page string="Mercancias / Partidas" name="mi_modulo_partidas_import"
-                invisible="x_tipo_operacion != 'importacion'">
+                invisible="not x_tipo_operacion">
             <group>
               <field name="x_ped_factura_resumen" readonly="1"/>
             </group>
