@@ -520,7 +520,13 @@ class CrmLead(models.Model):
             "fecha": self.x_cfdi_fecha or self.x_cfdi_fecha_emision or False,
             "cfdi_termino_facturacion": self.x_incoterm or self.x_cfdi_termino_facturacion or False,
             "cfdi_moneda_id": self.x_cfdi_moneda_id.id or self.x_currency_id.id or False,
-            "cfdi_valor_usd": self.x_cfdi_valor_usd or 0.0,
+            "cfdi_valor_usd": self.x_cfdi_valor_usd or (
+                # If currency is already USD, valor_moneda IS the USD value
+                (self.x_cfdi_valor_moneda or self.x_valor_factura or 0.0)
+                if (self.env.ref("base.USD", raise_if_not_found=False) and
+                    (self.x_cfdi_moneda_id or self.x_currency_id) == self.env.ref("base.USD", raise_if_not_found=False))
+                else 0.0
+            ),
             "cfdi_valor_moneda": self.x_cfdi_valor_moneda or self.x_valor_factura or 0.0,
             "cfdi_pais_id": self.x_cfdi_pais_id.id if self.x_cfdi_pais_id else (partner.country_id.id if partner and partner.country_id else False),
             "cfdi_estado_id": self.x_cfdi_estado_id.id if self.x_cfdi_estado_id else (partner.state_id.id if partner and partner.state_id else False),
@@ -610,7 +616,11 @@ class CrmLead(models.Model):
                     "%s -> Partidas %s | Valor Total USD: %.2f"
                     % (doc.display_name or doc.folio or _("Sin folio"), partida_nums or "-", total_usd)
                 )
-                if abs(total_usd - (doc.cfdi_valor_usd or 0.0)) > 0.01:
+                # When the document currency is already USD, valor_moneda IS the USD value
+                usd_ref = self.env.ref("base.USD", raise_if_not_found=False)
+                is_usd_doc = usd_ref and doc.cfdi_moneda_id == usd_ref
+                effective_usd = doc.cfdi_valor_usd or (doc.cfdi_valor_moneda if is_usd_doc else 0.0)
+                if abs(total_usd - effective_usd) > 0.01:
                     issues.append(
                         _("La suma USD de las partidas ligadas a %s no cuadra con su documento comercial.")
                         % (doc.display_name or doc.folio or doc.id,)
@@ -2403,7 +2413,7 @@ class CrmLeadDocumento(models.Model):
     es_documento_principal = fields.Boolean(string="Documento principal", default=False)
     folio = fields.Char(string="Folio")
     fecha = fields.Datetime(string="Fecha")
-    cfdi_termino_facturacion = fields.Char(string="Termino de facturacion")
+    cfdi_termino_facturacion = fields.Many2one("account.incoterms", string="Incoterm", ondelete="restrict")
     cfdi_moneda_id = fields.Many2one("res.currency", string="Moneda documento")
     cfdi_valor_usd = fields.Monetary(string="Valor USD", currency_field="company_currency_id")
     cfdi_valor_moneda = fields.Monetary(string="Valor en moneda documento", currency_field="cfdi_moneda_id")
@@ -2482,11 +2492,22 @@ class CrmLeadDocumento(models.Model):
         if not self.folio:
             vals["folio"] = lead.x_cfdi_numero or lead.x_cfdi_uuid or False
         if not self.cfdi_termino_facturacion:
-            vals["cfdi_termino_facturacion"] = lead.x_incoterm or lead.x_cfdi_termino_facturacion or False
+            incoterm_code = (lead.x_incoterm or lead.x_cfdi_termino_facturacion or "").strip().upper()
+            if incoterm_code:
+                incoterm = self.env["account.incoterms"].search([("code", "=", incoterm_code)], limit=1)
+                vals["cfdi_termino_facturacion"] = incoterm.id if incoterm else False
         if not self.cfdi_moneda_id:
             vals["cfdi_moneda_id"] = lead.x_cfdi_moneda_id.id or lead.x_currency_id.id or False
         if not self.cfdi_valor_usd:
-            vals["cfdi_valor_usd"] = lead.x_cfdi_valor_usd or 0.0
+            # Auto-fill from lead; if lead has no explicit USD value and currency is already USD,
+            # derive it from the moneda value (valor_moneda IS the USD value in that case)
+            lead_usd_val = lead.x_cfdi_valor_usd or 0.0
+            if not lead_usd_val:
+                usd_ref = self.env.ref("base.USD", raise_if_not_found=False)
+                moneda = vals.get("cfdi_moneda_id") or self.cfdi_moneda_id.id
+                if usd_ref and moneda == usd_ref.id:
+                    lead_usd_val = lead.x_cfdi_valor_moneda or lead.x_valor_factura or 0.0
+            vals["cfdi_valor_usd"] = lead_usd_val
         if not self.cfdi_valor_moneda:
             vals["cfdi_valor_moneda"] = lead.x_cfdi_valor_moneda or lead.x_valor_factura or 0.0
         if not self.cfdi_pais_id:

@@ -104,7 +104,7 @@ class MxPedDocumento(models.Model):
 
     folio = fields.Char()
     fecha = fields.Datetime()
-    cfdi_termino_facturacion = fields.Char(string="Termino facturacion 505")
+    cfdi_termino_facturacion = fields.Many2one("account.incoterms", string="Incoterm 505", ondelete="restrict")
     cfdi_moneda_id = fields.Many2one("res.currency", string="Moneda documento 505")
     cfdi_valor_usd = fields.Monetary(
         string="Valor USD 505",
@@ -212,7 +212,12 @@ class MxPedDocumento(models.Model):
         if not self.folio:
             vals["folio"] = lead.x_cfdi_numero or lead.x_cfdi_uuid or False
         if not self.cfdi_termino_facturacion:
-            vals["cfdi_termino_facturacion"] = lead.x_incoterm or lead.x_cfdi_termino_facturacion or False
+            incoterm_code = (lead.x_incoterm or lead.x_cfdi_termino_facturacion or "").strip().upper()
+            if incoterm_code:
+                incoterm = self.env["account.incoterms"].search(
+                    [("code", "=", incoterm_code)], limit=1
+                )
+                vals["cfdi_termino_facturacion"] = incoterm.id if incoterm else False
         if not self.cfdi_moneda_id and lead.x_cfdi_moneda_id:
             vals["cfdi_moneda_id"] = lead.x_cfdi_moneda_id.id
         if not self.cfdi_valor_usd and lead.x_cfdi_valor_usd:
