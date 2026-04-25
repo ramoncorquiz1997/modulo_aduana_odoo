@@ -5,6 +5,7 @@
     "summary": "Gestión de operaciones aduanales y pedimentos desde CRM",
     "depends": ["crm", "mail", "base", "contacts", "account"],
     "data": [
+        "data/cron_data.xml",
         "data/mail_template_portal_invite.xml",
         "data/aduana_layout_registro_tipo_data.xml",
         "data/mx_ped_tipo_movimiento_data.xml",

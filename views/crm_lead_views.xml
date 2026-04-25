@@ -526,6 +526,9 @@
                 <field name="x_valor_factura"/>
                 <field name="x_valor_aduana_estimado"/>
                 <field name="x_tipo_cambio" readonly="1"/>
+                <button name="action_refresh_tipo_cambio_banxico" type="object"
+                        string="↻ Actualizar FIX" class="btn-link"
+                        help="Consulta el tipo de cambio FIX vigente desde Banxico"/>
               </group>
             </group>
             <group>

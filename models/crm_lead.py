@@ -835,20 +835,52 @@ class CrmLead(models.Model):
             # Banxico no debe bloquear la apertura de ninguna vista
             _logger.warning("_sync_tipo_cambio_banxico ignorado por error: %s", exc)
 
-    def web_read(self, specification):
-        # Refresca FIX solo al abrir UN registro en formulario, nunca en listas/kanban.
-        # Envuelto en try/except para que un fallo de Banxico nunca bloquee la UI.
-        if (
-            not self.env.context.get("skip_sync_tipo_cambio_banxico")
-            and len(self) == 1
-            and self.id
-            and self.env.context.get("view_type") == "form"
-        ):
-            try:
-                self._sync_tipo_cambio_banxico()
-            except Exception as exc:
-                _logger.warning("Banxico sync en web_read ignorado: %s", exc)
-        return super().web_read(specification)
+    @api.model
+    def cron_sync_tipo_cambio_banxico(self):
+        """Cron diario: actualiza el tipo de cambio FIX en todos los leads activos
+        que no tengan pedimento pagado (x_estatus no en estados finales)."""
+        try:
+            rate = self._get_banxico_fix_rate()
+            if not rate:
+                _logger.warning("cron_sync_tipo_cambio_banxico: no se obtuvo tasa de Banxico.")
+                return
+            leads = self.search([
+                ("active", "=", True),
+                ("x_estatus", "not in", ["pagado", "cancelado", "archivado"]),
+            ])
+            to_update = leads.filtered(
+                lambda r: abs((r.x_tipo_cambio or 0.0) - rate) > 0.00001
+            )
+            if to_update:
+                to_update.with_context(skip_sync_tipo_cambio_banxico=True).write(
+                    {"x_tipo_cambio": rate}
+                )
+                _logger.info(
+                    "cron_sync_tipo_cambio_banxico: FIX=%.4f actualizado en %d lead(s).",
+                    rate, len(to_update),
+                )
+            else:
+                _logger.info(
+                    "cron_sync_tipo_cambio_banxico: FIX=%.4f, sin cambios necesarios.", rate
+                )
+        except Exception as exc:
+            _logger.exception("cron_sync_tipo_cambio_banxico falló: %s", exc)
+
+    def action_refresh_tipo_cambio_banxico(self):
+        """Botón manual para refrescar el tipo de cambio FIX desde Banxico.
+        No se llama automáticamente para no bloquear guardados ni aperturas de vista."""
+        self.ensure_one()
+        self._sync_tipo_cambio_banxico()
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "Tipo de cambio actualizado",
+                "message": "FIX Banxico: %.4f" % (self.x_tipo_cambio or 0.0),
+                "type": "success",
+                "sticky": False,
+            },
+        }
     
     @api.onchange("x_modo_transporte")
     def _onchange_x_modo_transporte_set_default_codes(self):
