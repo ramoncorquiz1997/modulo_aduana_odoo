@@ -14,7 +14,8 @@ class MxTigieMaestra(models.Model):
 
     Disenado para importacion masiva via CSV desde Odoo (import-compatible):
     la columna 'llave_10' actua como ID externo funcional gracias al
-    sql_constraint UNIQUE.
+    sql_constraint UNIQUE.  Los campos 'fraccion_8' y 'nico' se auto-derivan
+    de 'llave_10' en create/write si no se proporcionan explicitamente.
     """
 
     _name = "mx.tigie.maestra"
@@ -36,14 +37,15 @@ class MxTigieMaestra(models.Model):
     fraccion_8 = fields.Char(
         string="Fraccion (8)",
         size=8,
-        required=True,
         index=True,
-        help="Fraccion arancelaria de 8 digitos segun la TIGIE.",
+        help="Fraccion arancelaria de 8 digitos segun la TIGIE. "
+             "Se auto-deriva de llave_10[:8] si no se proporciona.",
     )
     nico = fields.Char(
         string="NICO",
         size=2,
-        help="Numero de identificacion comercial (NICO). Vacio si no aplica.",
+        help="Numero de identificacion comercial (NICO). "
+             "Se auto-deriva de llave_10[8:] si no se proporciona.",
     )
 
     # ── Descripcion ──────────────────────────────────────────────────────────
@@ -68,12 +70,24 @@ class MxTigieMaestra(models.Model):
     arancel_importacion = fields.Float(
         string="Arancel importacion (%)",
         digits=(16, 6),
-        help="Tasa advalorem de IGI (Impuesto General de Importacion) en porcentaje.",
+        help="Tasa advalorem de IGI en porcentaje. "
+             "0.0 cuando la fraccion es exenta o tiene cuota especial (ver nota).",
+    )
+    nota_importacion = fields.Char(
+        string="Nota arancel importacion",
+        help="Texto del arancel cuando no es advalorem puro: 'Ex.' (exento), "
+             "'AMX (...)' (cuota mixta), 'AE (...)' (arancel especifico), etc.",
     )
     arancel_exportacion = fields.Float(
         string="Arancel exportacion (%)",
         digits=(16, 6),
-        help="Tasa advalorem de IGE (Impuesto General de Exportacion) en porcentaje.",
+        help="Tasa advalorem de IGE en porcentaje. "
+             "0.0 cuando la fraccion es exenta o esta prohibida (ver nota).",
+    )
+    nota_exportacion = fields.Char(
+        string="Nota arancel exportacion",
+        help="Texto del arancel cuando no es advalorem puro: 'Ex.' (exento), "
+             "'Prohibida', etc.",
     )
     iva_importacion = fields.Float(
         string="IVA importacion (%)",
@@ -135,6 +149,29 @@ class MxTigieMaestra(models.Model):
             "La llave_10 debe ser unica en la TIGIE maestra.",
         ),
     ]
+
+    # ── ORM create / write ───────────────────────────────────────────────────
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            self._auto_fill_from_llave(vals)
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if "llave_10" in vals and "fraccion_8" not in vals:
+            self._auto_fill_from_llave(vals)
+        return super().write(vals)
+
+    @staticmethod
+    def _auto_fill_from_llave(vals):
+        """Deriva fraccion_8 y nico de llave_10 cuando no se proporcionan."""
+        llave = (vals.get("llave_10") or "").strip()
+        if len(llave) == 10:
+            if not vals.get("fraccion_8"):
+                vals["fraccion_8"] = llave[:8]
+            if "nico" not in vals:
+                vals["nico"] = llave[8:]
 
     # ── Computes ─────────────────────────────────────────────────────────────
 
