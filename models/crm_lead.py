@@ -2168,21 +2168,39 @@ class CrmLeadOperacionLine(models.Model):
 
     @api.onchange("fraccion_id")
     def _onchange_fraccion_id(self):
+        warning = {}
         for rec in self:
             fraccion = rec.fraccion_id
             if not fraccion:
                 continue
-            rec.fraccion_arancelaria = fraccion.code
-            if rec.nico_id and rec.nico_id.fraccion_id != fraccion:
-                rec.nico_id = False
-            rec.nico = rec.nico_id.code if rec.nico_id else fraccion.nico
+            rec.fraccion_arancelaria = fraccion.fraccion_8 or ""
+            rec.nico_id = False
+            rec.nico = fraccion.nico or ""
             if not rec.name:
-                rec.name = fraccion.name
-            if fraccion.um_id:
-                rec.uom_id = fraccion.um_id.id
-            rec.nom_ids = [(6, 0, fraccion.nom_default_ids.ids)]
-            rec.permiso_ids = [(6, 0, fraccion.permiso_default_ids.ids)]
-            rec.rrna_ids = [(6, 0, fraccion.rrna_default_ids.ids)]
+                rec.name = fraccion.descripcion_completa or ""
+            if fraccion.unidad_medida:
+                umt = self.env["mx.ped.um"].search(
+                    [("code", "=", fraccion.unidad_medida), ("active", "=", True)], limit=1
+                )
+                if umt:
+                    rec.uom_id = umt.id
+            rec.nom_ids = [(5, 0, 0)]
+            rec.permiso_ids = [(5, 0, 0)]
+            rec.rrna_ids = [(5, 0, 0)]
+            avisos = []
+            if fraccion.regulaciones_economia:
+                avisos.append("SE/COFEPRIS: " + fraccion.regulaciones_economia.strip())
+            if fraccion.otras_dependencias:
+                avisos.append("Otras: " + fraccion.otras_dependencias.strip())
+            if fraccion.requires_labeling_default:
+                avisos.append("Esta fraccion requiere etiquetado NOM.")
+            if avisos:
+                warning = {
+                    "title": "Regulaciones — %s" % (fraccion.llave_10 or fraccion.fraccion_8),
+                    "message": "\n".join(avisos),
+                }
+        if warning:
+            return {"warning": warning}
 
     @api.onchange("nico_id")
     def _onchange_nico_id(self):
