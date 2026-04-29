@@ -239,7 +239,7 @@ class MxPedConsolidadoRemesa(models.Model):
     def _onchange_factura_documento_ids_fill_uuid(self):
         self._autofill_documento_fuente_from_factura()
 
-    @api.onchange("partida_rel_ids", "partida_rel_ids.partida_id", "partida_rel_ids.partida_id.factura_documento_id")
+    @api.onchange("partida_rel_ids")
     def _onchange_partida_rel_ids_fill_uuid(self):
         self._autofill_documento_fuente_from_factura()
 
