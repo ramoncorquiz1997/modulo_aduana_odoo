@@ -198,7 +198,6 @@
       <field name="model">mx.nico</field>
       <field name="arch" type="xml">
         <list>
-          <field name="fraccion_id"/>
           <field name="code"/>
           <field name="name"/>
           <field name="active"/>
@@ -213,7 +212,6 @@
         <form>
           <sheet>
             <group>
-              <field name="fraccion_id"/>
               <field name="code"/>
               <field name="name"/>
               <field name="active"/>
