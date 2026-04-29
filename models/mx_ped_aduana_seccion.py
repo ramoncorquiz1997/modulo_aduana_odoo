@@ -5,16 +5,15 @@ from odoo import api, fields, models
 class MxPedAduanaSeccion(models.Model):
     _name = "mx.ped.aduana.seccion"
     _description = "Catalogo de Aduana-Seccion"
-    _rec_name = "display_name"
-    _order = "aduana, seccion"
+    _rec_name = "denominacion"
+    _order = "denominacion"
 
     aduana = fields.Char(string="Aduana", required=True, size=2, index=True)
     seccion = fields.Char(string="Seccion", required=False, size=1, index=True, default="0")
-    denominacion = fields.Char(string="Denominacion", required=True)
+    denominacion = fields.Char(string="Denominacion", required=True, index=True)
     active = fields.Boolean(default=True)
 
     code = fields.Char(string="Clave", compute="_compute_code", store=True)
-    display_name = fields.Char(compute="_compute_display_name", store=False)
 
     _sql_constraints = [
         (
@@ -99,14 +98,16 @@ class MxPedAduanaSeccion(models.Model):
 
     @api.depends("aduana", "seccion", "denominacion")
     def _compute_display_name(self):
+        """Muestra 'aduana-seccion denominacion' en dropdowns y many2one."""
         for rec in self:
-            if rec.aduana and rec.seccion:
-                rec.display_name = f"{rec.aduana}-{rec.seccion} {rec.denominacion or ''}".strip()
+            if rec.aduana:
+                rec.display_name = f"{rec.aduana}-{rec.seccion or '0'} {rec.denominacion or ''}".strip()
             else:
                 rec.display_name = rec.denominacion or ""
 
     @api.model
     def _name_search(self, name, domain=None, operator="ilike", limit=100, order=None):
+        """Permite buscar por aduana, seccion, denominacion o clave combinada."""
         domain = list(domain or [])
         if name:
             domain = [
@@ -116,4 +117,4 @@ class MxPedAduanaSeccion(models.Model):
                 ("denominacion", operator, name),
                 ("code", operator, name),
             ] + domain
-        return self._search(domain, limit=limit, order=order)
+        return self._search(domain, limit=limit, order=order or self._order)
