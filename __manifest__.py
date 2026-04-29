@@ -1,6 +1,6 @@
 {
     "name": "Aduanex",
-    "version": "18.0.1.10.0",
+    "version": "18.0.1.11.0",
     "category": "CRM",
     "summary": "Gestión de operaciones aduanales y pedimentos desde CRM",
     "depends": ["crm", "mail", "base", "contacts", "account"],
@@ -31,6 +31,7 @@
         "views/mx_ped_rulepack_views.xml",
         "views/mx_ped_aduana_seccion_views.xml",
         "views/mx_tigie_maestra_views.xml",
+        "views/mx_tigie_nom_import_wizard_views.xml",
         "views/mx_ped_fraccion_views.xml",
         "views/mx_ped_regulatorio_views.xml",
         "views/mx_ped_identificador_views.xml",

@@ -278,7 +278,7 @@ class MxPedRulepackConditionRule(models.Model):
         default="any",
         required=True,
     )
-    fraccion_id = fields.Many2one("mx.ped.fraccion", string="Fraccion (opcional)", ondelete="restrict")
+    fraccion_id = fields.Many2one("mx.tigie.maestra", string="Fraccion (opcional)", ondelete="restrict")
     fraccion_capitulo = fields.Char(
         string="Capitulo (opcional)",
         size=2,

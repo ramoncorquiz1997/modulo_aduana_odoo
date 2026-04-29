@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <record id="view_mx_tigie_nom_import_wizard_form" model="ir.ui.view">
+    <field name="name">mx.tigie.nom.import.wizard.form</field>
+    <field name="model">mx.tigie.nom.import.wizard</field>
+    <field name="arch" type="xml">
+      <form string="Importar NOMs por fracción">
+        <sheet>
+          <group invisible="estado != 'pendiente'">
+            <div class="alert alert-info" role="alert">
+              <strong>Instrucciones:</strong> Sube el CSV de NOMs por fracción
+              (columnas: <code>Fraccion_Arancelaria</code> y <code>NOM_Acotacion</code>).
+              El sistema extrae los códigos NOM automáticamente, crea los registros
+              que no existan y los vincula a cada fracción de la TIGIE maestra.
+            </div>
+            <field name="archivo" widget="binary" filename="archivo_filename"/>
+            <field name="archivo_filename" invisible="1"/>
+          </group>
+
+          <group invisible="estado == 'pendiente'">
+            <field name="resultado" nolabel="1" readonly="1"
+                   widget="text" style="font-family: monospace; white-space: pre;"/>
+          </group>
+        </sheet>
+        <footer>
+          <button name="action_importar" type="object" string="Importar"
+                  class="btn-primary" invisible="estado != 'pendiente'"/>
+          <button string="Cerrar" class="btn-secondary" special="cancel"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_mx_tigie_nom_import_wizard" model="ir.actions.act_window">
+    <field name="name">Importar NOMs por fracción</field>
+    <field name="res_model">mx.tigie.nom.import.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+
+</odoo>

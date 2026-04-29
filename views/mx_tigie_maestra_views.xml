@@ -16,6 +16,10 @@
         <field name="descripcion_completa"/>
         <field name="unidad_medida"/>
         <separator/>
+        <filter string="Con NOMs" name="con_noms"
+                domain="[('nom_ids','!=',False)]"/>
+        <filter string="Sin NOMs" name="sin_noms"
+                domain="[('nom_ids','=',False)]"/>
         <filter string="Con regulaciones SE" name="con_reg_economia"
                 domain="[('regulaciones_economia','!=',False),('regulaciones_economia','!=','')]"/>
         <filter string="Requiere etiquetado" name="etiquetado"
@@ -85,7 +89,12 @@
                    placeholder="Descripcion oficial segun la TIGIE..."/>
           </group>
 
-          <group string="Regulaciones">
+          <group string="NOMs aplicables (Anexo 2.4.1)">
+            <field name="nom_ids" widget="many2many_tags" nolabel="1"
+                   placeholder="Se llenan al importar el CSV de NOMs..."/>
+          </group>
+
+          <group string="Regulaciones (texto referencia)">
             <field name="requires_labeling_default" string="Requiere etiquetado NOM"/>
             <field name="regulaciones_economia"
                    placeholder="NOMs, RRNAs, permisos SE/COFEPRIS aplicables..."/>
@@ -99,6 +108,20 @@
           </group>
         </sheet>
       </form>
+    </field>
+  </record>
+
+  <!-- ── ACTION IMPORTAR NOMs ─────────────────────────────────────────────── -->
+  <record id="action_mx_tigie_nom_import_from_tigie" model="ir.actions.server">
+    <field name="name">Importar NOMs por fracción (CSV)</field>
+    <field name="model_id" ref="model_mx_tigie_maestra"/>
+    <field name="binding_model_id" ref="model_mx_tigie_maestra"/>
+    <field name="binding_view_types">list,form</field>
+    <field name="state">code</field>
+    <field name="code">
+action = env['mx.tigie.nom.import.wizard'].create({}).with_context(
+    dialog_size='medium'
+).action_open_wizard()
     </field>
   </record>
 

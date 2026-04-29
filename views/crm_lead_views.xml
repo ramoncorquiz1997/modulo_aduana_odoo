@@ -539,16 +539,29 @@
                   <field name="valor_comercial" readonly="1"/>
                   <field name="valor_aduana"/>
                 </group>
-                <group string="Regulatorio">
+                <group string="Tasas TIGIE" colspan="2">
+                  <group>
+                    <field name="tigie_igi_pct" string="IGI %" invisible="lead_id.x_tipo_operacion == 'exportacion'"/>
+                    <field name="tigie_ige_pct" string="IGE %" invisible="lead_id.x_tipo_operacion != 'exportacion'"/>
+                    <field name="tigie_iva_pct" string="IVA %"/>
+                    <field name="tigie_nota_arancel" invisible="not tigie_nota_arancel"/>
+                  </group>
+                  <group>
+                    <field name="tigie_etiquetado" string="Etiquetado NOM requerido"/>
+                    <field name="tigie_regulaciones" string="Regulaciones (TIGIE)" invisible="not tigie_regulaciones"/>
+                    <field name="tigie_otras_dependencias" string="Otras dependencias (TIGIE)" invisible="not tigie_otras_dependencias"/>
+                  </group>
+                </group>
+                <group string="Regulatorio (captura manual)">
                   <field name="nom_ids" widget="many2many_tags"/>
                   <field name="permiso_ids" widget="many2many_tags"/>
                   <field name="rrna_ids" widget="many2many_tags"/>
-                  <field name="labeling_required" readonly="1"/>
+                  <field name="labeling_required"/>
                   <field name="nom_compliance_status"/>
                   <field name="docs_reference"/>
                   <field name="notes_regulatorias"/>
                 </group>
-                <group string="Impuestos estimados">
+                <group string="Impuestos estimados (requiere valor USD)">
                   <field name="igi_estimado"/>
                   <field name="iva_estimado"/>
                   <field name="dta_estimado"/>

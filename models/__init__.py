@@ -16,6 +16,7 @@ from . import mx_ped_aduana_seccion
 from . import mx_ped_fraccion
 from . import mx_ped_regulatorio
 from . import mx_tigie_maestra
+from . import mx_tigie_nom_import_wizard
 from . import mx_ped_identificador
 from . import mx_ped_cuenta_aduanera
 from . import mx_ped_credencial_ws

@@ -112,6 +112,16 @@ class MxTigieMaestra(models.Model):
         help="Indica si esta fraccion requiere etiquetado NOM por defecto.",
     )
 
+    # ── NOMs estructuradas ───────────────────────────────────────────────────
+    nom_ids = fields.Many2many(
+        "mx.nom",
+        "mx_tigie_maestra_nom_rel",
+        "tigie_id",
+        "nom_id",
+        string="NOMs aplicables",
+        help="NOMs que aplican a esta fraccion segun el Anexo 2.4.1 de las RRNA.",
+    )
+
     active = fields.Boolean(default=True)
 
     # ── Campos calculados ────────────────────────────────────────────────────

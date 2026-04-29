@@ -1,4 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_mx_tigie_nom_import_wizard,mx.tigie.nom.import.wizard,model_mx_tigie_nom_import_wizard,base.group_system,1,1,1,1
 access_mx_ped_operacion,mx.ped.operacion,model_mx_ped_operacion,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_consolidado_remesa,mx.ped.consolidado.remesa,model_mx_ped_consolidado_remesa,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_consolidado_remesa_partida,mx.ped.consolidado.remesa.partida,model_mx_ped_consolidado_remesa_partida,modulo_aduana_odoo.group_aduana_user,1,1,1,1

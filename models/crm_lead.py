@@ -2038,6 +2038,39 @@ class CrmLeadOperacionLine(models.Model):
     )
     docs_reference = fields.Char(string="Referencia documentos")
     notes_regulatorias = fields.Text(string="Notas regulatorias")
+
+    # Tasas y datos informativos directo de la TIGIE maestra (solo lectura)
+    tigie_igi_pct = fields.Float(
+        string="IGI % (TIGIE)", related="fraccion_id.arancel_importacion",
+        readonly=True, digits=(5, 4),
+    )
+    tigie_ige_pct = fields.Float(
+        string="IGE % (TIGIE)", related="fraccion_id.arancel_exportacion",
+        readonly=True, digits=(5, 4),
+    )
+    tigie_iva_pct = fields.Float(
+        string="IVA % (TIGIE)", related="fraccion_id.iva_importacion",
+        readonly=True, digits=(5, 4),
+    )
+    tigie_nota_arancel = fields.Char(
+        string="Nota arancel", related="fraccion_id.nota_importacion",
+        readonly=True,
+    )
+    tigie_regulaciones = fields.Text(
+        string="Regulaciones SE/COFEPRIS (TIGIE)",
+        related="fraccion_id.regulaciones_economia",
+        readonly=True,
+    )
+    tigie_otras_dependencias = fields.Text(
+        string="Otras dependencias (TIGIE)",
+        related="fraccion_id.otras_dependencias",
+        readonly=True,
+    )
+    tigie_etiquetado = fields.Boolean(
+        string="Etiquetado requerido (TIGIE)",
+        related="fraccion_id.requires_labeling_default",
+        readonly=True,
+    )
     currency_id = fields.Many2one(
         related="lead_id.x_currency_id",
         string="Moneda",
@@ -2265,7 +2298,13 @@ class CrmLeadOperacionLine(models.Model):
             if fraccion.requires_labeling_default:
                 rec.labeling_required = True
 
-            # Notas regulatorias — copiar directamente el texto de la TIGIE
+            # NOMs estructuradas — directo de la TIGIE maestra
+            if fraccion.nom_ids:
+                rec.nom_ids = [(6, 0, fraccion.nom_ids.ids)]
+            else:
+                rec.nom_ids = [(5, 0, 0)]
+
+            # Notas regulatorias — texto de referencia de la TIGIE
             partes = []
             if fraccion.regulaciones_economia:
                 partes.append("SE/COFEPRIS: " + fraccion.regulaciones_economia.strip())

@@ -299,18 +299,6 @@ class MxPedLayoutCampo(models.Model):
     _name = 'mx.ped.layout.campo'
     _inherit = ['mx.ped.layout.campo', 'aduana.audit.mixin']
 
-class MxPedFraccion(models.Model):
-    _name = 'mx.ped.fraccion'
-    _inherit = ['mx.ped.fraccion', 'aduana.audit.mixin']
-
-class MxPedFraccionTasa(models.Model):
-    _name = 'mx.ped.fraccion.tasa'
-    _inherit = ['mx.ped.fraccion.tasa', 'aduana.audit.mixin']
-
-class MxPedFraccionContribucion(models.Model):
-    _name = 'mx.ped.fraccion.contribucion'
-    _inherit = ['mx.ped.fraccion.contribucion', 'aduana.audit.mixin']
-
 class MxPedUm(models.Model):
     _name = 'mx.ped.um'
     _inherit = ['mx.ped.um', 'aduana.audit.mixin']

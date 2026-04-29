@@ -129,13 +129,12 @@ class MxPermiso(models.Model):
 class MxNico(models.Model):
     _name = "mx.nico"
     _description = "Catalogo NICO"
-    _order = "fraccion_id, code"
+    _order = "code"
 
-    code = fields.Char(required=True, size=2)
+    code = fields.Char(required=True, size=2, index=True)
     name = fields.Char(required=True)
-    fraccion_id = fields.Many2one("mx.ped.fraccion", required=True, ondelete="cascade", index=True)
     active = fields.Boolean(default=True)
 
     _sql_constraints = [
-        ("mx_nico_fraccion_code_uniq", "unique(fraccion_id, code)", "NICO duplicado para la fraccion."),
+        ("mx_nico_code_uniq", "unique(code)", "El codigo NICO debe ser unico."),
     ]
