@@ -131,5 +131,27 @@ else
 fi
 
 # ── Monitorear logs en tiempo real (siempre al final) ────────────────────────
-step "Monitoreando logs en tiempo real (Ctrl+C para salir)..."
-sudo journalctl -u $SERVICE -f -n 50
+step "Monitoreando logs de Odoo en tiempo real (Ctrl+C para salir)..."
+
+# Buscar el log file de Odoo (tiene los errores reales, incluyendo tracebacks)
+ODOO_LOG=""
+if [ -n "$ODOO_CONF" ]; then
+    ODOO_LOG=$(grep -E "^logfile\s*=" "$ODOO_CONF" 2>/dev/null | awk -F'=' '{print $2}' | tr -d ' ')
+fi
+# Rutas conocidas como fallback
+if [ -z "$ODOO_LOG" ] || [ ! -f "$ODOO_LOG" ]; then
+    for _lf in /var/log/odoo18/odoo.log /var/log/odoo/odoo.log /opt/odoo18/logs/odoo.log /opt/odoo18/odoo18.log; do
+        if [ -f "$_lf" ]; then
+            ODOO_LOG="$_lf"
+            break
+        fi
+    done
+fi
+
+if [ -f "$ODOO_LOG" ]; then
+    ok "Log file: $ODOO_LOG"
+    sudo tail -f -n 80 "$ODOO_LOG"
+else
+    warn "Log file no encontrado — usando journalctl filtrado (sin mensajes de systemd)"
+    sudo journalctl -u $SERVICE -f -n 80 -o cat | grep -v "^systemd\[" | grep -v "Consumed\|Deactivated\|Stopping\|Stopped\|Started\|Starting"
+fi
