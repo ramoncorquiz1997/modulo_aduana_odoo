@@ -195,15 +195,7 @@
                                     <field name="rrna_default_ids" widget="many2many_tags"/>
                                 </group>
                             </group>
-                            <group string="NICO sugeridos por fraccion">
-                                <field name="nico_ids" context="{'default_fraccion_id': id}">
-                                    <list editable="bottom">
-                                        <field name="code"/>
-                                        <field name="name"/>
-                                        <field name="active"/>
-                                    </list>
-                                </field>
-                            </group>
+
                         </page>
                     </notebook>
                 </sheet>
