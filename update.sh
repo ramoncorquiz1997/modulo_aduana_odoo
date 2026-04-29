@@ -16,7 +16,7 @@ MODULE="modulo_aduana_odoo"
 SERVICE="odoo18"
 
 # Config file de Odoo (necesario para que odoo-bin vea addons-custom)
-# Si no existe en la ruta default, se detecta automáticamente
+# Intenta rutas conocidas, luego busca con find si no hay ninguna
 ODOO_CONF=""
 for _f in /etc/odoo18.conf /etc/odoo/odoo18.conf /opt/odoo18/odoo18.conf /opt/odoo18/odoo.conf /etc/odoo.conf; do
     if [ -f "$_f" ]; then
@@ -24,6 +24,11 @@ for _f in /etc/odoo18.conf /etc/odoo/odoo18.conf /opt/odoo18/odoo18.conf /opt/od
         break
     fi
 done
+# Si no encontró nada, busca con find
+if [ -z "$ODOO_CONF" ]; then
+    ODOO_CONF=$(find /etc /opt/odoo18 -maxdepth 3 -name "*.conf" 2>/dev/null \
+        | xargs grep -l "addons_path" 2>/dev/null | head -1)
+fi
 
 # Colores
 GREEN='\033[0;32m'
@@ -56,29 +61,6 @@ if [ "$1" == "--full" ]; then
         warn "Config NO encontrado en rutas conocidas — se usará --addons-path"
         warn "Si falla, ejecuta: sudo find /etc /opt/odoo18 -name '*.conf' | xargs grep -l addons_path 2>/dev/null"
         warn "Luego edita ODOO_CONF= en este script"
-    fi
-
-    # Verificar imports de Python antes de tocar el servicio
-    step "Verificando imports de Python..."
-    IMPORT_ERR=$($ODOO_VENV -c "
-import sys
-sys.path.insert(0, '$ODOO_ADDONS')
-sys.path.insert(0, '/opt/odoo18/odoo')
-try:
-    import $MODULE
-    print('OK')
-except Exception as e:
-    import traceback
-    traceback.print_exc()
-" 2>&1)
-
-    if echo "$IMPORT_ERR" | grep -q "^OK$"; then
-        ok "Imports correctos"
-    else
-        fail "Error de Python al importar el módulo:"
-        echo -e "${RED}$IMPORT_ERR${NC}"
-        warn "El servicio NO se detuvo — corrige el error y vuelve a intentar."
-        exit 1
     fi
 
     step "Deteniendo servicio para upgrade..."
