@@ -39,7 +39,6 @@ class MxPedFraccion(models.Model):
         "fraccion_id",
         string="Contribuciones extra",
     )
-    nico_ids = fields.One2many("mx.nico", "fraccion_id", string="NICOs")
     nom_default_ids = fields.Many2many(
         "mx.nom",
         "mx_ped_fraccion_nom_default_rel",

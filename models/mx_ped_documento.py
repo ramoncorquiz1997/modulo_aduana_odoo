@@ -109,12 +109,10 @@ class MxPedDocumento(models.Model):
     cfdi_valor_usd = fields.Monetary(
         string="Valor USD 505",
         currency_field="company_currency_id",
-        digits=(16, 2),
     )
     cfdi_valor_moneda = fields.Monetary(
         string="Valor moneda documento 505",
         currency_field="cfdi_moneda_id",
-        digits=(16, 2),
     )
     cfdi_pais_id = fields.Many2one("res.country", string="Pais documento 505")
     cfdi_estado_id = fields.Many2one("res.country.state", string="Entidad documento 505")
