@@ -18,7 +18,7 @@ SERVICE="odoo18"
 # Config file de Odoo (necesario para que odoo-bin vea addons-custom)
 # Intenta rutas conocidas, luego busca con find si no hay ninguna
 ODOO_CONF=""
-for _f in /etc/odoo18.conf /etc/odoo/odoo18.conf /opt/odoo18/odoo18.conf /opt/odoo18/odoo.conf /etc/odoo.conf; do
+for _f in /etc/odoo18/odoo.conf /etc/odoo18.conf /etc/odoo/odoo18.conf /opt/odoo18/odoo18.conf /opt/odoo18/odoo.conf /etc/odoo.conf; do
     if [ -f "$_f" ]; then
         ODOO_CONF="$_f"
         break
