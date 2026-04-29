@@ -2,16 +2,28 @@
 # =============================================================================
 # update.sh — Actualizar y monitorear Aduanex
 # Uso: bash update.sh [--full]
-#   Sin flags  : git pull + restart + logs del servicio
-#   --full     : git pull + upgrade con log detallado de Odoo + restart
+#   Sin flags  : git pull + restart + journalctl -f continuo
+#   --full     : git pull + verificar imports + upgrade con log completo
+#                + restart + journalctl -f continuo
 # =============================================================================
 
 ODOO_BIN="/opt/odoo18/odoo/odoo-bin"
 ODOO_VENV="/opt/odoo18/venv/bin/python"
+ODOO_ADDONS="/opt/odoo18/addons-custom"
 ODOO_DB="aduanex_pro_v1"
 ODOO_USER="odoo18"
 MODULE="modulo_aduana_odoo"
 SERVICE="odoo18"
+
+# Config file de Odoo (necesario para que odoo-bin vea addons-custom)
+# Si no existe en la ruta default, se detecta automáticamente
+ODOO_CONF=""
+for _f in /etc/odoo18.conf /etc/odoo/odoo18.conf /opt/odoo18/odoo18.conf /opt/odoo18/odoo.conf /etc/odoo.conf; do
+    if [ -f "$_f" ]; then
+        ODOO_CONF="$_f"
+        break
+    fi
+done
 
 # Colores
 GREEN='\033[0;32m'
@@ -36,23 +48,75 @@ ok "Código actualizado"
 
 # ── Modo full: upgrade con log detallado ─────────────────────────────────────
 if [ "$1" == "--full" ]; then
+
+    # Mostrar qué config se usará
+    if [ -n "$ODOO_CONF" ]; then
+        ok "Config detectado: $ODOO_CONF"
+    else
+        warn "Config NO encontrado en rutas conocidas — se usará --addons-path"
+        warn "Si falla, ejecuta: sudo find /etc /opt/odoo18 -name '*.conf' | xargs grep -l addons_path 2>/dev/null"
+        warn "Luego edita ODOO_CONF= en este script"
+    fi
+
+    # Verificar imports de Python antes de tocar el servicio
+    step "Verificando imports de Python..."
+    IMPORT_ERR=$($ODOO_VENV -c "
+import sys
+sys.path.insert(0, '$ODOO_ADDONS')
+sys.path.insert(0, '/opt/odoo18/odoo')
+try:
+    import $MODULE
+    print('OK')
+except Exception as e:
+    import traceback
+    traceback.print_exc()
+" 2>&1)
+
+    if echo "$IMPORT_ERR" | grep -q "^OK$"; then
+        ok "Imports correctos"
+    else
+        fail "Error de Python al importar el módulo:"
+        echo -e "${RED}$IMPORT_ERR${NC}"
+        warn "El servicio NO se detuvo — corrige el error y vuelve a intentar."
+        exit 1
+    fi
+
     step "Deteniendo servicio para upgrade..."
     sudo systemctl stop $SERVICE
     sleep 2
 
     step "Corriendo upgrade del módulo (log completo)..."
-    echo -e "${YELLOW}--- INICIO LOG ODOO ---${NC}"
-    sudo -u $ODOO_USER $ODOO_VENV $ODOO_BIN \
-        -u $MODULE \
-        -d $ODOO_DB \
-        --stop-after-init \
-        --log-level=info 2>&1
-    UPGRADE_EXIT=$?
-    echo -e "${YELLOW}--- FIN LOG ODOO ---${NC}"
+    if [ -n "$ODOO_CONF" ]; then
+        ok "Usando config: $ODOO_CONF"
+    else
+        warn "No se encontró config de Odoo — se usará --addons-path directo"
+    fi
+    echo ""
 
-    if [ $UPGRADE_EXIT -ne 0 ]; then
-        fail "El upgrade terminó con errores (código $UPGRADE_EXIT). Revisa el log arriba."
-        warn "El servicio NO se reinició para que puedas diagnosticar."
+    if [ -n "$ODOO_CONF" ]; then
+        UPGRADE_LOG=$(sudo -u $ODOO_USER $ODOO_VENV $ODOO_BIN \
+            --config "$ODOO_CONF" \
+            -u $MODULE \
+            -d $ODOO_DB \
+            --stop-after-init \
+            --log-level=info 2>&1)
+    else
+        UPGRADE_LOG=$(sudo -u $ODOO_USER $ODOO_VENV $ODOO_BIN \
+            --addons-path "/opt/odoo18/odoo/addons,$ODOO_ADDONS" \
+            -u $MODULE \
+            -d $ODOO_DB \
+            --stop-after-init \
+            --log-level=info 2>&1)
+    fi
+
+    echo "$UPGRADE_LOG"
+
+    # Detectar errores reales aunque el exit code sea 0
+    if echo "$UPGRADE_LOG" | grep -qE "not installable|inconsistent states|ERROR|Traceback"; then
+        echo ""
+        fail "Se detectaron errores en el upgrade:"
+        echo "$UPGRADE_LOG" | grep -E "not installable|inconsistent|ERROR|Traceback|File \"|raise " | head -30
+        warn "El servicio NO se reinició. Revisa los errores arriba."
         exit 1
     fi
     ok "Upgrade completado sin errores"
@@ -84,6 +148,6 @@ else
     fi
 fi
 
-# ── 3. Monitorear logs ────────────────────────────────────────────────────────
-step "Monitoreando logs (Ctrl+C para salir)..."
-sudo journalctl -u $SERVICE -f
+# ── Monitorear logs en tiempo real (siempre al final) ────────────────────────
+step "Monitoreando logs en tiempo real (Ctrl+C para salir)..."
+sudo journalctl -u $SERVICE -f -n 50
