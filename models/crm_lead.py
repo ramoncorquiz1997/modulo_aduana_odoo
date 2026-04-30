@@ -2535,13 +2535,20 @@ class CrmLeadDocumento(models.Model):
     estatus = fields.Selection([("pendiente", "Pendiente"), ("ok", "OK"), ("rechazado", "Rechazado")], default="pendiente")
     notas = fields.Text()
     company_currency_id = fields.Many2one("res.currency", related="lead_id.company_id.currency_id", readonly=True, store=True)
-    display_name = fields.Char(compute="_compute_display_name", store=False)
+    display_name = fields.Char(
+        compute="_compute_display_name",
+        store=False,
+        search="_search_display_name",
+    )
 
     @api.depends("tipo", "folio")
     def _compute_display_name(self):
         for rec in self:
             tipo = dict(self._fields["tipo"].selection).get(rec.tipo, rec.tipo or "Documento")
             rec.display_name = " | ".join([p for p in [tipo, rec.folio] if p]) or tipo
+
+    def _search_display_name(self, operator, value):
+        return ["|", ("folio", operator, value), ("tipo", operator, value)]
 
     def name_get(self):
         result = []
