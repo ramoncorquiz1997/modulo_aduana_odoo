@@ -4416,7 +4416,7 @@ class MxPedOperacion(models.Model):
             p.value_usd or 0.0 for p in self.partida_ids
         ) or 1.0
         ratio_global = total_value_usd / pedimento_value_usd
-  
+  
         ped.valor_dolares = self._proforma_text(total_value_usd)
         ped.valor_aduana = self._proforma_text(total_value_mxn)
         ped.precio_pagado_valor_comercial = self._proforma_text(total_value_mxn)
