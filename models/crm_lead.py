@@ -617,7 +617,6 @@ class CrmLead(models.Model):
                 if not linked:
                     continue
                 total_usd = sum(linked.mapped("value_usd"))
-                total_comercial = sum(linked.mapped("valor_comercial"))
                 partida_nums = ", ".join(str(n) for n in linked.mapped("numero_partida") if n)
                 summary.append(
                     "%s -> Partidas %s | Valor Total USD: %.2f"
@@ -632,11 +631,9 @@ class CrmLead(models.Model):
                         _("La suma USD de las partidas ligadas a %s no cuadra con su documento comercial.")
                         % (doc.display_name or doc.folio or doc.id,)
                     )
-                if abs(total_comercial - (doc.cfdi_valor_moneda or 0.0)) > 0.01:
-                    issues.append(
-                        _("La suma de valor comercial de las partidas ligadas a %s no cuadra con su documento comercial.")
-                        % (doc.display_name or doc.folio or doc.id,)
-                    )
+                # No se compara valor_comercial vs cfdi_valor_moneda: están en monedas
+                # distintas (valor_comercial usa moneda de la op/empresa; el documento
+                # puede estar en USD u otra). El chequeo de value_usd ya cubre la validación.
             rec.x_ped_factura_resumen = "\n".join(summary) if summary else False
             if issues:
                 rec.x_ped_preflight_state = "incompleto"
