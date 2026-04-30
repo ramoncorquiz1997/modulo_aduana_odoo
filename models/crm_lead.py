@@ -2365,10 +2365,9 @@ class CrmLeadOperacionLine(models.Model):
 
     @api.onchange("lead_id", "numero_partida", "factura_documento_id", "quantity")
     def _onchange_factura_documento_id(self):
-        domain = [("id", "=", 0)]
         for rec in self:
             docs = rec._get_eligible_factura_documentos() if rec.lead_id else self.env["crm.lead.documento"]
-            domain = [("id", "in", docs.ids)] if docs else [("id", "=", 0)]
+            # Solo limpiar si hay docs cargados Y la selección no está entre ellos
             if docs and rec.factura_documento_id and rec.factura_documento_id not in docs:
                 rec.factura_documento_id = False
             if not rec.factura_documento_id:
@@ -2376,7 +2375,9 @@ class CrmLeadOperacionLine(models.Model):
                 if default_doc:
                     rec.factura_documento_id = default_doc
             rec._apply_factura_remaining_suggestion()
-        return {"domain": {"factura_documento_id": domain}}
+        # No devolver domain: el dominio del campo ya filtra por lead_id.
+        # Devolver domain=[(id,=,0)] cuando docs está vacío hace que OWL
+        # borre la selección del usuario en el cliente.
 
     def action_load_regulatory_defaults(self):
         # mx.tigie.maestra es un modelo plano: no contiene listas pre-definidas de NOMs,
@@ -2535,6 +2536,24 @@ class CrmLeadDocumento(models.Model):
     estatus = fields.Selection([("pendiente", "Pendiente"), ("ok", "OK"), ("rechazado", "Rechazado")], default="pendiente")
     notas = fields.Text()
     company_currency_id = fields.Many2one("res.currency", related="lead_id.company_id.currency_id", readonly=True, store=True)
+
+    # display_name: sobreescribimos el de la clase base para añadir search=
+    # (en Odoo 18 la clase base puede no tenerlo, lo que causa el error en expression.py)
+    display_name = fields.Char(
+        compute="_compute_display_name",
+        search="_search_display_name",
+        store=False,
+    )
+
+    @api.depends("tipo", "folio")
+    def _compute_display_name(self):
+        for rec in self:
+            tipo = dict(self._fields["tipo"].selection).get(rec.tipo, rec.tipo or "Documento")
+            rec.display_name = " | ".join([p for p in [tipo, rec.folio] if p]) or tipo
+
+    def _search_display_name(self, operator, value):
+        return ["|", ("folio", operator, value), ("tipo", operator, value)]
+
     def name_get(self):
         result = []
         for rec in self:
