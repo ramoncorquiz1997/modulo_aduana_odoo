@@ -713,7 +713,7 @@ class MxPedOperacion(models.Model):
             "domain": [("operacion_id", "=", self.id)],
             "context": {
                 "default_operacion_id": self.id,
-                "default_rfc_importador": self.lead_id.x_rfc if self.lead_id else False,
+                "default_rfc_importador": self.importador_id.vat if self.importador_id else False,
             },
         }
         if self.mv_count == 1:
