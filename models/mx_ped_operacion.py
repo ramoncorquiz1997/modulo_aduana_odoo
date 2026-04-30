@@ -1426,7 +1426,13 @@ class MxPedOperacion(models.Model):
                     _("La suma de Valor USD de las partidas ligadas a %s no cuadra con el valor USD del 505. Partidas=%.2f Documento=%.2f")
                     % (doc.display_name or doc.folio or doc.id, total_usd, doc_usd)
                 )
-            if abs(total_comercial - doc_moneda) > 0.01:
+            # Solo comparar valor comercial cuando ambos lados están en la misma moneda.
+            # Si la factura está en USD (u otra moneda distinta a la de la operación),
+            # la validación ya queda cubierta por el chequeo de value_usd anterior.
+            op_currency = self.currency_id or self.env.company.currency_id
+            doc_currency = doc.cfdi_moneda_id
+            misma_moneda = (not doc_currency) or (doc_currency == op_currency)
+            if misma_moneda and doc_moneda and abs(total_comercial - doc_moneda) > 0.01:
                 self.write({"show_advanced_info": True, "show_advanced": True})
                 linked.with_context(skip_auto_generated_refresh=True).write({
                     "factura_value_error": True,
