@@ -702,6 +702,24 @@ class MxPedOperacion(models.Model):
         for rec in self:
             rec.mv_count = len(rec.mv_ids)
 
+    def action_view_mvs(self):
+        """Abre la lista de MVs de esta operación, o el form si solo hay una."""
+        self.ensure_one()
+        action = {
+            "type": "ir.actions.act_window",
+            "name": "Manifestaciones de Valor",
+            "res_model": "mx.ped.mv",
+            "view_mode": "list,form",
+            "domain": [("operacion_id", "=", self.id)],
+            "context": {
+                "default_operacion_id": self.id,
+                "default_rfc_importador": self.lead_id.x_rfc if self.lead_id else False,
+            },
+        }
+        if self.mv_count == 1:
+            action["view_mode"] = "form"
+            action["res_id"] = self.mv_ids[0].id
+        return action
 
     @api.depends(
         "partida_ids.factura_documento_id",
