@@ -259,6 +259,178 @@ class MxFirmaDigital(models.AbstractModel):
         """
         return f"|{numero_operacion}|{rfc}|"
 
+    # ── SHA256withRSA para Manifestación de Valor ─────────────────────────────
+
+    @staticmethod
+    def _firma_sign_b64_sha256(private_key, cadena_str):
+        """Firma con SHA256withRSA (requerido por MV — distinto de COVE que usa SHA1).
+
+        Proceso:
+          1. Codificar la cadena como UTF-8
+          2. Firmar con SHA256 + RSA PKCS1v15
+          3. Convertir bytes resultado a Base64
+
+        Referencia: Diccionario_de_datos_MV_2025.pdf — algoritmo SHA256withRSA.
+        """
+        try:
+            cadena_bytes = cadena_str.encode("utf-8")
+        except UnicodeEncodeError as exc:
+            raise UserError(
+                "La cadena original MV contiene caracteres inválidos.\n"
+                f"Detalle: {exc}"
+            ) from exc
+
+        try:
+            firma_bytes = private_key.sign(
+                cadena_bytes,
+                asym_padding.PKCS1v15(),
+                hashes.SHA256(),
+            )
+        except Exception as exc:
+            raise UserError(f"Error al firmar MV con SHA256: {exc}") from exc
+
+        return base64.b64encode(firma_bytes).decode("ascii")
+
+    def _build_cadena_mv(self, mv):
+        """Construye la cadena original pipe-separated para una mx.ped.mv.
+
+        Estructura basada en Ejemplo Registro MV.txt (cadenaOriginal del SOAP):
+          |RFCIMPEXP|RFCCONSULTA|TIPFIG|eDocument|COVE|INCOTERM|vinculacion|
+          pedimento|patente|aduana|fechaPago|total|tipoPago|moneda|cambio|...
+          metodoValoracion|tipoInc|fechaEro|importe|moneda|cambio|cargo|
+          tipoDec|fechaEro|importe|moneda|cambio|
+          totalPP|totalPPP|totalInc|totalDec|totalAduana|
+
+        Returns:
+            str — cadena original lista para firmar con SHA256
+        """
+        p = self._co_val
+
+        def fmt_dec(v, d=3):
+            if v is None or v is False:
+                return "0"
+            return f"{float(v):.{d}f}"
+
+        def fmt_dt(v):
+            if not v:
+                return ""
+            if hasattr(v, "strftime"):
+                return v.strftime("%d/%m/%Y")
+            return str(v)
+
+        partes = []
+        partes.append(p(mv.rfc_importador))
+
+        # Personas consulta
+        for pc in mv.persona_consulta_ids:
+            partes.append(p(pc.rfc))
+            partes.append(p(pc.tipo_figura))
+
+        # e-Documents (uno por COVE)
+        for cl in mv.cove_line_ids:
+            e_doc = cl.cove_id.e_document if cl.cove_id else ""
+            partes.append(p(e_doc))
+
+        # informacionCove (cada COVE y sus sub-líneas)
+        for cl in mv.cove_line_ids:
+            cove_folio = cl.cove_id.e_document if cl.cove_id else ""
+            partes.append(p(cove_folio))
+            partes.append(p(cl.incoterm))
+            partes.append("1" if cl.existe_vinculacion else "0")
+
+            for ped in cl.pedimento_ids:
+                partes.append(p(ped.numero_pedimento))
+                partes.append(p(ped.patente))
+                partes.append(p(ped.aduana))
+
+            for pp in cl.precio_pagado_ids:
+                partes.append(fmt_dt(pp.fecha_pago))
+                partes.append(fmt_dec(pp.total, 3))
+                partes.append(p(pp.tipo_pago))
+                partes.append(p(pp.tipo_moneda))
+                partes.append(fmt_dec(pp.tipo_cambio, 1))
+
+            for ppp in cl.precio_por_pagar_ids:
+                partes.append(fmt_dt(ppp.fecha_pago))
+                partes.append(fmt_dec(ppp.total, 3))
+                if ppp.situacion_no_fecha_pago:
+                    partes.append(p(ppp.situacion_no_fecha_pago))
+                partes.append(p(ppp.tipo_pago))
+                partes.append(p(ppp.tipo_moneda))
+                partes.append(fmt_dec(ppp.tipo_cambio, 1))
+
+            for cp in cl.compenso_pago_ids:
+                partes.append(p(cp.motivo))
+                partes.append(p(cp.prestacion_mercancia))
+                partes.append(p(cp.tipo_pago))
+
+            partes.append(p(cl.metodo_valoracion))
+
+            for inc in cl.incrementable_ids:
+                partes.append(p(inc.tipo_incrementable))
+                partes.append(fmt_dt(inc.fecha_erogacion))
+                partes.append(fmt_dec(inc.importe, 1))
+                partes.append(p(inc.tipo_moneda))
+                partes.append(fmt_dec(inc.tipo_cambio, 1))
+                partes.append("1" if inc.a_cargo_importador else "0")
+
+            for dec in cl.decrementable_ids:
+                partes.append(p(dec.tipo_decrementable))
+                partes.append(fmt_dt(dec.fecha_erogacion))
+                partes.append(fmt_dec(dec.importe, 1))
+                partes.append(p(dec.tipo_moneda))
+                partes.append(fmt_dec(dec.tipo_cambio, 1))
+
+        # valorEnAduana
+        partes.append(fmt_dec(mv.total_precio_pagado, 3))
+        partes.append(fmt_dec(mv.total_precio_por_pagar, 3))
+        partes.append(fmt_dec(mv.total_incrementables, 3))
+        partes.append(fmt_dec(mv.total_decrementables, 3))
+        partes.append(fmt_dec(mv.total_valor_aduana, 3))
+
+        return "|" + "|".join(partes) + "|"
+
+    def _firmar_mv(self, mv, credencial):
+        """Genera cadena original MV, la firma con SHA256withRSA y devuelve el dict.
+
+        Args:
+            mv         : record mx.ped.mv
+            credencial : record mx.ped.credencial.ws
+
+        Returns:
+            dict con claves: cadena_original, certificado_b64, firma_b64
+        """
+        self._firma_check_crypto()
+
+        if not credencial.cert_file:
+            raise UserError("La credencial no tiene certificado (.cer) cargado.")
+        if not credencial.key_file:
+            raise UserError("La credencial no tiene llave privada (.key) cargada.")
+
+        cert_bytes = base64.b64decode(credencial.cert_file)
+        key_bytes = base64.b64decode(credencial.key_file)
+
+        private_key = self._firma_load_private_key(key_bytes, credencial.key_password)
+        cadena = self._build_cadena_mv(mv)
+        firma_b64 = self._firma_sign_b64_sha256(private_key, cadena)
+        cert_b64 = self._firma_cert_to_b64(cert_bytes)
+
+        return {
+            "cadena_original": cadena,
+            "certificado_b64": cert_b64,
+            "firma_b64": firma_b64,
+        }
+
+    def _firmar_mv_cadena(self, cadena_str, credencial):
+        """Firma una cadena arbitraria con SHA256withRSA (para actualizarManifestacion)."""
+        self._firma_check_crypto()
+        cert_bytes = base64.b64decode(credencial.cert_file)
+        key_bytes = base64.b64decode(credencial.key_file)
+        private_key = self._firma_load_private_key(key_bytes, credencial.key_password)
+        firma_b64 = self._firma_sign_b64_sha256(private_key, cadena_str)
+        cert_b64 = self._firma_cert_to_b64(cert_bytes)
+        return {"certificado_b64": cert_b64, "firma_b64": firma_b64}
+
     # ── Método principal: firmar COVE completo ────────────────────────────────
 
     def _firmar_cove(self, cove, credencial):

@@ -22,14 +22,23 @@ class MxVucemLog(models.Model):
         ondelete="set null",
         index=True,
     )
+    mv_id = fields.Many2one(
+        "mx.ped.mv",
+        string="Manifestación de Valor",
+        ondelete="set null",
+        index=True,
+    )
 
     # ── Tipo de operación ─────────────────────────────────────────────────────
     tipo_operacion = fields.Selection(
         [
             ("registrar_cove", "Registrar COVE"),
-            ("consultar_resultado", "Consultar resultado"),
+            ("consultar_resultado", "Consultar resultado COVE"),
             ("registrar_relacion_ia", "Registrar Relación IA"),
             ("registrar_relacion_no_ia", "Registrar Relación No IA"),
+            ("registrar_mv", "Registrar MV"),
+            ("consultar_mv", "Consultar MV"),
+            ("actualizar_mv", "Actualizar MV"),
         ],
         string="Operación",
         required=True,

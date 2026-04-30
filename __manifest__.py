@@ -21,6 +21,7 @@
         "views/mx_ped_desistimiento_wizard_views.xml",
         "views/mx_cove_views.xml",
         "views/mx_doda_views.xml",
+        "views/mx_ped_mv_views.xml",
         "views/crm_lead_views.xml",
         "views/mx_ped_clave_views.xml",
         "views/aduana_catalogos_views.xml",

@@ -280,6 +280,29 @@ class MxCove(models.Model):
         required=True,
         default="TOCE.IMP",
     )
+    incoterm = fields.Selection(
+        [
+            ("EXW", "EXW — Ex Works"),
+            ("FCA", "FCA — Free Carrier"),
+            ("FAS", "FAS — Free Alongside Ship"),
+            ("FOB", "FOB — Free On Board"),
+            ("CFR", "CFR — Cost and Freight"),
+            ("CIF", "CIF — Cost, Insurance and Freight"),
+            ("CPT", "CPT — Carriage Paid To"),
+            ("CIP", "CIP — Carriage and Insurance Paid To"),
+            ("DPU", "DPU — Delivered at Place Unloaded"),
+            ("DAP", "DAP — Delivered at Place"),
+            ("DDP", "DDP — Delivered Duty Paid"),
+            ("DAT", "DAT — Delivered at Terminal"),
+            ("DAF", "DAF — Delivered at Frontier"),
+            ("DES", "DES — Delivered Ex Ship"),
+            ("DEQ", "DEQ — Delivered Ex Quay"),
+            ("DDU", "DDU — Delivered Duty Unpaid"),
+        ],
+        string="Incoterm",
+        help="Condición de entrega pactada con el proveedor para esta factura. "
+             "Se hereda de la operación pero puede modificarse por COVE si difiere.",
+    )
     tipo_figura = fields.Selection(
         TIPO_FIGURA,
         string="Tipo de figura",
@@ -448,6 +471,13 @@ class MxCove(models.Model):
             rec.log_count = self.env["mx.vucem.log"].search_count(
                 [("cove_id", "=", rec.id)]
             )
+
+    # ── Incoterm: hereda de la operación al seleccionarla ─────────────────────
+    @api.onchange("operacion_id")
+    def _onchange_operacion_id_incoterm(self):
+        """Pre-llena el incoterm desde la operación si el COVE no tiene uno."""
+        if self.operacion_id and not self.incoterm:
+            self.incoterm = self.operacion_id.incoterm or False
 
     # ── Secuencia ─────────────────────────────────────────────────────────────
     @api.model_create_multi

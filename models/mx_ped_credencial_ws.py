@@ -58,6 +58,18 @@ class MxPedCredencialWs(models.Model):
     vigencia_hasta = fields.Date(string="Vigencia hasta")
     notes = fields.Text(string="Notas")
 
+    # ── Endpoints Manifestación de Valor (VUCEM) ──────────────────────────────
+    endpoint_mv_registro = fields.Char(
+        string="Endpoint MV Registro",
+        default="https://privados.ventanillaunica.gob.mx:8106/IngresoManifestacionImpl/IngresoManifestacionService",
+        help="URL del WS registroManifestacion / actualizarManifestacion.",
+    )
+    endpoint_mv_consulta = fields.Char(
+        string="Endpoint MV Consulta",
+        default="https://privados.ventanillaunica.gob.mx/ConsultaManifestacionImpl/ConsultaManifestacionService",
+        help="URL del WS consultaManifestacion.",
+    )
+
     @api.constrains("is_default", "partner_id")
     def _check_default_without_partner(self):
         for rec in self:

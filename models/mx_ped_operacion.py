@@ -596,6 +596,16 @@ class MxPedOperacion(models.Model):
         string="COVEs",
         compute="_compute_cove_count",
     )
+    mv_ids = fields.One2many(
+        "mx.ped.mv",
+        "operacion_id",
+        string="Manifestaciones de Valor",
+        copy=False,
+    )
+    mv_count = fields.Integer(
+        string="MVs",
+        compute="_compute_mv_count",
+    )
     total_packages_line = fields.Integer(
         string="Total bultos",
         compute="_compute_totales_partidas",
@@ -686,6 +696,12 @@ class MxPedOperacion(models.Model):
     def _compute_cove_count(self):
         for rec in self:
             rec.cove_count = len(rec.cove_ids)
+
+    @api.depends("mv_ids")
+    def _compute_mv_count(self):
+        for rec in self:
+            rec.mv_count = len(rec.mv_ids)
+
 
     @api.depends(
         "partida_ids.factura_documento_id",

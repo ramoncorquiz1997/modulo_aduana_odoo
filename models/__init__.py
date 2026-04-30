@@ -38,3 +38,4 @@ from . import mx_firma_digital
 from . import mx_vucem_log
 from . import mx_cove
 from . import mx_doda
+from . import mx_ped_mv

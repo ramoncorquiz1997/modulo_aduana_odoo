@@ -27,6 +27,7 @@
           <field name="name"/>
           <field name="tipo_operacion"/>
           <field name="numero_factura_original"/>
+          <field name="incoterm"/>
           <field name="fecha_expedicion"/>
           <field name="emisor_nombre"/>
           <field name="dest_nombre"/>
@@ -117,6 +118,7 @@
                 </group>
                 <group string="Factura" col="4">
                   <field name="numero_factura_original" required="1"/>
+                  <field name="incoterm"/>
                   <field name="certificado_origen" required="1"/>
                   <field name="subdivision" required="1"/>
                   <field name="numero_exportador_autorizado"/>
