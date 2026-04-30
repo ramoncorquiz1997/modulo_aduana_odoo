@@ -1960,6 +1960,14 @@ class CrmLeadOperacionLine(models.Model):
     )
     quantity = fields.Float(string="Cantidad", digits=(16, 6), default=1.0)
     uom_id = fields.Many2one("mx.ped.um", string="Unidad de medida")
+
+    # ── Unidades SAAI (UMC / UMT) ─────────────────────────────────────────────
+    # UMC: como viene en la factura del proveedor
+    unidad_comercial_id = fields.Many2one("mx.ped.um", string="Unidad comercial (UMC)")
+    cantidad_comercial = fields.Float(string="Cantidad comercial", digits=(16, 5))
+    # UMT: la que exige la TIGIE para esa fracción arancelaria
+    unidad_tarifa_id = fields.Many2one("mx.ped.um", string="Unidad tarifa (UMT)")
+    cantidad_tarifa = fields.Float(string="Cantidad tarifa", digits=(16, 5))
     packages_line = fields.Integer(string="Bultos", default=0)
     gross_weight_line = fields.Float(string="Peso bruto", digits=(16, 3))
     net_weight_line = fields.Float(string="Peso neto", digits=(16, 3))
@@ -2275,13 +2283,22 @@ class CrmLeadOperacionLine(models.Model):
             if not rec.name:
                 rec.name = fraccion.descripcion_completa or ""
 
-            # Unidad de medida (desde TIGIE)
+            # Unidad de medida (desde TIGIE) → UMT y también UMC si no están capturadas
             if fraccion.unidad_medida:
                 umt = self.env["mx.ped.um"].search(
                     [("code", "=", fraccion.unidad_medida), ("active", "=", True)], limit=1
                 )
                 if umt:
-                    rec.uom_id = umt.id
+                    rec.unidad_tarifa_id = umt
+                    if not rec.uom_id:
+                        rec.uom_id = umt
+                    if not rec.unidad_comercial_id:
+                        rec.unidad_comercial_id = umt
+                    # Auto-llenar cantidades solo si aún están vacías
+                    if not rec.cantidad_tarifa and rec.quantity:
+                        rec.cantidad_tarifa = rec.quantity
+                    if not rec.cantidad_comercial and rec.quantity:
+                        rec.cantidad_comercial = rec.quantity
 
             # Etiquetado (desde TIGIE)
             if fraccion.requires_labeling_default:
@@ -2310,6 +2327,31 @@ class CrmLeadOperacionLine(models.Model):
     def _onchange_nico_id(self):
         for rec in self:
             rec.nico = rec.nico_id.code if rec.nico_id else (rec.fraccion_id.nico if rec.fraccion_id else False)
+
+    @api.onchange("quantity")
+    def _onchange_quantity_sync_umt_umc(self):
+        """Sincroniza cantidad_tarifa y cantidad_comercial cuando cambia quantity.
+        - Si están vacías: las llena automáticamente.
+        - Si ya tienen valor pero usan la misma unidad que uom_id: las mantiene sincronizadas.
+        - Si el usuario capturó un valor distinto adrede (UMT ≠ UMC): lo respeta.
+        """
+        for rec in self:
+            if not rec.quantity:
+                continue
+            if not rec.cantidad_tarifa:
+                rec.cantidad_tarifa = rec.quantity
+            elif rec.unidad_tarifa_id and rec.uom_id and rec.unidad_tarifa_id == rec.uom_id:
+                rec.cantidad_tarifa = rec.quantity
+            if not rec.cantidad_comercial:
+                rec.cantidad_comercial = rec.quantity
+            elif rec.unidad_comercial_id and rec.uom_id and rec.unidad_comercial_id == rec.uom_id:
+                rec.cantidad_comercial = rec.quantity
+
+    @api.onchange("uom_id")
+    def _onchange_uom_sync_comercial(self):
+        for rec in self:
+            if rec.uom_id and not rec.unidad_comercial_id:
+                rec.unidad_comercial_id = rec.uom_id
 
     @api.onchange("value_usd", "quantity")
     def _onchange_calc_precio_unitario(self):
