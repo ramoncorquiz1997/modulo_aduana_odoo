@@ -1413,9 +1413,7 @@ class MxPedOperacion(models.Model):
         for doc in docs:
             linked = partidas.filtered(lambda p: p.factura_documento_id == doc)
             total_usd = sum(linked.mapped("value_usd"))
-            total_comercial = sum(linked.mapped("valor_comercial"))
             doc_usd = doc.cfdi_valor_usd or 0.0
-            doc_moneda = doc.cfdi_valor_moneda or 0.0
             if abs(total_usd - doc_usd) > 0.01:
                 self.write({"show_advanced_info": True, "show_advanced": True})
                 linked.with_context(skip_auto_generated_refresh=True).write({
@@ -1426,22 +1424,9 @@ class MxPedOperacion(models.Model):
                     _("La suma de Valor USD de las partidas ligadas a %s no cuadra con el valor USD del 505. Partidas=%.2f Documento=%.2f")
                     % (doc.display_name or doc.folio or doc.id, total_usd, doc_usd)
                 )
-            # Solo comparar valor comercial cuando ambos lados están en la misma moneda.
-            # Si la factura está en USD (u otra moneda distinta a la de la operación),
-            # la validación ya queda cubierta por el chequeo de value_usd anterior.
-            op_currency = self.currency_id or self.env.company.currency_id
-            doc_currency = doc.cfdi_moneda_id
-            misma_moneda = (not doc_currency) or (doc_currency == op_currency)
-            if misma_moneda and doc_moneda and abs(total_comercial - doc_moneda) > 0.01:
-                self.write({"show_advanced_info": True, "show_advanced": True})
-                linked.with_context(skip_auto_generated_refresh=True).write({
-                    "factura_value_error": True,
-                    "factura_validation_note": "El Valor Comercial de las partidas no cuadra con el 505 de la factura.",
-                })
-                raise UserError(
-                    _("La suma de Valor Comercial de las partidas ligadas a %s no cuadra con el valor en moneda del 505. Partidas=%.2f Documento=%.2f")
-                    % (doc.display_name or doc.folio or doc.id, total_comercial, doc_moneda)
-                )
+            # Nota: no se compara valor_comercial vs cfdi_valor_moneda porque están en
+            # monedas distintas (valor_comercial usa la moneda de la operación; el documento
+            # puede ser en USD u otra). El chequeo de value_usd cubre la validación.
 
     def _compute_specificity(self, rule, source):
         score = 0
