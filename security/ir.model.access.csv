@@ -166,3 +166,5 @@ access_mx_ped_mv_incrementable_user,mx.ped.mv.incrementable.user,model_mx_ped_mv
 access_mx_ped_mv_incrementable_admin,mx.ped.mv.incrementable.admin,model_mx_ped_mv_incrementable,base.group_system,1,1,1,1
 access_mx_ped_mv_decrementable_user,mx.ped.mv.decrementable.user,model_mx_ped_mv_decrementable,modulo_aduana_odoo.group_aduana_user,1,1,1,1
 access_mx_ped_mv_decrementable_admin,mx.ped.mv.decrementable.admin,model_mx_ped_mv_decrementable,base.group_system,1,1,1,1
+access_mx_lead_proveedor_user,mx.lead.proveedor.user,model_mx_lead_proveedor,modulo_aduana_odoo.group_aduana_user,1,1,1,1
+access_mx_lead_proveedor_admin,mx.lead.proveedor.admin,model_mx_lead_proveedor,base.group_system,1,1,1,1

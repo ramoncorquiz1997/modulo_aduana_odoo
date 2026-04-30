@@ -1,4 +1,5 @@
 from . import crm_lead
+from . import mx_lead_proveedor
 from . import res_partner
 from . import mx_ped_operacion
 from . import mx_ped_consolidado_remesa

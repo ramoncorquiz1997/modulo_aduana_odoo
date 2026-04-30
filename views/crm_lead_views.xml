@@ -104,6 +104,7 @@
                 <field name="x_importador_name"
                        invisible="x_tipo_operacion == 'exportacion'"/>
                 <field name="x_proveedor_id"
+                       string="Proveedor principal"
                        domain="['|', ('x_contact_role','in',['proveedor','otro']), ('supplier_rank','>',0)]"
                        context="{'default_x_contact_role': 'proveedor'}"/>
                 <field name="x_proveedor_name"/>
@@ -119,6 +120,32 @@
                 <field name="x_destinatario_final_name"/>
               </group>
             </group>
+
+            <separator string="Proveedores / Facturas (para generar COVEs)"/>
+            <field name="x_proveedor_ids" nolabel="1">
+              <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="nombre" required="1"/>
+                <field name="tipo_identificador"/>
+                <field name="identificacion"/>
+                <field name="pais_id"/>
+                <field name="numero_factura" required="1"/>
+                <field name="incoterm"/>
+                <field name="cove_count" string="COVEs" readonly="1"/>
+                <field name="cove_estado" string="Estado" readonly="1"/>
+                <button name="action_generar_cove"
+                        type="object"
+                        string="Generar COVE"
+                        icon="fa-plus-circle"
+                        title="Abre el formulario de COVE pre-llenado con este proveedor"/>
+                <button name="action_ver_coves"
+                        type="object"
+                        string=""
+                        icon="fa-eye"
+                        title="Ver COVEs de este proveedor"
+                        invisible="cove_count == 0"/>
+              </list>
+            </field>
           </page>
 
           <page string="Logística" name="mi_modulo_logistica">

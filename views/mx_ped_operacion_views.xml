@@ -469,6 +469,38 @@
                   </form>
                 </field>
               </page>
+              <page string="Proveedores / COVEs" name="proveedores_coves">
+                <p class="text-muted mb-2">
+                  Agrega aquí cada proveedor con su número de factura.
+                  El botón "Generar COVE" abre el formulario pre-llenado para ese proveedor.
+                </p>
+                <field name="proveedor_ids" nolabel="1"
+                       context="{'operacion_id': id}">
+                  <list editable="bottom">
+                    <field name="sequence" widget="handle"/>
+                    <field name="nombre" required="1"/>
+                    <field name="tipo_identificador"/>
+                    <field name="identificacion"/>
+                    <field name="pais_id"/>
+                    <field name="numero_factura" required="1"/>
+                    <field name="incoterm"/>
+                    <field name="cove_count" string="COVEs" readonly="1"/>
+                    <field name="cove_estado" string="Estado" readonly="1"/>
+                    <button name="action_generar_cove"
+                            type="object"
+                            string="Generar COVE"
+                            icon="fa-plus-circle"
+                            title="Abre el formulario de COVE pre-llenado con este proveedor"/>
+                    <button name="action_ver_coves"
+                            type="object"
+                            string=""
+                            icon="fa-eye"
+                            title="Ver COVEs de este proveedor"
+                            invisible="cove_count == 0"/>
+                  </list>
+                </field>
+              </page>
+
               <page string="Facturas / COVEs / Documentos">
                 <field name="documento_ids"
                        readonly="1"

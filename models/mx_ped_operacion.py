@@ -602,6 +602,11 @@ class MxPedOperacion(models.Model):
         string="Manifestaciones de Valor",
         copy=False,
     )
+    proveedor_ids = fields.One2many(
+        related="lead_id.x_proveedor_ids",
+        string="Proveedores / Facturas",
+        readonly=False,
+    )
     mv_count = fields.Integer(
         string="MVs",
         compute="_compute_mv_count",

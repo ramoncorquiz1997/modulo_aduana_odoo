@@ -321,6 +321,13 @@ class CrmLead(models.Model):
 
     x_proveedor_id = fields.Many2one("res.partner", string="Proveedor")
     x_proveedor_name = fields.Char(string="Proveedor (texto)")
+    x_proveedor_ids = fields.One2many(
+        "mx.lead.proveedor",
+        "lead_id",
+        string="Proveedores / facturas",
+        help="Lista de proveedores para operaciones con múltiples fuentes (consolidados). "
+             "Cada línea genera su propio COVE.",
+    )
     x_comprador_id = fields.Many2one("res.partner", string="Comprador")
     x_comprador_name = fields.Char(string="Comprador (texto)")
     x_counterparty_partner_id = fields.Many2one(

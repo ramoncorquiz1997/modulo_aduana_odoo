@@ -266,6 +266,15 @@ class MxCove(models.Model):
         help="Credencial con e.firma (.cer + .key) para firmar y usuario/contraseña para VUCEM.",
     )
 
+    # ── Proveedor del lead (para consolidados con múltiples proveedores) ─────────
+    proveedor_lead_id = fields.Many2one(
+        "mx.lead.proveedor",
+        string="Proveedor (lead)",
+        ondelete="set null",
+        index=True,
+        help="Línea de proveedor del lead desde la que se generó este COVE.",
+    )
+
     # ── e-document (para adendas) ─────────────────────────────────────────────
     e_document_adenda = fields.Char(
         string="e-Document original (adenda)",
