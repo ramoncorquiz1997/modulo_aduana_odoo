@@ -548,7 +548,7 @@
                     string="Asignacion masiva de factura"
                     class="btn-secondary"/>
             <field name="x_operacion_line_ids" context="{'default_lead_id': id}">
-              <list editable="bottom" open_form_view="1" decoration-danger="factura_documento_error or factura_value_error">
+              <list open_form_view="1" decoration-danger="factura_documento_error or factura_value_error">
                 <field name="numero_partida"/>
                 <field name="factura_documento_id"/>
                 <field name="fraccion_id"/>
