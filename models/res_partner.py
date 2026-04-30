@@ -91,7 +91,7 @@ class ResPartner(models.Model):
         string="Es proveedor",
         compute="_compute_x_es_proveedor",
         inverse="_inverse_x_es_proveedor",
-        store=True,
+        store=False,
     )
     x_freight_forwarder_id = fields.Many2one(
         "res.partner",
