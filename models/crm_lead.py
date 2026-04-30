@@ -1993,7 +1993,7 @@ class CrmLeadOperacionLine(models.Model):
         "crm.lead.documento",
         string="Factura / CFDI",
         ondelete="set null",
-        domain="[('lead_id', '=', lead_id)]",
+        # Sin domain en el modelo — se pone en la vista con lead_id cargado explícitamente
     )
     factura_documento_error = fields.Boolean(string="Error factura", default=False, copy=False)
     factura_value_error = fields.Boolean(string="Error valores factura", default=False, copy=False)
