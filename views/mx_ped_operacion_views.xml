@@ -485,7 +485,7 @@
                     <field name="nombre" required="1"/>
                     <field name="identificacion" optional="show"/>
                     <field name="pais_id" optional="show"/>
-                    <field name="numero_factura" required="1"/>
+                    <field name="numero_factura" optional="show"/>
                     <field name="incoterm" optional="show"/>
                     <field name="cove_count" string="COVEs" readonly="1"/>
                     <field name="cove_estado" string="Estado" readonly="1"/>
