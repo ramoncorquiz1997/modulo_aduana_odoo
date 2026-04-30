@@ -478,12 +478,15 @@
                        context="{'operacion_id': id}">
                   <list editable="bottom">
                     <field name="sequence" widget="handle"/>
+                    <field name="partner_id"
+                           string="Contacto"
+                           domain="['|', ('x_contact_role', 'in', ['proveedor', 'otro']), ('supplier_rank', '>', 0)]"
+                           context="{'default_x_contact_role': 'proveedor'}"/>
                     <field name="nombre" required="1"/>
-                    <field name="tipo_identificador"/>
-                    <field name="identificacion"/>
-                    <field name="pais_id"/>
+                    <field name="identificacion" optional="show"/>
+                    <field name="pais_id" optional="show"/>
                     <field name="numero_factura" required="1"/>
-                    <field name="incoterm"/>
+                    <field name="incoterm" optional="show"/>
                     <field name="cove_count" string="COVEs" readonly="1"/>
                     <field name="cove_estado" string="Estado" readonly="1"/>
                     <button name="action_generar_cove"

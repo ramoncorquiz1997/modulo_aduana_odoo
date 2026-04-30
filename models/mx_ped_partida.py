@@ -453,15 +453,19 @@ class MxPedPartida(models.Model):
             rec.dta_estimado = base * (dta_rate / 100.0)
             rec.prv_estimado = base * (prv_rate / 100.0)
 
-    @api.constrains("quantity", "value_usd")
     def _check_required_trade_fields(self):
+        """Validación de campos requeridos para generar el pedimento.
+        Se llama explícitamente desde action_validar, NO como constrains,
+        para permitir guardar borradores parciales (ej. antes de asignar valor USD).
+        """
+        errors = []
         for rec in self:
-            if not rec.quantity:
-                raise ValidationError("La partida requiere cantidad.")
-            if rec.quantity <= 0:
-                raise ValidationError("La cantidad por partida debe ser mayor a cero.")
-            if rec.value_usd is False or rec.value_usd is None or rec.value_usd <= 0:
-                raise ValidationError("La partida requiere valor USD mayor a cero.")
+            if not rec.quantity or rec.quantity <= 0:
+                errors.append(f"Partida {rec.numero_partida or rec.id}: cantidad debe ser mayor a cero.")
+            if not rec.value_usd or rec.value_usd <= 0:
+                errors.append(f"Partida {rec.numero_partida or rec.id}: valor USD debe ser mayor a cero.")
+        if errors:
+            raise ValidationError("\n".join(errors))
 
     @api.depends("fraccion_id", "nico_id")
     def _compute_fraccion_nico_snapshot(self):

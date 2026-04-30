@@ -51,6 +51,15 @@ class MxLeadProveedor(models.Model):
     )
     sequence = fields.Integer(default=10)
 
+    # ── Contacto Odoo (opcional pero recomendado) ─────────────────────────────
+    partner_id = fields.Many2one(
+        "res.partner",
+        string="Contacto proveedor",
+        domain="['|', ('x_contact_role', 'in', ['proveedor', 'otro']), ('supplier_rank', '>', 0)]",
+        context="{'default_x_contact_role': 'proveedor'}",
+        help="Selecciona el contacto para auto-llenar nombre, ID fiscal, país y domicilio.",
+    )
+
     # ── Identificación del proveedor ──────────────────────────────────────────
     nombre = fields.Char(string="Nombre / razón social", required=True)
     tipo_identificador = fields.Selection(
@@ -68,6 +77,28 @@ class MxLeadProveedor(models.Model):
     numero_interior = fields.Char(string="Núm. int.")
     codigo_postal = fields.Char(string="C.P.")
     ciudad = fields.Char(string="Ciudad / municipio")
+
+    @api.onchange("partner_id")
+    def _onchange_partner_id(self):
+        """Auto-llena los campos del proveedor desde el contacto seleccionado."""
+        p = self.partner_id
+        if not p:
+            return
+        self.nombre = p.name or self.nombre
+        self.identificacion = p.vat or p.x_identificacion_fiscal or self.identificacion
+        self.pais_id = p.country_id or self.pais_id
+        self.calle = p.x_street_name or p.street or self.calle
+        self.numero_exterior = p.x_street_number_ext or self.numero_exterior
+        self.numero_interior = p.x_street_number_int or self.numero_interior
+        self.codigo_postal = p.zip or self.codigo_postal
+        self.ciudad = p.x_municipio or p.city or self.ciudad
+        # Inferir tipo_identificador: RFC si México, TAX ID si extranjero
+        if p.country_id and p.country_id.code == "MX":
+            self.tipo_identificador = "1"  # RFC
+        elif p.vat or p.x_identificacion_fiscal:
+            self.tipo_identificador = "0"  # TAX ID
+        else:
+            self.tipo_identificador = "3"  # Sin Tax ID
 
     # ── Factura ───────────────────────────────────────────────────────────────
     numero_factura = fields.Char(string="Núm. de factura", required=True)

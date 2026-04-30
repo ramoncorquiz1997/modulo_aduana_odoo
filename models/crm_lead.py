@@ -910,7 +910,9 @@ class CrmLead(models.Model):
     
     @api.onchange("x_modo_transporte")
     def _onchange_x_modo_transporte_set_default_codes(self):
-        """Sugiere claves Ap?ndice 3 cuando se elige modo general."""
+        """Actualiza las claves de medio transporte al cambiar el modo.
+        Siempre sobreescribe (incluyendo correcciones), para evitar inconsistencias.
+        """
         mapping = {
             "maritimo": "01",
             "aereo": "04",
@@ -924,17 +926,12 @@ class CrmLead(models.Model):
             [("code", "=", code), ("active", "=", True)],
             limit=1,
         )
-        if not self.x_medio_transporte_salida:
-            self.x_medio_transporte_salida = code
-        if mt and not self.x_medio_transporte_salida_id:
+        self.x_medio_transporte_salida = code
+        self.x_medio_transporte_arribo = code
+        self.x_medio_transporte_entrada_salida = code
+        if mt:
             self.x_medio_transporte_salida_id = mt
-        if not self.x_medio_transporte_arribo:
-            self.x_medio_transporte_arribo = code
-        if mt and not self.x_medio_transporte_arribo_id:
             self.x_medio_transporte_arribo_id = mt
-        if not self.x_medio_transporte_entrada_salida:
-            self.x_medio_transporte_entrada_salida = code
-        if mt and not self.x_medio_transporte_entrada_salida_id:
             self.x_medio_transporte_entrada_salida_id = mt
 
     @api.onchange("x_medio_transporte_salida_id", "x_medio_transporte_arribo_id", "x_medio_transporte_entrada_salida_id")

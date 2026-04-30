@@ -125,12 +125,16 @@
             <field name="x_proveedor_ids" nolabel="1">
               <list editable="bottom">
                 <field name="sequence" widget="handle"/>
+                <field name="partner_id"
+                       string="Contacto"
+                       domain="['|', ('x_contact_role', 'in', ['proveedor', 'otro']), ('supplier_rank', '>', 0)]"
+                       context="{'default_x_contact_role': 'proveedor'}"/>
                 <field name="nombre" required="1"/>
-                <field name="tipo_identificador"/>
-                <field name="identificacion"/>
-                <field name="pais_id"/>
+                <field name="tipo_identificador" optional="hide"/>
+                <field name="identificacion" optional="show"/>
+                <field name="pais_id" optional="show"/>
                 <field name="numero_factura" required="1"/>
-                <field name="incoterm"/>
+                <field name="incoterm" optional="show"/>
                 <field name="cove_count" string="COVEs" readonly="1"/>
                 <field name="cove_estado" string="Estado" readonly="1"/>
                 <button name="action_generar_cove"
@@ -150,20 +154,30 @@
 
           <page string="Logística" name="mi_modulo_logistica">
             <group>
-              <group string="Ruta">
+              <group string="Transporte">
                 <field name="x_modo_transporte"/>
                 <field name="x_incoterm"/>
-                <field name="x_medio_transporte_salida_id"/>
-                <field name="x_medio_transporte_arribo_id"/>
-                <field name="x_medio_transporte_entrada_salida_id"/>
+                <field name="x_medio_transporte_arribo_id"
+                       string="Medio de transporte"/>
+              </group>
+              <group string="Ruta">
                 <field name="x_origen_destino_id"/>
                 <field name="x_pais_origen_id"
                        invisible="x_tipo_operacion == 'exportacion'"/>
                 <field name="x_pais_destino_id"
                        invisible="x_tipo_operacion == 'importacion'"/>
-                <field name="x_lugar_carga"/>
-                <field name="x_lugar_descarga"/>
               </group>
+            </group>
+            <!-- Campos adicionales menos frecuentes (se muestran cuando son distintos) -->
+            <group string="Detalles avanzados de transporte" col="3">
+              <field name="x_medio_transporte_salida_id"
+                     string="Medio salida (país exportación)"
+                     optional="hide"/>
+              <field name="x_medio_transporte_entrada_salida_id"
+                     string="Medio entrada/salida aduana"
+                     optional="hide"/>
+              <field name="x_lugar_carga" optional="hide"/>
+              <field name="x_lugar_descarga" optional="hide"/>
             </group>
           </page>
 
@@ -185,7 +199,7 @@
               <!-- ══ TRANSPORTISTAS (Reg. 502) ══════════════════════════════ -->
               <group string="Transportistas (Reg. 502)">
                 <field name="x_transportista_ids" nolabel="1"
-                       context="{'default_lead_id': id}">
+                       context="{'default_lead_id': id, 'default_modo_transporte': x_modo_transporte}">
                   <list editable="bottom" open_form_view="1">
                     <field name="sequence" widget="handle"/>
                     <field name="transportista_id"
