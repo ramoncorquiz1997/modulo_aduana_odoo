@@ -61,7 +61,7 @@ class MxLeadProveedor(models.Model):
     )
 
     # ── Identificación del proveedor ──────────────────────────────────────────
-    nombre = fields.Char(string="Nombre / razón social", required=True)
+    nombre = fields.Char(string="Nombre / razón social")
     tipo_identificador = fields.Selection(
         TIPO_IDENTIFICADOR,
         string="Tipo ID fiscal",
@@ -101,7 +101,7 @@ class MxLeadProveedor(models.Model):
             self.tipo_identificador = "3"  # Sin Tax ID
 
     # ── Factura ───────────────────────────────────────────────────────────────
-    numero_factura = fields.Char(string="Núm. de factura", required=True)
+    numero_factura = fields.Char(string="Núm. de factura")
     incoterm = fields.Selection(INCOTERM_COVE, string="Incoterm")
 
     # ── Vínculo al COVE generado ─────────────────────────────────────────────
