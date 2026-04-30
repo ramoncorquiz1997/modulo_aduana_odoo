@@ -875,6 +875,9 @@
 
             <group string="Datos del proveedor / comprador (505)"
                    groups="modulo_aduana_odoo.group_aduana_user">
+              <field name="counterparty_partner_id"
+                     string="Contacto (auto-llena campos)"
+                     domain="['|', ('supplier_rank', '&gt;', 0), ('x_contact_role', 'in', ['proveedor', 'otro', 'cliente'])]"/>
               <field name="cfdi_pais_id"/>
               <field name="cfdi_estado_id"/>
               <field name="cfdi_id_fiscal"/>

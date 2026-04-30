@@ -2518,6 +2518,12 @@ class CrmLeadDocumento(models.Model):
     cfdi_pais_id = fields.Many2one("res.country", string="Pais documento")
     cfdi_estado_id = fields.Many2one("res.country.state", string="Entidad documento")
     cfdi_id_fiscal = fields.Char(string="Identificacion fiscal")
+    counterparty_partner_id = fields.Many2one(
+        "res.partner",
+        string="Contacto proveedor / comprador",
+        domain="['|', ('supplier_rank', '>', 0), ('x_contact_role', 'in', ['proveedor', 'otro', 'cliente'])]",
+        help="Selecciona el contacto para auto-llenar nombre, ID fiscal, país y domicilio del 505.",
+    )
     counterparty_name_505 = fields.Char(string="Proveedor / comprador")
     counterparty_street_505 = fields.Char(string="Calle")
     counterparty_num_int_505 = fields.Char(string="Numero interior")
@@ -2536,6 +2542,31 @@ class CrmLeadDocumento(models.Model):
         for rec in self:
             tipo = dict(self._fields["tipo"].selection).get(rec.tipo, rec.tipo or "Documento")
             rec.display_name = " | ".join([p for p in [tipo, rec.folio] if p]) or tipo
+
+    @api.onchange("counterparty_partner_id")
+    def _onchange_counterparty_partner_id(self):
+        """Auto-llena los campos del 505 desde el contacto seleccionado.
+        Respeta valores ya capturados — solo rellena los vacíos."""
+        for rec in self:
+            p = rec.counterparty_partner_id
+            if not p:
+                continue
+            if not rec.counterparty_name_505:
+                rec.counterparty_name_505 = p.name or ""
+            if not rec.cfdi_id_fiscal:
+                rec.cfdi_id_fiscal = p.vat or getattr(p, "x_identificacion_fiscal", "") or ""
+            if not rec.cfdi_pais_id:
+                rec.cfdi_pais_id = p.country_id or False
+            if not rec.counterparty_street_505:
+                rec.counterparty_street_505 = getattr(p, "x_street_name", None) or p.street or ""
+            if not rec.counterparty_num_ext_505:
+                rec.counterparty_num_ext_505 = getattr(p, "x_street_number_ext", None) or ""
+            if not rec.counterparty_num_int_505:
+                rec.counterparty_num_int_505 = getattr(p, "x_street_number_int", None) or ""
+            if not rec.counterparty_zip_505:
+                rec.counterparty_zip_505 = p.zip or ""
+            if not rec.counterparty_city_505:
+                rec.counterparty_city_505 = getattr(p, "x_municipio", None) or p.city or ""
 
     @api.depends(
         "line_ids",

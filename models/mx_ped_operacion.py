@@ -844,7 +844,12 @@ class MxPedOperacion(models.Model):
         for rec in self:
             rec.invoice_count = len(rec.invoice_ids.filtered(lambda m: m.move_type == "out_invoice"))
 
-    @api.depends("strict_mode_policy", "cliente_id.x_rule_engine_strict", "participante_id.x_rule_engine_strict")
+    @api.depends(
+        "strict_mode_policy",
+        "cliente_id.x_rule_engine_strict",
+        "importador_id.x_rule_engine_strict",
+        "exportador_id.x_rule_engine_strict",
+    )
     def _compute_strict_mode_effective(self):
         for rec in self:
             rec.strict_mode_effective = rec._is_strict_mode()
