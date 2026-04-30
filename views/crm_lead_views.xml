@@ -544,12 +544,16 @@
             <group>
               <field name="x_ped_factura_resumen" readonly="1"/>
             </group>
+            <button name="action_nueva_partida"
+                    type="object"
+                    string="Nueva partida"
+                    class="btn-primary"/>
             <button name="action_open_lead_partida_factura_wizard"
                     type="object"
                     string="Asignacion masiva de factura"
                     class="btn-secondary"/>
             <field name="x_operacion_line_ids" context="{'default_lead_id': id}">
-              <list editable="bottom" open_form_view="1" decoration-danger="factura_documento_error or factura_value_error">
+              <list create="0" editable="bottom" open_form_view="1" decoration-danger="factura_documento_error or factura_value_error">
                 <field name="lead_id" column_invisible="1"/>
                 <field name="numero_partida"/>
                 <field name="factura_documento_id" domain="[('lead_id', '=', lead_id)]"/>
@@ -896,6 +900,80 @@
               <field name="lead_id"/>
               <field name="active"/>
               <field name="has_difference"/>
+            </group>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         Formulario standalone para crm.lead.operacion.line
+         Usado por el botón "Nueva partida" (abre diálogo completo)
+    ════════════════════════════════════════════════════════════ -->
+    <record id="crm_lead_operacion_line_view_form" model="ir.ui.view">
+      <field name="name">crm.lead.operacion.line.form.standalone</field>
+      <field name="model">crm.lead.operacion.line</field>
+      <field name="arch" type="xml">
+        <form string="Partida">
+          <sheet>
+            <group>
+              <group string="Captura básica">
+                <field name="lead_id" invisible="1"/>
+                <field name="numero_partida"/>
+                <field name="factura_documento_id" domain="[('lead_id', '=', lead_id)]"/>
+                <field name="name"/>
+                <field name="fraccion_id"/>
+                <field name="quantity"/>
+                <field name="value_usd"/>
+                <field name="factura_validation_note" readonly="1" invisible="not factura_validation_note"/>
+              </group>
+              <group string="Comercial y mercancía">
+                <field name="sequence" invisible="1"/>
+                <field name="nico_id"/>
+                <field name="uom_id" string="Unidad principal (UMC)"/>
+                <field name="packages_line"/>
+                <field name="gross_weight_line"/>
+                <field name="net_weight_line"/>
+                <field name="precio_unitario"/>
+                <field name="value_mxn" readonly="1"/>
+                <field name="valor_comercial" readonly="1"/>
+                <field name="valor_aduana"/>
+              </group>
+            </group>
+            <group string="Unidades SAAI (UMC / UMT)">
+              <group string="Unidad comercial (UMC — como en factura)">
+                <field name="unidad_comercial_id"/>
+                <field name="cantidad_comercial"/>
+              </group>
+              <group string="Unidad tarifa (UMT — según TIGIE)">
+                <field name="unidad_tarifa_id"/>
+                <field name="cantidad_tarifa"/>
+              </group>
+            </group>
+            <group string="Tasas TIGIE">
+              <group>
+                <field name="tigie_igi_pct" string="IGI %"/>
+                <field name="tigie_iva_pct" string="IVA %"/>
+              </group>
+              <group>
+                <field name="tigie_etiquetado"/>
+                <field name="tigie_nota_arancel" invisible="not tigie_nota_arancel"/>
+              </group>
+            </group>
+            <group string="Regulatorio">
+              <field name="nom_ids" widget="many2many_tags"/>
+              <field name="permiso_ids" widget="many2many_tags"/>
+              <field name="rrna_ids" widget="many2many_tags"/>
+              <field name="labeling_required"/>
+              <field name="nom_compliance_status"/>
+              <field name="docs_reference"/>
+              <field name="notes_regulatorias"/>
+            </group>
+            <group string="Impuestos estimados">
+              <field name="igi_estimado"/>
+              <field name="iva_estimado"/>
+              <field name="dta_estimado"/>
+              <field name="prv_estimado"/>
             </group>
           </sheet>
         </form>

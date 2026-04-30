@@ -1865,6 +1865,25 @@ class CrmLead(models.Model):
             "target": "current",
         }
 
+    def action_nueva_partida(self):
+        """Abre el formulario completo de partida como diálogo para crear una nueva."""
+        self.ensure_one()
+        form_view = self.env.ref(
+            "modulo_aduana_odoo.crm_lead_operacion_line_view_form",
+            raise_if_not_found=False,
+        )
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Nueva partida",
+            "res_model": "crm.lead.operacion.line",
+            "view_mode": "form",
+            "views": [(form_view.id if form_view else False, "form")],
+            "target": "new",
+            "context": {
+                "default_lead_id": self.id,
+            },
+        }
+
     def action_open_lead_partida_factura_wizard(self):
         self.ensure_one()
         wizard = self.env["crm.lead.partida.factura.wizard"].create({
