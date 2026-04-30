@@ -2535,7 +2535,7 @@ class CrmLeadDocumento(models.Model):
     estatus = fields.Selection([("pendiente", "Pendiente"), ("ok", "OK"), ("rechazado", "Rechazado")], default="pendiente")
     notas = fields.Text()
     company_currency_id = fields.Many2one("res.currency", related="lead_id.company_id.currency_id", readonly=True, store=True)
-    display_name = fields.Char(compute="_compute_display_name", store=False)
+    display_name = fields.Char(compute="_compute_display_name", store=True)
 
     @api.depends("tipo", "folio")
     def _compute_display_name(self):
