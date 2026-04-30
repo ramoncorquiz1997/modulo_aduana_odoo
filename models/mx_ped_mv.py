@@ -248,7 +248,7 @@ class MxPedMv(models.Model):
     )
     aviso_multicurrency = fields.Char(
         string="Aviso monedas",
-        compute="_compute_totales",
+        compute="_compute_aviso_multicurrency",
         store=False,
         readonly=True,
         help="Se muestra cuando los COVEs tienen precios en más de una moneda.",
@@ -329,7 +329,12 @@ class MxPedMv(models.Model):
     # Cada importe se convierte a MXN usando su tipo_cambio:
     #   MXN = importe × tipo_cambio  (estándar SAT: tipo_cambio = MXN por 1 unidad extranjera)
     # Si todos los registros son en MXN (tipo_cambio = 1.0) el resultado es idéntico al anterior.
-    @api.depends(
+    #
+    # NOTA: Odoo 18 requiere métodos separados para campos stored vs non-stored.
+    # _compute_totales → campos Float stored
+    # _compute_aviso_multicurrency → campo Char store=False
+
+    _TOTALES_DEPENDS = [
         "cove_line_ids.precio_pagado_ids.total",
         "cove_line_ids.precio_pagado_ids.tipo_cambio",
         "cove_line_ids.precio_pagado_ids.tipo_moneda",
@@ -342,31 +347,38 @@ class MxPedMv(models.Model):
         "cove_line_ids.decrementable_ids.importe",
         "cove_line_ids.decrementable_ids.tipo_cambio",
         "cove_line_ids.decrementable_ids.tipo_moneda",
-    )
+    ]
+
+    def _calc_totales(self):
+        """Helper interno: devuelve (pp, ppp, inc, dec, monedas_ext) para un registro."""
+        monedas = set()
+
+        def _to_mxn(importe, linea):
+            tc = getattr(linea, "tipo_cambio", 1.0) or 1.0
+            mon = getattr(linea, "tipo_moneda", "MXN") or "MXN"
+            monedas.add(mon)
+            return importe * tc
+
+        pp  = sum(_to_mxn(p.total,   p) for cl in self.cove_line_ids for p in cl.precio_pagado_ids)
+        ppp = sum(_to_mxn(p.total,   p) for cl in self.cove_line_ids for p in cl.precio_por_pagar_ids)
+        inc = sum(_to_mxn(i.importe, i) for cl in self.cove_line_ids for i in cl.incrementable_ids)
+        dec = sum(_to_mxn(d.importe, d) for cl in self.cove_line_ids for d in cl.decrementable_ids)
+        return pp, ppp, inc, dec, monedas - {"MXN"}
+
+    @api.depends(*_TOTALES_DEPENDS)
     def _compute_totales(self):
         for rec in self:
-            monedas = set()
-
-            def _to_mxn(importe, linea):
-                """Convierte importe a MXN usando tipo_cambio de la línea."""
-                tc = getattr(linea, "tipo_cambio", 1.0) or 1.0
-                mon = getattr(linea, "tipo_moneda", "MXN") or "MXN"
-                monedas.add(mon)
-                return importe * tc
-
-            pp  = sum(_to_mxn(p.total,   p) for cl in rec.cove_line_ids for p in cl.precio_pagado_ids)
-            ppp = sum(_to_mxn(p.total,   p) for cl in rec.cove_line_ids for p in cl.precio_por_pagar_ids)
-            inc = sum(_to_mxn(i.importe, i) for cl in rec.cove_line_ids for i in cl.incrementable_ids)
-            dec = sum(_to_mxn(d.importe, d) for cl in rec.cove_line_ids for d in cl.decrementable_ids)
-
+            pp, ppp, inc, dec, _monedas = rec._calc_totales()
             rec.total_precio_pagado    = pp
             rec.total_precio_por_pagar = ppp
             rec.total_incrementables   = inc
             rec.total_decrementables   = dec
             rec.total_valor_aduana     = pp + ppp + inc - dec
 
-            # Aviso si hay más de una moneda extranjera (excluyendo MXN puro)
-            monedas_ext = monedas - {"MXN"}
+    @api.depends(*_TOTALES_DEPENDS)
+    def _compute_aviso_multicurrency(self):
+        for rec in self:
+            _pp, _ppp, _inc, _dec, monedas_ext = rec._calc_totales()
             if len(monedas_ext) > 1:
                 rec.aviso_multicurrency = (
                     f"⚠️ Múltiples monedas detectadas: {', '.join(sorted(monedas_ext))}. "

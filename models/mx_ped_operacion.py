@@ -1180,8 +1180,8 @@ class MxPedOperacion(models.Model):
             ctx["default_emisor_numero_interior"] = doc.counterparty_num_int_505 or ""
             ctx["default_emisor_codigo_postal"] = doc.counterparty_zip_505 or ""
             ctx["default_emisor_municipio"] = doc.counterparty_city_505 or ""
-            if doc.partner_id and doc.partner_id.country_id:
-                ctx["default_emisor_pais"] = doc.partner_id.country_id.code or ""
+            if doc.cfdi_pais_id:
+                ctx["default_emisor_pais"] = doc.cfdi_pais_id.code or ""
             ctx["default_numero_factura_original"] = doc.folio or ""
 
         # Pre-llenar destinatario (importador) desde la operación
