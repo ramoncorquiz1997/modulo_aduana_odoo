@@ -2369,7 +2369,7 @@ class CrmLeadOperacionLine(models.Model):
         for rec in self:
             docs = rec._get_eligible_factura_documentos() if rec.lead_id else self.env["crm.lead.documento"]
             domain = [("id", "in", docs.ids)] if docs else [("id", "=", 0)]
-            if rec.factura_documento_id and rec.factura_documento_id not in docs:
+            if docs and rec.factura_documento_id and rec.factura_documento_id not in docs:
                 rec.factura_documento_id = False
             if not rec.factura_documento_id:
                 default_doc = rec._get_default_factura_documento()

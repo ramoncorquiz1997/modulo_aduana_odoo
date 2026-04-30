@@ -420,7 +420,7 @@
 
             <group string="Facturas / CFDI / Documentos comerciales">
               <field name="x_documento_505_ids" context="{'default_lead_id': id, 'default_tipo': 'factura'}">
-                <list editable="bottom" delete="0"
+                <list delete="0"
                       decoration-danger="has_difference"
                       decoration-success="not has_difference and cfdi_valor_moneda > 0">
                   <field name="sequence" optional="hide"/>
@@ -466,12 +466,13 @@
                       <field name="cfdi_pais_id" readonly="1"/>
                       <field name="cfdi_estado_id" readonly="1"/>
                       <field name="cfdi_id_fiscal" readonly="1"/>
-                      <field name="counterparty_name_505" readonly="1"/>
-                      <field name="counterparty_street_505" readonly="1"/>
-                      <field name="counterparty_num_int_505" readonly="1"/>
-                      <field name="counterparty_num_ext_505" readonly="1"/>
-                      <field name="counterparty_zip_505" readonly="1"/>
-                      <field name="counterparty_city_505" readonly="1"/>
+                      <field name="counterparty_partner_id" string="Contacto proveedor / comprador"/>
+                      <field name="counterparty_name_505"/>
+                      <field name="counterparty_street_505"/>
+                      <field name="counterparty_num_ext_505"/>
+                      <field name="counterparty_num_int_505"/>
+                      <field name="counterparty_zip_505"/>
+                      <field name="counterparty_city_505"/>
                     </group>
                   </group>
                 </form>
