@@ -2433,7 +2433,7 @@ class CrmLeadDocumento(models.Model):
     _name = "crm.lead.documento"
     _description = "CRM Lead - Documento comercial"
     _order = "sequence, id"
-    _rec_name = "display_name"
+    _rec_name = "folio"
 
     active = fields.Boolean(default=True)
     lead_id = fields.Many2one("crm.lead", required=True, ondelete="cascade", index=True)
@@ -2535,13 +2535,28 @@ class CrmLeadDocumento(models.Model):
     estatus = fields.Selection([("pendiente", "Pendiente"), ("ok", "OK"), ("rechazado", "Rechazado")], default="pendiente")
     notas = fields.Text()
     company_currency_id = fields.Many2one("res.currency", related="lead_id.company_id.currency_id", readonly=True, store=True)
-    display_name = fields.Char(compute="_compute_display_name", store=True)
+    display_name = fields.Char(compute="_compute_display_name", store=False)
 
     @api.depends("tipo", "folio")
     def _compute_display_name(self):
         for rec in self:
             tipo = dict(self._fields["tipo"].selection).get(rec.tipo, rec.tipo or "Documento")
             rec.display_name = " | ".join([p for p in [tipo, rec.folio] if p]) or tipo
+
+    def name_get(self):
+        result = []
+        for rec in self:
+            tipo = dict(self._fields["tipo"].selection).get(rec.tipo, rec.tipo or "Documento")
+            label = " | ".join([p for p in [tipo, rec.folio] if p]) or tipo
+            result.append((rec.id, label))
+        return result
+
+    @classmethod
+    def _name_search(cls, name, domain=None, operator="ilike", limit=100, order=None):
+        domain = list(domain or [])
+        if name:
+            domain = ["|", ("folio", operator, name), ("tipo", operator, name)] + domain
+        return cls._search(domain, limit=limit, order=order)
 
     @api.onchange("counterparty_partner_id")
     def _onchange_counterparty_partner_id(self):
