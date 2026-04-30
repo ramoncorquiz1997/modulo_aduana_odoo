@@ -5369,6 +5369,10 @@ class MxPedOperacion(models.Model):
             # campo siempre lleve un valor positivo declarable en el TXT de SAAI.
             if not val and source == "cantidad_comercial" and partida:
                 val = partida.cantidad_tarifa or partida.quantity or 0.0
+            # cantidad_tarifa / cantidad_umt (UMT) análogo: si no se llenó, usar
+            # cantidad_comercial o quantity como respaldo.
+            if not val and source in ("cantidad_tarifa", "cantidad_umt") and partida:
+                val = partida.cantidad_comercial or partida.quantity or 0.0
             return val
         return self._lead_value_for_field_name(
             campo.nombre,

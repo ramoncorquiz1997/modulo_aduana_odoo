@@ -492,7 +492,7 @@ class MxPedPartida(models.Model):
             if not rec.descripcion:
                 rec.descripcion = fraccion.descripcion_completa or ""
 
-            # — Unidad de medida de tarifa —
+            # — Unidad de medida de tarifa (UMT) —
             if fraccion.unidad_medida:
                 umt = self.env["mx.ped.um"].search(
                     [("code", "=", fraccion.unidad_medida), ("active", "=", True)], limit=1
@@ -501,6 +501,14 @@ class MxPedPartida(models.Model):
                     rec.unidad_tarifa_id = umt
                     if not rec.uom_id:
                         rec.uom_id = umt
+                    # Auto-llenar cantidad_tarifa desde quantity solo si aún no tiene valor
+                    if not rec.cantidad_tarifa and rec.quantity:
+                        rec.cantidad_tarifa = rec.quantity
+                    # Auto-llenar unidad_comercial si no está capturada
+                    if not rec.unidad_comercial_id:
+                        rec.unidad_comercial_id = umt
+                    if not rec.cantidad_comercial and rec.quantity:
+                        rec.cantidad_comercial = rec.quantity
 
             # — Limpiar regulatorias (ya no se auto-propagan desde M2M) —
             rec.nom_ids = [(5, 0, 0)]
@@ -523,6 +531,40 @@ class MxPedPartida(models.Model):
 
         if warning:
             return {"warning": warning}
+
+    @api.onchange("quantity")
+    def _onchange_quantity_sync_umt_umc(self):
+        """Sincroniza cantidad_tarifa y cantidad_comercial con quantity cuando:
+        - El campo todavía no tiene valor (captura inicial), O
+        - La unidad de tarifa y la unidad comercial son iguales a uom_id
+          (caso más común: misma unidad en factura y TIGIE → los tres deben cuadrar).
+        Nunca sobreescribe si el usuario ya capturó un valor distinto adrede.
+        """
+        for rec in self:
+            if not rec.quantity:
+                continue
+            # Si cantidad_tarifa no se ha llenado → tomar de quantity
+            if not rec.cantidad_tarifa:
+                rec.cantidad_tarifa = rec.quantity
+            # Si cantidad_tarifa YA existe pero la unidad tarifa = unidad comercial = uom
+            # (misma unidad en los tres lados) → mantener sincronizado
+            elif (rec.unidad_tarifa_id and rec.uom_id
+                  and rec.unidad_tarifa_id == rec.uom_id):
+                rec.cantidad_tarifa = rec.quantity
+            # Mismo patrón para cantidad_comercial
+            if not rec.cantidad_comercial:
+                rec.cantidad_comercial = rec.quantity
+            elif (rec.unidad_comercial_id and rec.uom_id
+                  and rec.unidad_comercial_id == rec.uom_id):
+                rec.cantidad_comercial = rec.quantity
+
+    @api.onchange("uom_id")
+    def _onchange_uom_sync_comercial(self):
+        """Cuando el usuario cambia la unidad principal, proponer la misma
+        en unidad_comercial si aún no está capturada."""
+        for rec in self:
+            if rec.uom_id and not rec.unidad_comercial_id:
+                rec.unidad_comercial_id = rec.uom_id
 
     @api.onchange("nico_id")
     def _onchange_nico_id(self):

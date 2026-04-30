@@ -571,7 +571,7 @@
                 <group string="Comercial y mercancia">
                   <field name="sequence" invisible="1"/>
                   <field name="nico_id"/>
-                  <field name="uom_id"/>
+                  <field name="uom_id" string="Unidad principal (UMC)"/>
                   <field name="packages_line"/>
                   <field name="gross_weight_line"/>
                   <field name="net_weight_line"/>
@@ -579,6 +579,16 @@
                   <field name="value_mxn" readonly="1"/>
                   <field name="valor_comercial" readonly="1"/>
                   <field name="valor_aduana"/>
+                </group>
+                <group string="Unidades SAAI (UMC / UMT)">
+                  <group string="Unidad de medida comercial (UMC — como en factura)">
+                    <field name="unidad_comercial_id" string="Unidad comercial"/>
+                    <field name="cantidad_comercial" string="Cantidad comercial"/>
+                  </group>
+                  <group string="Unidad de medida de tarifa (UMT — según TIGIE)">
+                    <field name="unidad_tarifa_id" string="Unidad tarifa"/>
+                    <field name="cantidad_tarifa" string="Cantidad tarifa"/>
+                  </group>
                 </group>
                 <group string="Tasas TIGIE" colspan="2">
                   <group>

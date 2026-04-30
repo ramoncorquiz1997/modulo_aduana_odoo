@@ -190,13 +190,9 @@ class MxPedValidacionWizard(models.TransientModel):
                         _("Valor USD de partidas (%.2f) no coincide con el 505 (%.2f).") % (total_usd, doc_usd),
                         ref=ref_doc, cat="documentos", seq=30,
                     )
-                total_comercial = sum(linked.mapped("valor_comercial"))
-                doc_moneda = doc.cfdi_valor_moneda or 0.0
-                if doc_moneda > 0 and abs(total_comercial - doc_moneda) > 0.01:
-                    w(
-                        _("Valor comercial de partidas (%.2f) no coincide con valor en moneda del 505 (%.2f).") % (total_comercial, doc_moneda),
-                        ref=ref_doc, cat="documentos", seq=40,
-                    )
+                # No se compara valor_comercial vs cfdi_valor_moneda: están en monedas
+                # distintas (valor_comercial en moneda de la operación; el 505 puede ser USD).
+                # El chequeo de value_usd ya cubre la validación correctamente.
 
         # ── 4. CONTRIBUCIONES ────────────────────────────────────────────
         contribuciones = op.contribucion_global_ids
