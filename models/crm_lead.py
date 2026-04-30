@@ -1351,18 +1351,6 @@ class CrmLead(models.Model):
     x_peso_neto = fields.Float(string="Peso neto", compute="_compute_x_totales_partidas", store=False)
     x_volumen_cbm = fields.Float(string="Volumen (CBM)")
 
-    x_tipo_empaque = fields.Selection(
-        selection=[
-            ("cajas", "Cajas"),
-            ("tarimas", "Tarimas"),
-            ("granel", "Granel"),
-            ("otro", "Otro"),
-        ],
-        string="Tipo de empaque",
-    )
-
-    x_numero_paquetes = fields.Integer(string="Número de paquetes")
-
     # --- Transporte / guías ---
     x_booking = fields.Char(string="Booking")
     x_guia_ids = fields.One2many(
