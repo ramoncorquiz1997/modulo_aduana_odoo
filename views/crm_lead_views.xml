@@ -161,7 +161,14 @@
                        string="Medio de transporte"/>
               </group>
               <group string="Ruta">
-                <field name="x_origen_destino_id"/>
+                <field name="x_origen_destino_id"
+                       string="País de origen (SAAI)"
+                       invisible="x_tipo_operacion == 'exportacion'"
+                       required="x_tipo_operacion == 'importacion'"/>
+                <field name="x_origen_destino_id"
+                       string="País de destino (SAAI)"
+                       invisible="x_tipo_operacion == 'importacion'"
+                       required="x_tipo_operacion == 'exportacion'"/>
                 <field name="x_pais_origen_id"
                        invisible="x_tipo_operacion == 'exportacion'"/>
                 <field name="x_pais_destino_id"

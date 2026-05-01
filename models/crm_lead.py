@@ -266,9 +266,9 @@ class CrmLead(models.Model):
     x_origen_destino_mercancia = fields.Char(string="Origen/Destino mercancía (cve)")
     x_origen_destino_id = fields.Many2one(
         "aduana.catalogo.pais",
-        string="Origen/Destino mercancía",
+        string="País origen/destino (SAAI)",
         domain="[('active','=',True)]",
-        help="Selecciona el país de destino (importación) u origen (exportación) según Apéndice 15 Anexo 22.",
+        help="Importación: país de origen de la mercancía. Exportación: país de destino. Catálogo Apéndice 15 Anexo 22 (código SAAI 2 dígitos). Se usa en el registro 501.",
         ondelete="restrict",
     )
 
