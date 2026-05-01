@@ -2007,6 +2007,11 @@ class CrmLeadOperacionLine(models.Model):
     valor_aduana = fields.Monetary(
         string="Valor aduana",
         currency_field="currency_id",
+        compute="_compute_valor_aduana",
+        store=True,
+        readonly=False,
+        help="Valor en aduana en MXN. Se calcula automáticamente como value_usd × tipo_cambio. "
+             "Puedes sobreescribirlo si hay ajustes (fletes, seguros, etc.).",
     )
     factura_documento_id = fields.Many2one(
         "crm.lead.documento",
@@ -2186,6 +2191,15 @@ class CrmLeadOperacionLine(models.Model):
                 rec.valor_comercial = rec.quantity * rec.precio_unitario
             else:
                 rec.valor_comercial = rec.value_mxn
+
+    @api.depends("value_mxn")
+    def _compute_valor_aduana(self):
+        """Valor en aduana = value_usd × tipo_cambio (igual a value_mxn).
+        El usuario puede sobreescribirlo si hay ajustes por flete/seguro."""
+        for rec in self:
+            # Solo auto-calcular si el campo no tiene valor manual ya guardado
+            if not rec.valor_aduana:
+                rec.valor_aduana = rec.value_mxn
 
     def _get_eligible_factura_documentos(self):
         self.ensure_one()
