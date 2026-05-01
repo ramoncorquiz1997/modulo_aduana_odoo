@@ -625,6 +625,8 @@
                   <field name="nom_compliance_status"/>
                   <field name="docs_reference"/>
                   <field name="notes_regulatorias"/>
+                  <field name="pais_origen_id" string="País de origen"/>
+                  <field name="pais_vendedor_id" string="País vendedor"/>
                 </group>
                 <group string="Impuestos estimados (requiere valor USD)">
                   <field name="igi_estimado"/>
@@ -975,6 +977,8 @@
               <field name="nom_compliance_status"/>
               <field name="docs_reference"/>
               <field name="notes_regulatorias"/>
+              <field name="pais_origen_id" string="País de origen"/>
+              <field name="pais_vendedor_id" string="País vendedor"/>
             </group>
             <group string="Impuestos estimados">
               <field name="igi_estimado"/>

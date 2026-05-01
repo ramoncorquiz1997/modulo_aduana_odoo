@@ -746,6 +746,12 @@ class CrmLead(models.Model):
                 "precio_unitario": line.precio_unitario,
                 "valor_comercial": line.valor_comercial,
                 "valor_aduana": line.valor_aduana,
+                "unidad_tarifa_id": line.unidad_tarifa_id.id or False,
+                "cantidad_tarifa": line.cantidad_tarifa or line.quantity or 0.0,
+                "unidad_comercial_id": line.unidad_comercial_id.id or False,
+                "cantidad_comercial": line.cantidad_comercial or line.quantity or 0.0,
+                "pais_origen_id": line.pais_origen_id.id or False,
+                "pais_vendedor_id": line.pais_vendedor_id.id or False,
                 "factura_documento_id": (
                     doc_map.get(line.factura_documento_id.id)
                     if line.factura_documento_id
@@ -2059,6 +2065,8 @@ class CrmLeadOperacionLine(models.Model):
     )
     docs_reference = fields.Char(string="Referencia documentos")
     notes_regulatorias = fields.Text(string="Notas regulatorias")
+    pais_origen_id = fields.Many2one("res.country", string="País de origen")
+    pais_vendedor_id = fields.Many2one("res.country", string="País vendedor")
 
     # Tasas y datos informativos directo de la TIGIE maestra (solo lectura)
     tigie_igi_pct = fields.Float(
